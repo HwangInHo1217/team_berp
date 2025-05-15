@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>접수 등록</title>
+  <link rel="stylesheet" href="./css/sales_order_add.css">
+</head>
+<body>
+  <div class="modal">
+    <div class="modal-header">
+      <h2>접수 등록</h2>
+      <span class="close">&times;</span>
+    </div>
+
+    <form class="form-area">
+      <div class="form-row">
+        <div class="form-group">
+          <label>작성일</label>
+          <input type="date">
+        </div>
+        <div class="form-group">
+          <label>납기일</label>
+          <input type="date">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>발주번호</label>
+          <input type="text">
+        </div>
+        <div class="form-group">
+          <label>고객사</label>
+          <input type="text">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>대표명</label>
+          <input type="text">
+        </div>
+        <div class="form-group">
+          <label>담당자명</label>
+          <input type="text">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>도면</label>
+          <input type="text">
+        </div>
+        <div class="form-group">
+          <label>도면 업로드</label>
+          <button type="button" class="btn-blue">파일찾기</button>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>품목</label>
+          <input type="text">
+        </div>
+        <div class="form-group">
+          <label>규격</label>
+          <input type="text">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>수량</label>
+          <input type="text">
+        </div>
+        <div class="form-group">
+          <label>단가</label>
+          <input type="text">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group full">
+          <label>비고</label>
+          <textarea rows="3"></textarea>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group full">
+          <label>출고 방법</label>
+          <select>
+            <option>선택</option>
+            <option>택배</option>
+            <option>직납</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-buttons">
+        <button type="submit" class="save">저장</button>
+        <button type="button" class="cancel">닫기</button>
+      </div>
+    </form>
+  </div>
+</body>
+</html>

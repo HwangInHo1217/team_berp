@@ -4,6 +4,9 @@ server:
 
 # ✅ Spring 설정
 spring:
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+
   # ================================
   # [🔧 데이터베이스 설정 - 아직 실제 사용 안하므로 주석처리]
   # datasource:
@@ -42,12 +45,12 @@ spring:
 
   # ================================
   # [🖥️ 타임리프 설정 - 템플릿 없으면 오류나므로 주석처리]
-  # thymeleaf:
-  #   cache: false               # 캐시 비활성화 (수정사항 바로 반영)
-  #   prefix: classpath:/templates/  # 템플릿 폴더 경로
-  #   suffix: .html              # 템플릿 파일 확장자
-  #   mode: HTML                 # HTML 모드 사용
-  #   encoding: UTF-8            # 문자 인코딩
+  thymeleaf:
+     cache: false               # 캐시 비활성화 (수정사항 바로 반영)
+     prefix: classpath:/templates/  # 템플릿 폴더 경로
+     suffix: .html              # 템플릿 파일 확장자
+     mode: HTML                 # HTML 모드 사용
+     encoding: UTF-8            # 문자 인코딩
   # ================================
 
 # ✅ Swagger 설정 - API 문서용

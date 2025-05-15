@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <meta charset="UTF-8">
+  
+  <link rel="stylesheet" href="./css/product_manage.css">
+</head>
+<body>
+<header th:fragment="headerFragment">
+    <div class="header-main">
+      <div class="hamburger">☰</div>
+      <div class="system-title">스마트 제조 시스템</div>
+      <nav class="main-nav">
+        <ul>
+          <li>
+            기초 정보 관리
+            <ul>
+              <li><a href="business.html">사업장 관리</a></li>
+              <li><a href="customer.html">거래처 관리</a></li>
+              <li>품목 관리</li>
+              <li>공정 관리</li>
+              <li>창고 관리</li>
+              <li>B.O.M</li>
+            </ul>
+          </li>
+          <li>구매·영업 관리
+            <ul>
+              <li>발주 관리</li>
+              <li>주문 관리</li>
+              <li>출고 관리</li>
+              <li>반품 관리</li>
+            </ul>
+          </li>
+          <li>자재 관리
+            <ul>
+              <li>입고 관리</li>
+              <li>재고 관리</li>
+            </ul>
+          </li>
+          <li>생산 관리
+            <ul>
+              <li>생산 계획</li>
+              <li>생산 실적 관리</li>
+            </ul>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+</body>
+</html>

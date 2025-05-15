@@ -39,22 +39,11 @@ dependencies {
     //✅ 코드 수정 시 서버 자동 재시작 / 캐시 자동 리프레시 기능 제공
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 
-	//✅ 아래 두 개면 .xls, .xlsx 모두 읽고 쓰기 가능함
-	implementation 'org.apache.poi:poi:5.2.3'
-	implementation 'org.apache.poi:poi-ooxml:5.2.3'
+
 	//✅ 공통 기능(로깅, 보안 검사 등)을 코드와 분리해서 적용 가능하게 해주는 기법
 	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-aop', version: '3.4.5'
 
-    // ✅ Spring Security + JWT (보안 및 로그인 토큰 처리)
-    implementation 'org.springframework.boot:spring-boot-starter-security'
-    implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
-    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
-    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
-	//✅ Spring Boot 백엔드에서 바코드 생성·해석할 때 사용하는 기본 라이브러리
-	implementation 'com.google.zxing:core:3.5.2'
-	//ZXing Core를 기반으로 Java SE 환경에서 사용하기 쉽게 도와주는 확장 모듈
-	//이미지 파일 입출력 등 BufferedImage 관련 기능 포함됨
-	implementation 'com.google.zxing:javase:3.5.2'
+
 	//thymeleaf
 	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-thymeleaf', version: '3.4.5'
     // ✅ MyBatis (직접 SQL 작성 시 사용)

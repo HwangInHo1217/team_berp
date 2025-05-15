@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>주문 관리</title>
+  <link rel="stylesheet" href="./css/sales_order_manage.css">
+</head>
+<body>
+  <header>
+    <div class="header-main">
+      <div class="hamburger">☰</div>
+      <div class="system-title">스마트 제조 시스템</div>
+      <nav class="main-nav">
+        <ul>
+          <li>기초 정보 관리
+            <ul>
+              <li><a href="business.html">사업장 관리</a></li>
+              <li><a href="customer.html">거래처 관리</a></li>
+              <li><a href="product.html">품목 관리</a></li>
+            </ul>
+          </li>
+          <li>구매·영업 관리
+            <ul>
+              <li><a href="order.html">발주 관리</a></li>
+              <li><a href="sales_order_manage.html">주문 관리</a></li>
+            </ul>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="content">
+      <div class="title-bar">
+        <h2>주문 관리</h2>
+        <div class="filter-row">
+          <input type="text" placeholder="2024-01-01 ~ 2024-12-31">
+          <select>
+            <option>전체</option>
+            <option>1월</option>
+            <option>2월</option>
+          </select>
+          <input type="text" placeholder="검색어 입력">
+          <button class="btn blue">조회</button>
+          <button class="btn green">신규등록</button>
+          <button class="btn red">삭제</button>
+        </div>
+      </div>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th><input type="checkbox"></th>
+            <th>발주번호</th>
+            <th>도면</th>
+            <th>품목</th>
+            <th>규격</th>
+            <th>고객사</th>
+            <th>작성일자</th>
+            <th>납기일</th>
+            <th>출고 유무</th>
+            <th>도면 유무</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><input type="checkbox"></td>
+            <td><a href="#">asd</a></td>
+            <td>asd</td>
+            <td>리턴엔드</td>
+            <td>5.5.2</td>
+            <td>이음</td>
+            <td>2024-04-15</td>
+            <td>2024-05-15</td>
+            <td>X</td>
+            <td>X</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+</body>
+</html>

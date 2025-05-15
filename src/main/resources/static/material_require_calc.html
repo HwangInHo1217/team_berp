@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>자재소요량 계산</title>
+  <link rel="stylesheet" href="./css/material_require_calc.css">
+</head>
+<body>
+  <div class="container">
+    <h2>자재소요량 계산</h2>
+
+    <div class="filter-section">
+      <label for="date">일자</label>
+      <input type="date" id="start-date">
+      ~
+      <input type="date" id="end-date">
+      <button class="btn calc">계산</button>
+      <button class="btn save">저장</button>
+      <button class="btn cancel">취소</button>
+    </div>
+
+    <div class="table-wrapper">
+      <h3>주문 품목 목록</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>No</th>
+            <th>품목코드</th>
+            <th>품목명</th>
+            <th>거래처</th>
+            <th>규격</th>
+            <th>단위</th>
+            <th>생산수량</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td>P-001</td>
+            <td>샘플제품 A</td>
+            <td>이음</td>
+            <td>5.5.2</td>
+            <td>EA</td>
+            <td>100</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>P-002</td>
+            <td>샘플제품 B</td>
+            <td>이음</td>
+            <td>3.2.1</td>
+            <td>EA</td>
+            <td>50</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="table-wrapper">
+      <h3>필요 자재 목록</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>No</th>
+            <th>자재코드</th>
+            <th>자재명</th>
+            <th>규격</th>
+            <th>소요량</th>
+            <th>단위</th>
+            <th>투입예상량</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>1</td>
+            <td>M-001</td>
+            <td>알루미늄</td>
+            <td>100x100</td>
+            <td>200</td>
+            <td>EA</td>
+            <td>206</td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>M-002</td>
+            <td>볼트</td>
+            <td>6mm</td>
+            <td>400</td>
+            <td>EA</td>
+            <td>410</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</body>
+</html>
