@@ -1,0 +1,49 @@
+<!-- BOM 구성 보기 모달 -->
+<div class="modal fade" id="bomViewModal" tabindex="-1" aria-labelledby="bomViewModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="bomViewModalLabel">BOM 구성 보기</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+      </div>
+      <div class="modal-body">
+        <h6 class="mb-3"><strong>완제품:</strong> P001 - 완제품 A</h6>
+
+        <!-- 구성 자재 테이블 -->
+        <div class="table-responsive">
+          <table class="table table-bordered text-center align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>자재코드</th>
+                <th>자재명</th>
+                <th>규격</th>
+                <th>단위</th>
+                <th>수량</th>
+              </tr>
+            </thead>
+            <tbody id="bomComponentTableBody">
+              <tr>
+                <td>M001</td>
+                <td>자재 X</td>
+                <td>10x20</td>
+                <td>EA</td>
+                <td>5</td>
+              </tr>
+              <tr>
+                <td>M002</td>
+                <td>자재 Y</td>
+                <td>5x10</td>
+                <td>EA</td>
+                <td>3</td>
+              </tr>
+              <!-- 추후 JavaScript 또는 Thymeleaf로 반복 처리 -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+      </div>
+    </div>
+  </div>
+</div>

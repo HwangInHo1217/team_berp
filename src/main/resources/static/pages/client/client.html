@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>거래처 관리</title>
+<link
+	href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+	rel="stylesheet" />
+<script
+	src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<link rel="stylesheet" href="/assets/css/style.css" />
+</head>
+<body class="d-flex flex-column" style="min-height: 100vh;">
+	<div id="header"></div>
+
+	<div class="d-flex flex-grow-1">
+		<div id="sidebar"></div>
+
+		<main class="p-4 flex-fill">
+			<div class="container">
+				<h2 class="mb-4">거래처 관리</h2>
+
+				<!-- 🔹 탭 버튼 -->
+				<div class="mb-3">
+					<button class="btn btn-outline-primary active me-2" id="tab-client">고객사</button>
+					<button class="btn btn-outline-secondary" id="tab-supplier">매입처</button>
+				</div>
+
+				<!-- 🔍 검색 및 등록/삭제 버튼 -->
+				<div class="row align-items-center mb-3">
+					<div class="col-md-6 d-flex">
+						<!-- 검색 조건 -->
+						<select class="form-select w-25 me-2" id="searchType">
+							<option value="name">거래처명</option>
+							<option value="ceo">대표자명</option>
+						</select>
+
+						<!-- 검색어 입력 -->
+						<input type="text" class="form-control me-2" id="searchKeyword"
+							placeholder="검색어 입력" />
+
+						<!-- 🔍 검색 버튼 -->
+						<button class="btn btn-outline-secondary"
+							onclick="searchClients()">검색</button>
+					</div>
+
+					<div class="col-md-6 text-end">
+						<button class="btn btn-danger me-2">삭제</button>
+						<button class="btn btn-primary" data-bs-toggle="modal"
+							data-bs-target="#clientRegisterModal">+ 거래처 등록</button>
+					</div>
+				</div>
+
+
+				<!-- 📋 거래처 목록 테이블 -->
+				<div class="table-responsive">
+					<table
+						class="table table-bordered table-hover align-middle text-center">
+						<thead class="table-light">
+							<tr>
+								<th><input type="checkbox" /></th>
+								<th>거래처명</th>
+								<th>대표자명</th>
+								<th>전화번호</th>
+								<th>이메일</th>
+								<th>수정</th>
+								<th>삭제</th>
+							</tr>
+						</thead>
+						<tbody id="client-table">
+							<tr>
+								<td><input type="checkbox" /></td>
+								<td>삼성전자</td>
+								<td>이재용</td>
+								<td>02-1234-5678</td>
+								<td>samsung@example.com</td>
+								<td><button class="btn btn-sm btn-warning"
+										onclick="openEditModal('삼성전자', '이재용', '123-45-67890', '02-1234-5678', 'samsung@example.com', '02-1234-9999', '서울시 강남구 테헤란로 1', '제조업', '반도체', 'CLIENT')">
+										수정</button></td>
+								<td><button class="btn btn-sm btn-danger">삭제</button></td>
+							</tr>
+							<tr>
+								<td><input type="checkbox" /></td>
+								<td>LG화학</td>
+								<td>구광모</td>
+								<td>02-9876-5432</td>
+								<td>lgchem@example.com</td>
+								<td><button class="btn btn-sm btn-warning"
+										onclick="openEditModal('LG화학', '구광모', '123-45-67390', '02-1234-5678', '구광모@example.com', '02-1234-8888', '서울시 강남구 ', '제조업', '반도체', 'CLIENT')">
+										수정</button></td>
+								<td><button class="btn btn-sm btn-danger">삭제</button></td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+
+				<!-- ◀️ 페이징 -->
+				<nav>
+					<ul class="pagination justify-content-center mt-3">
+						<li class="page-item disabled"><a class="page-link" href="#">이전</a></li>
+						<li class="page-item active"><a class="page-link" href="#">1</a></li>
+						<li class="page-item"><a class="page-link" href="#">2</a></li>
+						<li class="page-item"><a class="page-link" href="#">3</a></li>
+						<li class="page-item"><a class="page-link" href="#">다음</a></li>
+					</ul>
+				</nav>
+			</div>
+		</main>
+	</div>
+	<!-- 거래처 등록 모달 -->
+	<div class="modal fade" id="clientRegisterModal" tabindex="-1"
+		aria-labelledby="clientRegisterModalLabel" aria-hidden="true">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+				<form id="clientRegisterForm" method="post" action="#">
+					<div class="modal-header">
+						<h5 class="modal-title" id="clientRegisterModalLabel">거래처 등록</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal"
+							aria-label="닫기"></button>
+					</div>
+					<div class="modal-body">
+						<div class="row mb-3">
+							<div class="col-md-6">
+								<label for="companyName" class="form-label">회사명</label> <input
+									type="text" class="form-control" id="companyName"
+									name="companyName" required />
+							</div>
+							<div class="col-md-6">
+								<label for="ceoName" class="form-label">대표자명</label> <input
+									type="text" class="form-control" id="ceoName" name="ceoName"
+									required />
+							</div>
+						</div>
+
+						<div class="row mb-3">
+							<div class="col-md-6">
+								<label for="bizNum" class="form-label">사업자 번호</label> <input
+									type="text" class="form-control" id="bizNum" name="bizNum"
+									placeholder="000-00-00000" />
+							</div>
+							<div class="col-md-6">
+								<label for="phone" class="form-label">전화번호</label> <input
+									type="tel" class="form-control" id="phone" name="phone"
+									placeholder="예: 02-1234-5678" />
+							</div>
+						</div>
+
+						<div class="row mb-3">
+							<div class="col-md-6">
+								<label for="email" class="form-label">이메일</label> <input
+									type="email" class="form-control" id="email" name="email" />
+							</div>
+							<div class="col-md-6">
+								<label for="fax" class="form-label">팩스</label> <input
+									type="text" class="form-control" id="fax" name="fax" />
+							</div>
+						</div>
+
+						<!-- 주소 검색 (지번/도로명 + 상세주소 분리) -->
+						<div class="mb-3">
+							<label class="form-label">주소</label>
+
+							<!-- 주소 유형 표시 (도로명/지번) -->
+							<input type="text" id="addressType" class="form-control mb-2"
+								placeholder="도로명 or 지번 주소" readonly />
+
+							<!-- 기본 주소 (API에서 채워짐) -->
+							<input type="text" id="mainAddress" name="mainAddress"
+								class="form-control mb-2" placeholder="기본 주소" readonly />
+
+							<!-- 상세 주소 (사용자 입력) -->
+							<input type="text" id="detailAddress" name="detailAddress"
+								class="form-control" placeholder="상세 주소 입력" />
+
+							<!-- 주소 검색 버튼 -->
+							<button type="button" class="btn btn-outline-secondary mt-2"
+								onclick="execDaumPostcode()">주소 검색</button>
+						</div>
+
+
+						<div class="row mb-3">
+							<div class="col-md-6">
+								<label for="type" class="form-label">업태</label> <input
+									type="text" class="form-control" id="type" name="type" />
+							</div>
+							<div class="col-md-6">
+								<label for="item" class="form-label">종목</label> <input
+									type="text" class="form-control" id="item" name="item" />
+							</div>
+						</div>
+
+						<div class="mb-3">
+							<label class="form-label">거래처 유형</label>
+							<div>
+								<div class="form-check form-check-inline">
+									<input class="form-check-input" type="radio" name="clientType"
+										id="client" value="CLIENT" checked /> <label
+										class="form-check-label" for="client">고객사</label>
+								</div>
+								<div class="form-check form-check-inline">
+									<input class="form-check-input" type="radio" name="clientType"
+										id="supplier" value="SUPPLIER" /> <label
+										class="form-check-label" for="supplier">매입처</label>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="modal-footer">
+						<button type="reset" class="btn btn-secondary">초기화</button>
+						<button type="submit" class="btn btn-primary">등록</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+
+	<div id="footer"></div>
+	<!-- Daum 주소 검색 API -->
+	<!-- 카카오 주소 API -->
+	<script
+		src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+
+	<script>
+  function execDaumPostcode() {
+    new daum.Postcode({
+      oncomplete: function(data) {
+        // 주소 유형 (도로명 or 지번)
+        const isRoad = data.userSelectedType === 'R';
+        document.getElementById("addressType").value = isRoad ? "도로명" : "지번";
+
+        // 기본 주소 값 (선택한 주소)
+        const address = isRoad ? data.roadAddress : data.jibunAddress;
+        document.getElementById("mainAddress").value = address;
+
+        // 상세 주소는 사용자 입력 영역 → 초기화
+        document.getElementById("detailAddress").value = "";
+        document.getElementById("detailAddress").focus();
+      }
+    }).open();
+  }
+</script>
+
+
+	<script>
+    // 공통 레이아웃 불러오기
+    fetch('/layouts/header.html').then(res => res.text()).then(data => document.getElementById('header').innerHTML = data);
+    fetch('/layouts/sidebar.html').then(res => res.text()).then(data => document.getElementById('sidebar').innerHTML = data);
+    fetch('/layouts/footer.html').then(res => res.text()).then(data => document.getElementById('footer').innerHTML = data);
+
+    // 탭 버튼 기능 예시
+    document.addEventListener('DOMContentLoaded', () => {
+      const tabClient = document.getElementById('tab-client');
+      const tabSupplier = document.getElementById('tab-supplier');
+      const tableBody = document.getElementById('client-table');
+
+      tabClient.addEventListener('click', () => {
+        tabClient.classList.add('btn-outline-primary', 'active');
+        tabClient.classList.remove('btn-outline-secondary');
+        tabSupplier.classList.remove('active');
+        tabSupplier.classList.add('btn-outline-secondary');
+        tableBody.innerHTML = `
+          <tr><td><input type="checkbox" /></td><td>삼성전자</td><td>이재용</td><td>02-1234-5678</td><td>samsung@example.com</td>
+            <td><button class="btn btn-sm btn-warning">수정</button></td><td><button class="btn btn-sm btn-danger">삭제</button></td></tr>
+            <tr><td><input type="checkbox" /></td><td>LG화학	</td><td>구광모</td><td>02-9876-5432</td><td>lgchem@example.com</td>
+            <td><button class="btn btn-sm btn-warning">수정</button></td><td><button class="btn btn-sm btn-danger">삭제</button></td></tr>
+        `;
+      });
+
+      tabSupplier.addEventListener('click', () => {
+        tabSupplier.classList.add('btn-outline-primary', 'active');
+        tabSupplier.classList.remove('btn-outline-secondary');
+        tabClient.classList.remove('active');
+        tabClient.classList.add('btn-outline-secondary');
+        tableBody.innerHTML = `
+          <tr><td><input type="checkbox" /></td><td>대한유통</td><td>김유통</td><td>031-222-1111</td><td>daehan@example.com</td>
+            <td><button class="btn btn-sm btn-warning">수정</button></td><td><button class="btn btn-sm btn-danger">삭제</button></td></tr>
+        `;
+      });
+    });
+  </script>
+
+	<script>
+	//수정 모달 스크립트
+function openEditModal(company, ceo, biznum, phone, email, fax, address, type, item, clientType) {
+  // 폼에 값 채우기
+  document.getElementById("companyName").value = company;
+  document.getElementById("ceoName").value = ceo;
+  document.getElementById("bizNum").value = biznum;
+  document.getElementById("phone").value = phone;
+  document.getElementById("email").value = email;
+  document.getElementById("fax").value = fax;
+  document.getElementById("mainAddress").value = address;
+  document.getElementById("type").value = type;
+  document.getElementById("item").value = item;
+
+  // 거래처 유형 선택
+  if (clientType === 'CLIENT') {
+    document.getElementById("client").checked = true;
+  } else {
+    document.getElementById("supplier").checked = true;
+  }
+
+  // 등록/수정 상태 구분용 (선택사항)
+  // document.getElementById("mode").value = "edit";
+
+  // 모달 띄우기
+  const modal = new bootstrap.Modal(document.getElementById("clientRegisterModal"));
+  modal.show();
+}
+</script>
+
+<script>
+function searchClients() {
+  const type = document.getElementById("searchType").value;
+  const keyword = document.getElementById("searchKeyword").value;
+
+  if (!keyword.trim()) {
+    alert("검색어를 입력해주세요.");
+    return;
+  }
+
+  console.log("검색 조건:", type);
+  console.log("검색 키워드:", keyword);
+
+  // ✅ 실제 검색 로직은 여기에 추가
+  // 예) fetch(`/api/client/search?type=${type}&keyword=${keyword}`)
+  //     .then(res => res.json()).then(data => renderTable(data));
+
+  alert(`[테스트용] "${type}" 기준으로 "${keyword}" 검색합니다.`);
+}
+</script>
+
+</body>
+</html>

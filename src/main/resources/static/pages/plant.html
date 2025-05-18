@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>사업장 관리</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <link rel="stylesheet" href="/assets/css/style.css" />
+</head>
+<body class="d-flex flex-column" style="min-height: 100vh;">
+  <!-- 공통 헤더 -->
+  <div id="header"></div>
+
+  <div class="d-flex flex-grow-1">
+    <!-- 공통 사이드바 -->
+    <div id="sidebar"></div>
+
+    <!-- 메인 콘텐츠 -->
+    <main class="p-4 flex-fill">
+      <div class="container">
+        <h2 class="mb-4">사업장 등록</h2>
+        <form>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="name" class="form-label">사업장 명</label>
+              <input type="text" class="form-control" id="name" placeholder="예: (주)스마트제조" />
+            </div>
+            <div class="col-md-6">
+              <label for="ceo" class="form-label">대표자</label>
+              <input type="text" class="form-control" id="ceo" placeholder="예: 홍길동" />
+            </div>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="biznum" class="form-label">사업자 번호</label>
+              <input type="text" class="form-control" id="biznum" placeholder="예: 123-45-67890" />
+            </div>
+            <div class="col-md-3">
+              <label for="type" class="form-label">업태</label>
+              <input type="text" class="form-control" id="type" placeholder="예: 제조업" />
+            </div>
+            <div class="col-md-3">
+              <label for="item" class="form-label">종목</label>
+              <input type="text" class="form-control" id="item" placeholder="예: 전자부품" />
+            </div>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="phone" class="form-label">전화번호</label>
+              <input type="tel" class="form-control" id="phone" placeholder="예: 02-1234-5678" />
+            </div>
+            <div class="col-md-6">
+              <label for="fax" class="form-label">팩스</label>
+              <input type="tel" class="form-control" id="fax" placeholder="예: 02-8765-4321" />
+            </div>
+          </div>
+          
+          <div class="mb-3">
+            <label for="address" class="form-label">주소</label>
+            <input type="text" class="form-control" id="address" placeholder="예: 서울특별시 성동구 성수이로 113" />
+          </div>
+          
+          <div class="text-end">
+            <button type="reset" class="btn btn-secondary">초기화</button>
+            <button type="submit" class="btn btn-primary">등록</button>
+          </div>
+        </form>
+        <hr class="my-5" />
+<h4 class="mb-3">사업장 목록</h4>
+<div class="table-responsive">
+  <table class="table table-bordered table-hover align-middle text-center">
+    <thead class="table-secondary">
+      <tr>
+        <th>번호</th>
+        <th>사업장 명</th>
+        <th>대표자</th>
+        <th>사업자 번호</th>
+        <th>업태</th>
+        <th>종목</th>
+        <th>전화번호</th>
+        <th>주소</th>
+        <th>수정</th>
+        <th>삭제</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>1</td>
+        <td>스마트제조(주)</td>
+        <td>홍길동</td>
+        <td>123-45-67890</td>
+        <td>제조업</td>
+        <td>전자부품</td>
+        <td>02-1234-5678</td>
+        <td>서울 성수동 123-4</td>
+        <td><button class="btn btn-sm btn-warning">수정</button></td>
+        <td><button class="btn btn-sm btn-danger">삭제</button></td>
+      </tr>
+      <tr>
+        <td>2</td>
+        <td>베르프테크</td>
+        <td>이순신</td>
+        <td>234-56-78901</td>
+        <td>도소매업</td>
+        <td>부품유통</td>
+        <td>031-222-3333</td>
+        <td>경기도 성남시 판교대로 123</td>
+        <td><button class="btn btn-sm btn-warning">수정</button></td>
+        <td><button class="btn btn-sm btn-danger">삭제</button></td>
+      </tr>
+      <!-- 더미 데이터 or 추후 Thymeleaf 반복문 적용 -->
+    </tbody>
+  </table>
+</div>
+        
+      </div>
+    </main>
+  </div>
+
+  <!-- 공통 푸터 -->
+  <div id="footer"></div>
+
+  <script>
+    fetch('/layouts/header.html').then(res => res.text()).then(data => document.getElementById('header').innerHTML = data);
+    fetch('/layouts/sidebar.html').then(res => res.text()).then(data => document.getElementById('sidebar').innerHTML = data);
+    fetch('/layouts/footer.html').then(res => res.text()).then(data => document.getElementById('footer').innerHTML = data);
+  </script>
+</body>
+</html>
