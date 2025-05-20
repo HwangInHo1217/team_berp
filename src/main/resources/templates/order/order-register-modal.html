@@ -1,0 +1,69 @@
+<div class="modal fade" id="orderRegisterModal" tabindex="-1" aria-labelledby="orderRegisterModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="orderRegisterModalLabel">주문 등록</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="orderForm" method="POST">
+                    <div class="mb-3">
+                        <label for="customer_id" class="form-label">고객사</label>
+                        <input type="text" class="form-control" name="customer_id" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="order_date" class="form-label">주문일자</label>
+                        <input type="date" class="form-control" name="order_date" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="due_date" class="form-label">납기일자</label>
+                        <input type="date" class="form-control" name="due_date" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="manager" class="form-label">담당자</label>
+                        <input type="text" class="form-control" name="manager" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="note" class="form-label">비고</label>
+                        <input type="text" class="form-control" name="note" />
+                    </div>
+
+                    <table id="orderItemTable" class="table">
+                        <thead>
+                            <tr>
+                                <th>품목</th>
+                                <th>수량</th>
+                                <th>단위</th>
+                                <th>단가</th>
+                                <th>총액</th>
+                                <th>삭제</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Initial row for item -->
+                            <tr>
+                                <td>
+                                    <select class="form-select" name="item_id[]" required>
+                                        <option value="">-- 선택 --</option>
+                                        <option value="P001">P001 - 완제품 A</option>
+                                        <option value="P002">P002 - 완제품 B</option>
+                                    </select>
+                                </td>
+                                <td><input type="number" name="quantity[]" class="form-control" required oninput="calculateRowTotal(this)" /></td>
+                                <td><input type="text" name="unit[]" class="form-control" value="EA" required /></td>
+                                <td><input type="number" name="unit_price[]" class="form-control" required oninput="calculateRowTotal(this)" /></td>
+                                <td><input type="text" class="form-control total" readonly value="0" /></td>
+                                <td><button type="button" class="btn btn-sm btn-outline-danger" onclick="removeOrderItemRow(this)">삭제</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+                        <button type="submit" class="btn btn-primary" id="submitBtn">등록</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
