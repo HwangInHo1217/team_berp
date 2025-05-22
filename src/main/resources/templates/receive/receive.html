@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>입고 관리</title>
+  <!-- ✅ Bootstrap CSS/JS CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+<body class="d-flex flex-column" style="min-height: 100vh;">
+<!-- 공통 헤더 -->
+<div th:replace="~{/layouts/header :: header}"></div>
+  <div class="d-flex flex-grow-1">
+    <!-- 공통 사이드바 -->
+	<div th:replace="~{/layouts/sidebar :: sidebar}"></div>
+    <main class="p-4 flex-fill">
+      <div class="container">
+        <h2 class="mb-4">입고 관리</h2>
+
+        <!-- 🔍 검색창 + 버튼 한 줄 정렬 -->
+        <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+          <input type="text" class="form-control w-auto" placeholder="품목명" />
+          <input type="date" class="form-control w-auto" />
+          <span class="align-self-center">~</span>
+          <input type="date" class="form-control w-auto" />
+          <select class="form-select w-auto">
+            <option>전체 창고</option>
+            <option>자재창고 A</option>
+            <option>완제품창고</option>
+          </select>
+          <select class="form-select w-auto" id="statusFilter">
+            <option value="ALL">전체 상태</option>
+            <option value="TEMP">가입고</option>
+            <option value="CONFIRMED">실입고</option>
+          </select>
+          <button class="btn btn-outline-secondary">검색</button>
+
+          <!-- ✅ 우측 버튼들 -->
+          <button class="btn btn-outline-success ms-auto" onclick="alert('엑셀 다운로드 기능은 추후 제공될 예정입니다.')">엑셀 다운로드</button>
+          <button class="btn btn-danger" onclick="deleteSelectedRows()">삭제</button>
+          <button class="btn btn-success" onclick="confirmSelectedRows()">실입고 전환</button>
+          <button class="btn btn-primary" onclick="openReceiveAddModal()" data-bs-toggle="modal" data-bs-target="#receiveRegisterModal">+ 입고 등록</button>
+        </div>
+
+        <!-- 📋 입고 테이블 -->
+        <div class="table-responsive">
+          <table class="table table-bordered text-center align-middle" id="receiveTable">
+            <thead class="table-light">
+              <tr>
+                <th><input type="checkbox" /></th>
+                <th>순번</th>
+                <th>입고일자</th>
+                <th>매입처</th>
+                <th>품목코드</th>
+                <th>품목명</th>
+                <th>수량</th>
+                <th>단위</th>
+                <th>창고</th>
+                <th>입고유형</th>
+                <th>담당자</th>
+                <th>입고상태</th>
+                <th>비고</th>
+                <th>상세</th>
+                <th>수정</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr data-status="TEMP">
+                <td><input type="checkbox" /></td>
+                <td>1</td>
+                <td>2025-05-18</td>
+                <td>매입처회사이름</td>
+                <td>M001</td>
+                <td>자재 A</td>
+                <td>100</td>
+                <td>EA</td>
+                <td>자재창고 A</td>
+                <td>구매입고</td>
+                <td>김인호</td>
+                <td>가입고</td>
+                <td>-</td>
+                <td>
+                  <!-- 🔍 상세 버튼 -->
+                  <button class="btn btn-info btn-sm" onclick="openReceiveDetailModal({
+                    date: '2025-05-18',
+                    company_id : '매입처회사이름',
+                    itemCode: 'M001',
+                    itemName: '자재 A',
+                    quantity: 100,
+                    unit: 'EA',
+                    warehouse: '자재창고 A',
+                    type: '구매입고',
+                    status: '가입고',
+                    manager: '김인호',
+                    note: '-'
+                  })">상세</button>
+                </td>
+                <td>
+                  <!-- ✏️ 수정 버튼 -->
+                  <button class="btn btn-warning btn-sm" onclick="openReceiveEditModal({
+                    id: 1,
+                    date: '2025-05-18',
+                    company_id: '매입처회사이름',
+                    item_id: '1',
+                    qty: 100,
+                    unit: 'EA',
+                    warehouse_id: '1',
+                    type: 'PURCHASE',
+                    status: 'TEMP',
+                    manager: '김인호',
+                    note: '-'
+                  })">수정</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- 공통 푸터 -->
+  <div th:replace="~{/layouts/footer :: footer}"></div>
+  <div id="receiveModals"></div>
+  <div id="receiveDetailModals"></div>
+
+<!-- ✅ 모달, 레이아웃 파일 fetch + 자바스크립트 -->
+<script>
+  // 📦 공통 레이아웃 불러오기
+  fetch('/layouts/header.html').then(res => res.text()).then(html => document.getElementById('header').innerHTML = html);
+  fetch('/layouts/sidebar.html').then(res => res.text()).then(html => document.getElementById('sidebar').innerHTML = html);
+  fetch('/layouts/footer.html').then(res => res.text()).then(html => document.getElementById('footer').innerHTML = html);
+
+  // 🧾 등록 모달
+  fetch('/pages/receive/receive-register-modal.html')
+    .then(res => res.text())
+    .then(html => document.getElementById('receiveModals').innerHTML = html);
+
+  // 🔍 상세 모달
+  fetch('/pages/receive/receive-detail-modal.html')
+    .then(res => res.text())
+    .then(html => document.getElementById('receiveDetailModals').innerHTML = html);
+</script>
+
+<script>
+  // ✏️ 수정 모드로 모달 열기
+  function openReceiveEditModal(data) {
+    document.getElementById('receiveDate').value = data.date;
+    document.getElementById('companyId').value = data.company_id;
+    document.getElementById('itemId').value = data.item_id;
+    document.getElementById('quantity').value = data.qty;
+    document.getElementById('unit').value = data.unit;
+    document.getElementById('warehouseId').value = data.warehouse_id;
+    document.getElementById('receiveType').value = data.type;
+    document.getElementById('receiveStatus').value = data.status;
+    document.getElementById('manager').value = data.manager;
+    document.getElementById('note').value = data.note;
+    document.getElementById('submitBtn').textContent = '수정';
+    document.getElementById('receiveForm').action = `/receive/update/${data.id}`;
+    new bootstrap.Modal(document.getElementById('receiveRegisterModal')).show();
+  }
+
+  // ➕ 등록 모드 초기화
+  function openReceiveAddModal() {
+    document.getElementById('receiveForm').reset();
+    document.getElementById('submitBtn').textContent = '등록';
+    document.getElementById('receiveForm').action = '/receive/add';
+  }
+
+  // 🗑 삭제 기능
+  function deleteSelectedRows() {
+    const checkboxes = document.querySelectorAll('tbody input[type="checkbox"]:checked');
+    if (checkboxes.length === 0) return alert('삭제할 항목을 선택해주세요.');
+    if (!confirm(`${checkboxes.length}건을 삭제하시겠습니까?`)) return;
+    checkboxes.forEach(cb => cb.closest('tr').remove());
+    alert('삭제 완료');
+  }
+
+  // 🔄 실입고 전환
+  function confirmSelectedRows() {
+    const rows = document.querySelectorAll('tbody input[type="checkbox"]:checked');
+    if (rows.length === 0) return alert('가입고 항목을 선택해주세요.');
+    rows.forEach(cb => {
+      const row = cb.closest('tr');
+      row.querySelector('td:nth-child(11)').textContent = '실입고';
+      row.setAttribute('data-status', 'CONFIRMED');
+    });
+    alert('선택된 항목이 실입고로 전환되었습니다.');
+  }
+
+  // 📤 상태 필터링
+  document.getElementById('statusFilter').addEventListener('change', function () {
+    const value = this.value;
+    document.querySelectorAll('#receiveTable tbody tr').forEach(row => {
+      const rowStatus = row.getAttribute('data-status');
+      row.style.display = (value === 'ALL' || rowStatus === value) ? '' : 'none';
+    });
+  });
+
+  // 🧹 모달 닫힐 때 초기화
+  window.addEventListener('DOMContentLoaded', () => {
+    const modalEl = document.getElementById('receiveRegisterModal');
+    if (modalEl) {
+      modalEl.addEventListener('hidden.bs.modal', () => {
+        document.getElementById('receiveForm').reset();
+        document.getElementById('submitBtn').textContent = '등록';
+        document.getElementById('receiveForm').action = '/receive/add';
+      });
+    }
+  });
+
+  // 🔍 상세 보기 모달 열기
+  function openReceiveDetailModal(data) {
+    document.getElementById('detailDate').textContent = data.date;
+    document.getElementById('detailCompany').textContent = data.company_id;
+    document.getElementById('detailItemCode').textContent = data.itemCode;
+    document.getElementById('detailItemName').textContent = data.itemName;
+    document.getElementById('detailQty').textContent = data.quantity;
+    document.getElementById('detailUnit').textContent = data.unit;
+    document.getElementById('detailWarehouse').textContent = data.warehouse;
+    document.getElementById('detailType').textContent = data.type;
+    document.getElementById('detailStatus').textContent = data.status;
+    document.getElementById('detailManager').textContent = data.manager;
+    document.getElementById('detailNote').textContent = data.note;
+    new bootstrap.Modal(document.getElementById('receiveDetailModal')).show();
+  }
+</script>
+</body>
+</html>

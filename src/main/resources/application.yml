@@ -4,9 +4,14 @@ server:
 
 # ✅ Spring 설정
 spring:
-  autoconfigure:
-    exclude: org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+  #autoconfigure:
+  #  exclude: org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
 
+  datasource:
+    url: jdbc:mysql://localhost:3306/berp
+    username: root
+    password: a123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
   # ================================
   # [🔧 데이터베이스 설정 - 아직 실제 사용 안하므로 주석처리]
   # datasource:
@@ -74,3 +79,8 @@ logging:
   level:
     org.hibernate.SQL: debug        # 실행되는 SQL 출력
     org.hibernate.type: trace       # 바인딩되는 파라미터 값까지 출력
+
+mybatis:
+  maper-locations: classpath:mapper/**/*.xml
+  type-aliases-package: com.team.berp.plant.DTO
+

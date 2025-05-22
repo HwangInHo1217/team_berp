@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>출고 관리</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+<body class="d-flex flex-column" style="min-height: 100vh;">
+
+  <!-- ✅ 공통 레이아웃 삽입 영역 -->
+  <div id="header"></div>
+  <div class="d-flex flex-grow-1">
+    <div id="sidebar"></div>
+
+    <!-- ✅ 본문 영역 -->
+    <div class="container py-4">
+      <h2 class="mb-4">출고 관리</h2>
+
+      <!-- 🔍 검색 + 버튼 -->
+      <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+        <input type="text" class="form-control w-auto" placeholder="품목명" />
+        <input type="date" class="form-control w-auto" />
+        <span class="align-self-center">~</span>
+        <input type="date" class="form-control w-auto" />
+        <select class="form-select w-auto">
+          <option>전체 창고</option>
+          <option>자재창고 A</option>
+          <option>완제품창고</option>
+        </select>
+        <button class="btn btn-outline-secondary">검색</button>
+
+        <button class="btn btn-outline-success ms-auto">엑셀 다운로드</button>
+        <button class="btn btn-danger">삭제</button>
+        <button class="btn btn-primary" onclick="openShipmentAddModal()" data-bs-toggle="modal" data-bs-target="#shipmentRegisterModal">
+          + 출고 등록
+        </button>
+      </div>
+
+      <!-- 📋 출고 테이블 -->
+      <div class="table-responsive">
+        <table class="table table-bordered text-center align-middle">
+          <thead class="table-light">
+            <tr>
+              <th><input type="checkbox" /></th>
+              <th>순번</th>
+              <th>출고일자</th>
+              <th>고객사명</th>
+              <th>품목코드</th>
+              <th>품목명</th>
+              <th>수량</th>
+              <th>단위</th>
+              <th>창고</th>
+              <th>담당자</th>
+              <th>비고</th>
+              <th>상세</th>
+              <th>수정</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><input type="checkbox" /></td>
+              <td>1</td>
+              <td>2025-05-18</td>
+              <td>삼성전자</td>
+              <td>P001</td>
+              <td>완제품 A</td>
+              <td>200</td>
+              <td>EA</td>
+              <td>완제품창고</td>
+              <td>김인호</td>
+              <td>-</td>
+              <td>
+                <button class="btn btn-info btn-sm"
+                  onclick="openShipmentDetailModal({
+                    date: '2025-05-18',
+                    customer: '삼성전자',
+                    itemCode: 'P001',
+                    itemName: '완제품 A',
+                    quantity: 200,
+                    unit: 'EA',
+                    warehouse: '완제품창고',
+                    manager: '김인호',
+                    note: '-'
+                  })">상세</button>
+              </td>
+              <td>
+                <button class="btn btn-warning btn-sm"
+                  onclick="openShipmentEditModal({
+                    id: 1,
+                    date: '2025-05-18',
+                    customer_id: '1',
+                    item_id: 'P001',
+                    quantity: 200,
+                    unit: 'EA',
+                    warehouse_id: '1',
+                    manager: '김인호',
+                    note: '-'
+                  })">수정</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✅ 모달 삽입용 div -->
+  <div id="shipmentModals"></div> <!-- 등록/수정 모달 -->
+  <div id="shipmentDetailModalWrapper"></div> <!-- 상세 모달 -->
+  <div id="footer"></div>
+
+  <!-- ✅ 공통 레이아웃 fetch -->
+  <script>
+    fetch('/layouts/header.html').then(res => res.text()).then(data => document.getElementById('header').innerHTML = data);
+    fetch('/layouts/sidebar.html').then(res => res.text()).then(data => document.getElementById('sidebar').innerHTML = data);
+    fetch('/layouts/footer.html').then(res => res.text()).then(data => document.getElementById('footer').innerHTML = data);
+  </script>
+
+  <!-- ✅ 상세 모달 fetch 및 열기 -->
+  <script>
+    function openShipmentDetailModal(data) {
+      fetch('/pages/shipment/shipment-detail-modal.html')
+        .then(res => res.text())
+        .then(html => {
+          document.getElementById('shipmentDetailModalWrapper').innerHTML = html;
+          document.getElementById('shipmentDetailDate').textContent = data.date;
+          document.getElementById('shipmentDetailCustomer').textContent = data.customer;
+          document.getElementById('shipmentDetailItemCode').textContent = data.itemCode;
+          document.getElementById('shipmentDetailItemName').textContent = data.itemName;
+          document.getElementById('shipmentDetailQty').textContent = data.quantity;
+          document.getElementById('shipmentDetailUnit').textContent = data.unit;
+          document.getElementById('shipmentDetailWarehouse').textContent = data.warehouse;
+          document.getElementById('shipmentDetailManager').textContent = data.manager;
+          document.getElementById('shipmentDetailNote').textContent = data.note;
+
+          const modal = new bootstrap.Modal(document.getElementById('shipmentDetailModal'));
+          modal.show();
+        });
+    }
+  </script>
+
+  <!-- ✅ 등록/수정 모달 fetch 및 동작 함수 -->
+  <script>
+    fetch('/pages/shipment/shipment-register-modal.html')
+      .then(res => res.text())
+      .then(html => {
+        document.getElementById('shipmentModals').innerHTML = html;
+
+        // 모달이 닫힐 때 기본 상태로 초기화
+        const modalEl = document.getElementById('shipmentRegisterModal');
+        if (modalEl) {
+          modalEl.addEventListener('hidden.bs.modal', () => {
+            document.getElementById('shipmentForm').reset();
+            document.getElementById('shipmentForm').action = '/shipment/add';
+            document.getElementById('submitBtn').textContent = '등록';
+          });
+        }
+      });
+
+    // 등록 모드
+    function openShipmentAddModal() {
+      document.getElementById('shipmentForm').reset();
+      document.getElementById('shipmentForm').action = '/shipment/add';
+      document.getElementById('submitBtn').textContent = '등록';
+    }
+
+    // 수정 모드
+    function openShipmentEditModal(data) {
+      document.getElementById('shipmentDate').value = data.date;
+      document.getElementById('customerId').value = data.customer_id;
+      document.getElementById('itemId').value = data.item_id;
+      document.getElementById('quantity').value = data.quantity;
+      document.getElementById('unit').value = data.unit;
+      document.getElementById('warehouseId').value = data.warehouse_id;
+      document.getElementById('manager').value = data.manager;
+      document.getElementById('note').value = data.note;
+
+      document.getElementById('shipmentForm').action = `/shipment/update/${data.id}`;
+      document.getElementById('submitBtn').textContent = '수정';
+
+      const modal = new bootstrap.Modal(document.getElementById('shipmentRegisterModal'));
+      modal.show();
+    }
+  </script>
+</body>
+</html>

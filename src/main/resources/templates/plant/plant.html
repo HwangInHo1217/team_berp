@@ -10,12 +10,11 @@
 </head>
 <body class="d-flex flex-column" style="min-height: 100vh;">
   <!-- 공통 헤더 -->
-  <div id="header"></div>
-
+  <div th:replace="~{/layouts/header :: header}"></div>
+  
   <div class="d-flex flex-grow-1">
     <!-- 공통 사이드바 -->
-    <div id="sidebar"></div>
-
+	<div th:replace="~{/layouts/sidebar :: sidebar}"></div>
     <!-- 메인 콘텐츠 -->
     <main class="p-4 flex-fill">
       <div class="container">
@@ -24,43 +23,58 @@
           <div class="row mb-3">
             <div class="col-md-6">
               <label for="name" class="form-label">사업장 명</label>
-              <input type="text" class="form-control" id="name" placeholder="예: (주)스마트제조" />
+              <input type="text" class="form-control" id="workName" placeholder="예: (주)스마트제조" />
             </div>
             <div class="col-md-6">
               <label for="ceo" class="form-label">대표자</label>
-              <input type="text" class="form-control" id="ceo" placeholder="예: 홍길동" />
+              <input type="text" class="form-control" id="workPreName" placeholder="예: 홍길동" />
             </div>
           </div>
           
           <div class="row mb-3">
             <div class="col-md-6">
               <label for="biznum" class="form-label">사업자 번호</label>
-              <input type="text" class="form-control" id="biznum" placeholder="예: 123-45-67890" />
+              <input type="text" class="form-control" id="workNo" placeholder="예: 123-45-67890" />
             </div>
             <div class="col-md-3">
               <label for="type" class="form-label">업태</label>
-              <input type="text" class="form-control" id="type" placeholder="예: 제조업" />
+              <input type="text" class="form-control" id="workCond" placeholder="예: 제조업" />
             </div>
             <div class="col-md-3">
               <label for="item" class="form-label">종목</label>
-              <input type="text" class="form-control" id="item" placeholder="예: 전자부품" />
+              <input type="text" class="form-control" id="workItem" placeholder="예: 전자부품" />
             </div>
           </div>
           
           <div class="row mb-3">
             <div class="col-md-6">
               <label for="phone" class="form-label">전화번호</label>
-              <input type="tel" class="form-control" id="phone" placeholder="예: 02-1234-5678" />
+              <input type="tel" class="form-control" id="workTel" placeholder="예: 02-1234-5678" />
             </div>
             <div class="col-md-6">
               <label for="fax" class="form-label">팩스</label>
-              <input type="tel" class="form-control" id="fax" placeholder="예: 02-8765-4321" />
+              <input type="tel" class="form-control" id="workFax" placeholder="예: 02-8765-4321" />
             </div>
           </div>
           
           <div class="mb-3">
             <label for="address" class="form-label">주소</label>
-            <input type="text" class="form-control" id="address" placeholder="예: 서울특별시 성동구 성수이로 113" />
+            <input type="text" class="form-control" id="workAddr" placeholder="예: 서울특별시 성동구 성수이로 113" />
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-md-4">
+              <label for="type" class="form-label">담당자 명</label>
+              <input type="text" class="form-control" id="workManName"/>
+            </div>
+            <div class="col-md-4">
+              <label for="item" class="form-label">담당자 이메일</label>
+              <input type="text" class="form-control" id="workManEmail"/>
+            </div>
+            <div class="col-md-4">
+              <label for="item" class="form-label">담당자 번호</label>
+              <input type="text" class="form-control" id="workManTel"/>
+            </div>
           </div>
           
           <div class="text-end">
@@ -121,8 +135,8 @@
   </div>
 
   <!-- 공통 푸터 -->
-  <div id="footer"></div>
-
+  <div th:replace="~{/layouts/footer :: footer}"></div>
+  
   <script>
     fetch('/layouts/header.html').then(res => res.text()).then(data => document.getElementById('header').innerHTML = data);
     fetch('/layouts/sidebar.html').then(res => res.text()).then(data => document.getElementById('sidebar').innerHTML = data);

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.team.berp.plant.mapper.PlantMapper">
+<!-- 
+resultMap: 비즈니스 로직으로부터 반환할 결과값을 담은 객체
+resultType: 비즈니스 로직으로부터 반환할 결과값의 자료형
+	- 조회 결과 갑을 저장하기 위한 데이터 타입(데이터 하나에 대한 타입 지정)
+parameterMap
+parameterType: 전달받은 파라미터 데이터 타입 지정
+
+ -->
+<insert id="workplace_info" parameterType="com.team.berp.plant.DTO.plant_DTO">
+insert into berp(workId, workName, workPreName, workNo, workCond, workItem, workTel, workFax, workAddr, workManName, workManEmail, workManTel) 
+VALUES (#{workId}, #{workName}, #{workPreName}, #{workNo}, #{workCond}, #{workItem}, #{workTel}, #{workFax}, #{workAddr}, #{workManName}, #{workManEmail}, #{workManTel});
+</insert> 
+
+</mapper>
