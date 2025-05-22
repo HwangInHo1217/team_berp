@@ -8,9 +8,16 @@ spring:
   # ================================
   # [🔧 데이터베이스 설정 - 아직 실제 사용 안하므로 주석처리]
   datasource:
+<<<<<<< HEAD
      url: jdbc:mysql://localhost:3306/mrp
      username: project         # DB 접속 ID
      password: a123456     # DB 접속 비밀번호
+=======
+  #   url: jdbc:mysql://localhost:3306/berp_db?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+     url: jdbc:mysql://localhost:3306/erp_test
+     username: root         # DB 접속 ID
+     password: 0236     # DB 접속 비밀번호
+>>>>>>> branch 'develop' of https://github.com/HwangInHo1217/team_berp.git
      driver-class-name: com.mysql.cj.jdbc.Driver  # MySQL 드라이버 클래스
   # ================================
 

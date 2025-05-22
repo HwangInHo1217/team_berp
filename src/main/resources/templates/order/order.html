@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>주문 관리</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+<body class="d-flex flex-column" style="min-height: 100vh;">
+    <!-- ✅ 공통 레이아웃 -->
+    <div th:replace="~{layouts/header :: header}"></div>
+
+    <div class="d-flex flex-grow-1">
+        <!-- ✅ Sidebar -->
+        <div th:replace="~{layouts/sidebar :: sidebar}"></div>
+
+        <main class="p-4 flex-fill">
+            <div class="container">
+                <h2 class="mb-4">주문 관리</h2>
+                <!-- 🔍 검색 및 버튼 -->
+                <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+                    <input type="text" class="form-control w-auto" placeholder="고객사명" />
+                    <input type="date" class="form-control w-auto" />
+                    <span class="align-self-center">~</span>
+                    <input type="date" class="form-control w-auto" />
+                    <button class="btn btn-outline-secondary">검색</button>
+                    <button class="btn btn-outline-success ms-auto">엑셀 다운로드</button>
+                    <button class="btn btn-danger">삭제</button>
+                    <button class="btn btn-primary" onclick="openOrderAddModal()" data-bs-toggle="modal" data-bs-target="#orderRegisterModal">+ 주문 등록</button>
+                </div>
+
+                <!-- 📋 주문 테이블 -->
+                <div class="table-responsive">
+                    <table class="table table-bordered text-center align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th><input type="checkbox" /></th>
+                                <th>순번</th>
+                                <th>주문일자</th>
+                                <th>주문번호</th>
+                                <th>고객사</th>
+                                <th>납기일자</th>
+                                <th>품목수</th>
+                                <th>총금액</th>
+                                <th>담당자</th>
+                                <th>비고</th>
+                                <th>상세</th>
+                                <th>수정</th>
+                                <th>출고등록</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="order : ${orders}">
+                                <td><input type="checkbox" /></td>
+                                <td th:text="${order.sequence}"></td>
+                                <td th:text="${order.orderDate}"></td>
+                                <td th:text="${order.orderNumber}"></td>
+                                <td th:text="${order.customer}"></td>
+                                <td th:text="${order.dueDate}"></td>
+                                <td th:text="${order.itemCount}"></td>
+                                <td th:text="${order.totalAmount}"></td>
+                                <td th:text="${order.manager}"></td>
+                                <td>-</td>
+                                <td>
+                                    <button class="btn btn-info btn-sm" onclick="openOrderDetailModal({ customer: '${order.customer}', order_date: '${order.orderDate}', due_date: '${order.dueDate}', manager: '${order.manager}', note: '${order.note}', items: '${order.items}' })">상세</button>
+                                </td>
+                                <td>
+                                    <button class="btn btn-warning btn-sm" onclick="openOrderEditModal({ id: '${order.id}', customer_id: '${order.customerId}', order_date: '${order.orderDate}', due_date: '${order.dueDate}', manager: '${order.manager}', note: '${order.note}', items: '${order.items}' })">수정</button>
+                                </td>
+                                <td>
+                                    <button class="btn btn-success btn-sm" onclick="openShipmentFromOrder({ customer_id: '${order.customerId}', manager: '${order.manager}', items: '${order.items}' })">출고등록</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- 👇 여기에 모달 HTML 코드를 삽입합니다. -->
+	<!-- <div th:insert="~{order/order-register-modal :: modal}"></div> -->
+	<!-- <div th:insert="~{order/order-detail-modal :: modal}"></div> -->
+	<!-- 만약 모달 파일 전체를 포함시킨다면 이렇게 사용합니다. -->
+	<div th:insert="~{order/order-register-modal}"></div>
+	<div th:insert="~{order/order-detail-modal}"></div>
+
+    <!-- ✅ 공통 컴포넌트 fetch -->
+    <script src="/js/order/order.js"></script>
+</body>
+</html>
