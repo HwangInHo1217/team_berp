@@ -1,0 +1,74 @@
+<!-- /pages/bom/bom-modal.html -->
+<div class="modal fade" id="bomRegisterModal" tabindex="-1" aria-labelledby="bomRegisterModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <form id="bomForm" method="post" action="#">
+        <div class="modal-header">
+          <h5 class="modal-title" id="bomRegisterModalLabel">BOM 등록</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+        </div>
+        <div class="modal-body">
+          <!-- 완제품 선택 -->
+          <div class="mb-3">
+            <label class="form-label">완제품 (Parent Item)</label>
+            <select class="form-select" name="parent_item_id" required>
+              <option value="">-- 선택하세요 --</option>
+              <option value="1">P001 - 완제품 A</option>
+              <option value="2">P002 - 완제품 B</option>
+            </select>
+          </div>
+
+          <!-- 자재 구성 목록 -->
+          <div id="child-items-area">
+            <div class="row mb-2">
+              <div class="col-md-6">
+                <label class="form-label">자재 (Child Item)</label>
+                <select class="form-select" name="child_item_id[]" required>
+                  <option value="">-- 선택하세요 --</option>
+                  <option value="10">M001 - 자재 X</option>
+                  <option value="11">M002 - 자재 Y</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">수량</label>
+                <input type="number" name="qty[]" class="form-control" placeholder="예: 10" required />
+              </div>
+              <div class="col-md-3 d-flex align-items-end">
+                <button type="button" class="btn btn-outline-secondary w-100" onclick="addChildRow()">+ 자재 추가</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="reset" class="btn btn-secondary">초기화</button>
+          <button type="submit" class="btn btn-primary">등록</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function addChildRow() {
+  const area = document.getElementById('child-items-area');
+  const row = document.createElement('div');
+  row.className = 'row mb-2';
+  row.innerHTML = `
+    <div class="col-md-6">
+      <select class="form-select" name="child_item_id[]" required>
+        <option value="">-- 선택하세요 --</option>
+        <option value="10">M001 - 자재 X</option>
+        <option value="11">M002 - 자재 Y</option>
+      </select>
+    </div>
+    <div class="col-md-3">
+      <input type="number" name="qty[]" class="form-control" placeholder="예: 5" required />
+    </div>
+    <div class="col-md-3 d-flex align-items-end">
+      <button type="button" class="btn btn-outline-danger w-100" onclick="this.parentElement.parentElement.remove()">- 제거</button>
+    </div>
+  `;
+  area.appendChild(row);
+}
+</script>

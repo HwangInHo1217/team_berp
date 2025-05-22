@@ -1,0 +1,72 @@
+<!-- BOM 구성 수정 모달 -->
+<div class="modal fade" id="bomEditModal" tabindex="-1" aria-labelledby="bomEditModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <form id="bomEditForm" method="post" action="#">
+        <div class="modal-header">
+          <h5 class="modal-title" id="bomEditModalLabel">BOM 구성 수정</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+        </div>
+
+        <div class="modal-body">
+          <!-- 완제품 정보 -->
+          <div class="mb-3">
+            <label class="form-label fw-bold">완제품</label>
+            <input type="text" class="form-control" id="editParentItem" name="parent_item_name" value="P001 - 완제품 A" readonly />
+            <input type="hidden" name="parent_item_id" value="1" />
+          </div>
+
+          <!-- 자재 구성 테이블 -->
+          <div id="bomEditTableArea">
+            <div class="row mb-2">
+              <div class="col-md-5">
+                <label class="form-label">자재</label>
+                <select name="child_item_id[]" class="form-select" required>
+                  <option value="">-- 선택 --</option>
+                  <option value="10">M001 - 자재 X</option>
+                  <option value="11">M002 - 자재 Y</option>
+                </select>
+              </div>
+              <div class="col-md-3">
+                <label class="form-label">수량</label>
+                <input type="number" name="qty[]" class="form-control" required placeholder="예: 10" />
+              </div>
+              <div class="col-md-4 d-flex align-items-end">
+                <button type="button" class="btn btn-outline-secondary w-100" onclick="addEditRow()">+ 자재 추가</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+          <button type="submit" class="btn btn-primary">저장</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+function addEditRow() {
+  const area = document.getElementById('bomEditTableArea');
+  const row = document.createElement('div');
+  row.className = 'row mb-2';
+  row.innerHTML = `
+    <div class="col-md-5">
+      <select name="child_item_id[]" class="form-select" required>
+        <option value="">-- 선택 --</option>
+        <option value="10">M001 - 자재 X</option>
+        <option value="11">M002 - 자재 Y</option>
+      </select>
+    </div>
+    <div class="col-md-3">
+      <input type="number" name="qty[]" class="form-control" placeholder="예: 5" required />
+    </div>
+    <div class="col-md-4 d-flex align-items-end">
+      <button type="button" class="btn btn-outline-danger w-100" onclick="this.parentElement.parentElement.remove()">- 제거</button>
+    </div>
+  `;
+  area.appendChild(row);
+}
+</script>

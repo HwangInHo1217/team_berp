@@ -1,0 +1,60 @@
+<!-- 생산계획 등록/수정 모달 -->
+<div class="modal fade" id="planRegisterModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="planForm" method="post" action="/plan/add">
+        <div class="modal-header">
+          <h5 class="modal-title">생산계획 등록</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-2">
+            <label class="form-label">계획일자</label>
+            <input type="date" class="form-control" name="plan_date" id="planDate" required />
+          </div>
+          <div class="mb-2">
+            <label class="form-label">품목코드</label>
+            <input type="text" class="form-control" name="item_code" id="itemCode" required />
+          </div>
+          <div class="mb-2">
+            <label class="form-label">품목명</label>
+            <input type="text" class="form-control" name="item_name" id="itemName" required />
+          </div>
+          <div class="mb-2">
+            <label class="form-label">계획수량</label>
+            <input type="number" class="form-control" name="quantity" id="quantity" required min="1" />
+          </div>
+          <div class="mb-2">
+            <label class="form-label">단위</label>
+            <input type="text" class="form-control" name="unit" id="unit" value="EA" required />
+          </div>
+          <div class="mb-2">
+            <label class="form-label">납기일</label>
+            <input type="date" class="form-control" name="due_date" id="dueDate" required />
+          </div>
+          <div class="mb-2">
+            <label class="form-label">생산상태</label>
+            <select class="form-select" name="status" id="status" required>
+              <option value="계획">계획</option>
+              <option value="진행중">진행중</option>
+              <option value="완료">완료</option>
+              <option value="취소">취소</option>
+            </select>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">담당자</label>
+            <input type="text" class="form-control" name="manager" id="manager" required />
+          </div>
+          <div class="mb-2">
+            <label class="form-label">비고</label>
+            <textarea class="form-control" name="note" id="note" rows="2"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="reset" class="btn btn-secondary">초기화</button>
+          <button type="submit" class="btn btn-primary" id="submitBtn">등록</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,72 @@
+<!-- fragments/warehouse-main.html -->
+ <div class="container" th:fragment="warehouse_main">
+        <h2 class="mb-4">창고 관리</h2>
+
+        <!-- 🔍 검색 영역 -->
+        <div class="row mb-3">
+          <div class="col-md-5 d-flex">
+            <select class="form-select w-25 me-2" id="searchType">
+              <option value="code">창고코드</option>
+              <option value="name">창고명</option>
+            </select>
+            <input type="text" class="form-control me-2" id="searchKeyword" placeholder="검색어 입력" />
+            <button class="btn btn-outline-secondary">검색</button>
+          </div>
+          <div class="col-md-7 text-end">
+            <button class="btn btn-danger me-2">삭제</button>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#warehouseRegisterModal">+ 창고 등록</button>
+          </div>
+        </div>
+
+        <!-- 📋 창고 목록 테이블 -->
+        <div class="table-responsive">
+          <table class="table table-bordered text-center align-middle">
+			<thead class="table-light">
+				<tr>
+					<th><input type="checkbox" /></th>
+					<th>순번</th>
+					<th>창고코드</th>
+					<th>창고명</th>
+					<th>구분</th>
+					<th>설명</th>
+					<th>사용여부</th>
+					<th>수정</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr th:each="wh, stat : ${warehouses}">
+					<td><input type="checkbox" /></td>
+					<td th:text="${stat.count}">1</td>
+					<!-- 순번 -->
+					<td th:text="${wh.warehouseId}">WH001</td>
+					<td th:text="${wh.warehouseName}">자재창고 A</td>
+					<td th:text="${wh.warehouseType}">자재</td>
+					<td th:text="${wh.description}">설명</td>
+					<td th:text="${wh.useYn}">Y</td>
+					<td>
+						<button
+							th:with="
+  modalParams='id=' + ${wh.warehouseId} + 
+    ',name=' + ${wh.warehouseName} + 
+    ',type=' + ${wh.warehouseType} + 
+    ',useYn=' + ${wh.useYn}"
+							th:onclick="@{javascript:openWarehouseEditModal({${modalParams}})}"
+							class="btn btn-sm btn-warning">수정</button>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+        </div>
+
+        <!-- 📌 페이징 -->
+        <nav>
+          <ul class="pagination justify-content-center mt-3">
+            <li class="page-item disabled"><a class="page-link" href="#">이전</a></li>
+            <li class="page-item active"><a class="page-link" href="#">1</a></li>
+            <li class="page-item"><a class="page-link" href="#">2</a></li>
+            <li class="page-item"><a class="page-link" href="#">다음</a></li>
+          </ul>
+        </nav>
+      </div>
+      
+      <script src="static/js/warehouse/warehouse.js"></script>

@@ -1,0 +1,42 @@
+<!-- 출고 등록 모달: /pages/shipment/shipment-register-modal.html -->
+<div class="modal fade" id="shipmentRegisterModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <form>
+        <div class="modal-header">
+          <h5 class="modal-title">출고 등록</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label class="form-label">고객사</label>
+              <input type="text" id="shipmentCustomer" class="form-control" readonly />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">담당자</label>
+              <input type="text" id="shipmentManager" class="form-control" />
+            </div>
+          </div>
+
+          <table class="table table-bordered text-center">
+            <thead>
+              <tr>
+                <th>품목코드</th>
+                <th>품목명</th>
+                <th>수량</th>
+                <th>단위</th>
+              </tr>
+            </thead>
+            <tbody id="shipmentItemTableBody"></tbody>
+          </table>
+        </div>
+
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">출고 등록</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
