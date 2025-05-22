@@ -1,0 +1,77 @@
+
+// 🔧 사용 라이브러리 관리 플러그인 정의
+plugins {
+    id 'java' // Java 프로젝트임을 명시
+    id 'org.springframework.boot' version '3.4.5' // Spring Boot 프레임워크의 버전
+    id 'io.spring.dependency-management' version '1.1.4' // 의존성 버전 자동 관리
+}
+
+// 📦 프로젝트 기본 정보 설정
+group = 'com.team.berp' // 패키지 기본 도메인 (보통 회사나 조직 기준)
+version = '0.0.1-SNAPSHOT' // 현재 개발 중 버전 표시
+sourceCompatibility = '17' // 자바 버전 지정 (Java 17)
+
+def lombokVersion = '1.18.30' // Lombok 버전을 변수로 선언
+
+// 📚 사용할 외부 라이브러리 목록
+dependencies {
+    // ✅ 웹 개발에 필요한 Spring Boot 기본 라이브러리
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+
+    // ✅ JPA (ORM) + MySQL 드라이버
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    runtimeOnly 'com.mysql:mysql-connector-j' // MySQL DB 연결 드라이버
+
+    // ✅ 요청값 유효성 검사 (@Valid 등)
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+    // ✅ Lombok (코드 자동 생성용)
+    compileOnly "org.projectlombok:lombok:${lombokVersion}"
+    annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+	//Lombok을 테스트 코드에서도 사용한다면 추가
+	testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
+	testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+    // ✅ Swagger (API 문서 자동화)
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.1.0'
+
+    // ✅ ModelMapper (DTO ↔ Entity 변환 자동화)
+    implementation 'org.modelmapper:modelmapper:3.1.1'
+    //✅ 코드 수정 시 서버 자동 재시작 / 캐시 자동 리프레시 기능 제공
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+	//✅ 아래 두 개면 .xls, .xlsx 모두 읽고 쓰기 가능함
+	implementation 'org.apache.poi:poi:5.2.3'
+	implementation 'org.apache.poi:poi-ooxml:5.2.3'
+	//✅ 공통 기능(로깅, 보안 검사 등)을 코드와 분리해서 적용 가능하게 해주는 기법
+	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-aop', version: '3.4.5'
+
+    // ✅ Spring Security + JWT (보안 및 로그인 토큰 처리)
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
+	//✅ Spring Boot 백엔드에서 바코드 생성·해석할 때 사용하는 기본 라이브러리
+	implementation 'com.google.zxing:core:3.5.2'
+	//ZXing Core를 기반으로 Java SE 환경에서 사용하기 쉽게 도와주는 확장 모듈
+	//이미지 파일 입출력 등 BufferedImage 관련 기능 포함됨
+	implementation 'com.google.zxing:javase:3.5.2'
+	//thymeleaf
+	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-thymeleaf', version: '3.4.5'
+    // ✅ MyBatis (직접 SQL 작성 시 사용)
+    implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.3'
+    //✅ 이메일로 알림, 보고서 전송, 비밀번호 초기화 등을 처리할 수 있는 도구
+	implementation group: 'org.springframework.boot', name: 'spring-boot-starter-mail', version: '3.4.5'
+
+    // ✅ 단위 테스트용 기본 테스트 라이브러리
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+// 🔄 Maven 중앙 저장소 사용
+repositories {
+    mavenCentral()
+}
+
+// 🧪 테스트 시 JUnit 플랫폼 사용 설정
+tasks.named('test') {
+    useJUnitPlatform()
+}
