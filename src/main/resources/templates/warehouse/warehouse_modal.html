@@ -1,3 +1,4 @@
+<!-- warehouse_modal.html -->
 <!-- 창고 등록 모달 -->
 <div class="modal fade" id="warehouseRegisterModal" tabindex="-1" aria-labelledby="warehouseRegisterModalLabel" aria-hidden="true" th:fragment="warehouse_modal">
   <div class="modal-dialog">
@@ -9,20 +10,28 @@
         </div>
 
         <div class="modal-body">
+          <!-- 숨겨진 ID 필드 (수정 시 사용) -->
+          <input type="hidden" id="warehouseId" name="warehouseId">
+          
           <div class="mb-3">
             <label for="warehouseCode" class="form-label">창고 코드</label>
-            <input type="text" class="form-control" id="warehouseId" name="warehouse_id" placeholder="예: RWWH001, PRWH002" />
-            <button type="button" class="btn btn-outline-secondary" id="checkDuplicateBtn">중복확인</button>
+            <div class="input-group">
+              <input type="text" class="form-control" id="warehouseCode" name="warehouseCode" 
+                     placeholder="예: RWWH0001, PDWH0002" />
+              <button type="button" class="btn btn-outline-info" id="checkDuplicateBtn">중복확인</button>
+            </div>
+            <div id="codeCheckResult" class="form-text mt-1"></div>
+            <input type="hidden" id="isCodeChecked" value="false">
           </div>
 
           <div class="mb-3">
             <label for="warehouseName" class="form-label">창고 명</label>
-            <input type="text" class="form-control" id="warehouseName" name="warehouse_name" required />
+            <input type="text" class="form-control" id="warehouseName" name="warehouseName" required />
           </div>
 
           <div class="mb-3">
             <label for="warehouseType" class="form-label">창고 구분</label>
-            <select class="form-select" id="warehouseType" name="warehouse_type" required>
+            <select class="form-select" id="warehouseType" name="warehouseType" required>
               <option value="">-- 선택 --</option>
               <option value="RAW">자재 창고</option>
               <option value="PRODUCT">완제품 창고</option>
@@ -36,7 +45,7 @@
 
           <div class="mb-3">
             <label for="useYn" class="form-label">사용 여부</label>
-            <select class="form-select" id="useYn" name="use_yn" required>
+            <select class="form-select" id="useYn" name="useYn" required>
               <option value="Y" selected>사용</option>
               <option value="N">미사용</option>
             </select>
@@ -51,4 +60,3 @@
     </div>
   </div>
 </div>
-

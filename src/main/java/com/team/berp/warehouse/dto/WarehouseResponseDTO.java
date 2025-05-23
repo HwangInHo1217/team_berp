@@ -1,7 +1,7 @@
 package com.team.berp.warehouse.dto;
 
-import com.team.berp.warehouse.domain.WarehouseTypeEnum;
-import com.team.berp.warehouse.domain.Warehouse_entity;
+import com.team.berp.domain.Warehouse;
+import com.team.berp.domain.Warehouse.WarehouseType;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -13,14 +13,16 @@ import lombok.NoArgsConstructor;
 public class WarehouseResponseDTO {
 	
 	private Integer warehouseId;
+	private String warehouseCode;
 	private String warehouseName;
-	private WarehouseTypeEnum warehouseType;
+	private WarehouseType warehouseType;
 	private String useYn;
 	private String description;
 	
 	// 엔티티 객체로부터 DTO를 생성하는 생성자는 유지하는 것이 편리함
-	public WarehouseResponseDTO(Warehouse_entity warehouse) {
+	public WarehouseResponseDTO(Warehouse warehouse) {
 		this.warehouseId = warehouse.getWarehouseId();
+		this.warehouseCode = warehouse.getWarehouseCode();
 		this.warehouseName = warehouse.getWarehouseName();
         this.warehouseType = warehouse.getWarehouseType();
         this.useYn = warehouse.getUseYn();

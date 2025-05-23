@@ -11,7 +11,7 @@ import lombok.Setter;
 @NoArgsConstructor //매개변수 없는 생성자
 @AllArgsConstructor //모든 필드를 인자로 받는 생성자 (테스트나 특정 상황에서 유용)
 public class WarehouseCreateRequestDTO {
-	
+	private String warehouseCode;
 	private String warehouseName; // 변경: warehouse_name → warehouseName
     private String warehouseType; // 변경: warehouse_type → warehouseType
     private String useYn; // 변경: use_yn → useYn

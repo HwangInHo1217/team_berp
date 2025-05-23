@@ -1,72 +1,104 @@
 <!-- fragments/warehouse-main.html -->
- <div class="container" th:fragment="warehouse_main">
-        <h2 class="mb-4">창고 관리</h2>
+<div class="container" th:fragment="warehouse_main">
+  <h2 class="mb-4">창고 관리</h2>
 
-        <!-- 🔍 검색 영역 -->
-        <div class="row mb-3">
-          <div class="col-md-5 d-flex">
-            <select class="form-select w-25 me-2" id="searchType">
-              <option value="code">창고코드</option>
-              <option value="name">창고명</option>
-            </select>
-            <input type="text" class="form-control me-2" id="searchKeyword" placeholder="검색어 입력" />
-            <button class="btn btn-outline-secondary">검색</button>
-          </div>
-          <div class="col-md-7 text-end">
-            <button class="btn btn-danger me-2">삭제</button>
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#warehouseRegisterModal">+ 창고 등록</button>
-          </div>
-        </div>
+  <!-- 🔍 검색 영역 -->
+  <div class="row mb-3">
+    <div class="col-md-6 d-flex">
+      <select class="form-select w-auto me-2" id="searchType">
+        <option value="code">창고코드</option>
+        <option value="name">창고명</option>
+      </select>
+      <input type="text" class="form-control me-2" id="searchKeyword" placeholder="검색어 입력" />
+      <button class="btn btn-outline-secondary me-2" id="searchBtn">검색</button>
+      <button class="btn btn-outline-info" id="showAllBtn">전체</button>
+    </div>
+    <div class="col-md-6 d-flex justify-content-end align-items-center">
+      <!-- 사용여부 필터 -->
+      <select class="form-select w-auto me-2" id="useYnFilter">
+        <option value="ALL">전체</option>
+        <option value="Y" selected>사용</option>
+        <option value="N">미사용</option>
+      </select>
+      <button class="btn btn-danger me-2" onclick="check_del()">선택삭제</button>
+      <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#warehouseRegisterModal">+ 창고 등록</button>
+    </div>
+  </div>
 
-        <!-- 📋 창고 목록 테이블 -->
-        <div class="table-responsive">
-          <table class="table table-bordered text-center align-middle">
-			<thead class="table-light">
-				<tr>
-					<th><input type="checkbox" /></th>
-					<th>순번</th>
-					<th>창고코드</th>
-					<th>창고명</th>
-					<th>구분</th>
-					<th>설명</th>
-					<th>사용여부</th>
-					<th>수정</th>
-				</tr>
-			</thead>
-			<tbody>
-				<tr th:each="wh, stat : ${warehouses}">
-					<td><input type="checkbox" /></td>
-					<td th:text="${stat.count}">1</td>
-					<!-- 순번 -->
-					<td th:text="${wh.warehouseId}">WH001</td>
-					<td th:text="${wh.warehouseName}">자재창고 A</td>
-					<td th:text="${wh.warehouseType}">자재</td>
-					<td th:text="${wh.description}">설명</td>
-					<td th:text="${wh.useYn}">Y</td>
-					<td>
-						<button
-							th:with="
-  modalParams='id=' + ${wh.warehouseId} + 
-    ',name=' + ${wh.warehouseName} + 
-    ',type=' + ${wh.warehouseType} + 
-    ',useYn=' + ${wh.useYn}"
-							th:onclick="@{javascript:openWarehouseEditModal({${modalParams}})}"
-							class="btn btn-sm btn-warning">수정</button>
-					</td>
-				</tr>
-			</tbody>
-		</table>
-        </div>
+  <!-- 📊 총 개수 표시 -->
+  <div class="row mb-2">
+    <div class="col-12">
+      <span class="text-muted" id="totalCount">총 0개의 창고가 등록되어 있습니다.</span>
+    </div>
+  </div>
 
-        <!-- 📌 페이징 -->
-        <nav>
-          <ul class="pagination justify-content-center mt-3">
-            <li class="page-item disabled"><a class="page-link" href="#">이전</a></li>
-            <li class="page-item active"><a class="page-link" href="#">1</a></li>
-            <li class="page-item"><a class="page-link" href="#">2</a></li>
-            <li class="page-item"><a class="page-link" href="#">다음</a></li>
-          </ul>
-        </nav>
-      </div>
-      
-      <script src="static/js/warehouse/warehouse.js"></script>
+  <!-- 📋 창고 목록 테이블 -->
+  <div class="table-responsive">
+    <table class="table table-bordered text-center align-middle">
+      <thead class="table-light">
+        <tr>
+          <th style="width: 50px;">
+            <label class="d-flex justify-content-center align-items-center" style="cursor: pointer; min-height: 40px; margin: 0;">
+              <input type="checkbox" onclick="check_all(this.checked)" style="margin: 0;">
+            </label>
+          </th>
+          <th>순번</th>
+          <th>창고코드</th>
+          <th>창고명</th>
+          <th>구분</th>
+          <th>설명</th>
+          <th>사용여부</th>
+          <th>수정</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="wh, stat : ${warehouses}">
+          <td>
+            <label class="d-flex justify-content-center align-items-center" style="cursor: pointer; min-height: 40px; margin: 0; width: 100%;">
+              <input type="checkbox" name="ckbox" th:value="${wh.warehouseId}" onchange="checkdata()" style="margin: 0;">
+            </label>
+          </td>
+          <td th:text="${stat.count}">1</td>
+          <td th:text="${wh.warehouseCode}">WH001</td>
+          <td th:text="${wh.warehouseName}">자재창고 A</td>
+          <td th:text="${wh.warehouseType}">자재</td>
+          <td th:text="${wh.description ?: ''}">설명</td>
+          <td th:text="${wh.useYn}">Y</td>
+          <td>
+            <button type="button"
+              class="btn btn-sm btn-warning edit-btn"
+              th:data-id="${wh.warehouseId}"
+              th:data-code="${wh.warehouseCode}"
+              th:data-name="${wh.warehouseName}" 
+              th:data-type="${wh.warehouseType}"
+              th:data-description="${wh.description ?: ''}" 
+              th:data-useyn="${wh.useYn}">
+              수정
+            </button>
+          </td>
+        </tr>
+        <!-- 검색 결과가 없을 때 표시할 행 -->
+        <tr th:if="${#lists.isEmpty(warehouses)}">
+          <td colspan="8" style="text-align: center; padding: 40px;">
+            검색 결과가 없습니다.
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 📌 페이징 -->
+  <nav>
+    <ul class="pagination justify-content-center mt-3">
+      <li class="page-item disabled"><a class="page-link" href="#">이전</a></li>
+      <li class="page-item active"><a class="page-link" href="#">1</a></li>
+      <li class="page-item"><a class="page-link" href="#">2</a></li>
+      <li class="page-item"><a class="page-link" href="#">다음</a></li>
+    </ul>
+  </nav>
+
+  <!-- 삭제용 hidden form -->
+  <form id="dform" method="post" action="/api/warehouses/delete-selected" style="display: none;">
+    <input type="hidden" name="ckdel" id="ckdel">
+  </form>
+</div>
