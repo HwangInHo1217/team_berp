@@ -1,34 +1,43 @@
+<!-- warehouse_view.html -->
 <!-- fragments/warehouse-main.html -->
 <div class="container" th:fragment="warehouse_main">
   <h2 class="mb-4">창고 관리</h2>
 
-  <!-- 🔍 검색 영역 -->
+  <!-- 🔍 검색 및 필터 영역 -->
   <div class="row mb-3">
+    <!-- 좌측: 검색 조건 -->
     <div class="col-md-6 d-flex">
+      <!-- 검색 유형 선택 (창고코드 / 창고명) -->
       <select class="form-select w-auto me-2" id="searchType">
         <option value="code">창고코드</option>
         <option value="name">창고명</option>
       </select>
+      <!-- 검색어 입력 -->
       <input type="text" class="form-control me-2" id="searchKeyword" placeholder="검색어 입력" />
+      <!-- 검색 버튼 -->
       <button class="btn btn-outline-secondary me-2" id="searchBtn">검색</button>
+      <!-- 전체 목록 보기 버튼 -->
       <button class="btn btn-outline-info" id="showAllBtn">전체</button>
     </div>
+    <!-- 우측: 사용여부 필터 및 등록/삭제 버튼 -->
     <div class="col-md-6 d-flex justify-content-end align-items-center">
-      <!-- 사용여부 필터 -->
+      <!-- 사용여부 필터링 -->
       <select class="form-select w-auto me-2" id="useYnFilter">
-        <option value="ALL">전체</option>
-        <option value="Y" selected>사용</option>
+        <option value="ALL" selected>전체</option>
+        <option value="Y">사용</option>
         <option value="N">미사용</option>
       </select>
+      <!-- 선택 항목 삭제 버튼 -->
       <button class="btn btn-danger me-2" onclick="check_del()">선택삭제</button>
+      <!-- 창고 등록 모달 열기 버튼 -->
       <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#warehouseRegisterModal">+ 창고 등록</button>
     </div>
   </div>
 
-  <!-- 📊 총 개수 표시 -->
+  <!-- 📊 총 등록 개수 출력 -->
   <div class="row mb-2">
     <div class="col-12">
-      <span class="text-muted" id="totalCount">총 0개의 창고가 등록되어 있습니다.</span>
+      <span class="text-muted" id="totalCount" th:text="|총 ${totalElements}개의 창고가 등록되어 있습니다.|">총 0개의 창고가 등록되어 있습니다.</span>
     </div>
   </div>
 
@@ -52,33 +61,32 @@
         </tr>
       </thead>
       <tbody>
-        <tr th:each="wh, stat : ${warehouses}">
+        <!-- ✅ 창고 목록 반복 출력 -->
+        <tr th:each="whs, stat : ${whsList}">
           <td>
+            <!-- 개별 선택 체크박스 -->
             <label class="d-flex justify-content-center align-items-center" style="cursor: pointer; min-height: 40px; margin: 0; width: 100%;">
-              <input type="checkbox" name="ckbox" th:value="${wh.warehouseId}" onchange="checkdata()" style="margin: 0;">
+              <input type="checkbox" name="ckbox" th:value="${whs.warehouseId}" onchange="checkdata()" style="margin: 0;">
             </label>
           </td>
-          <td th:text="${stat.count}">1</td>
-          <td th:text="${wh.warehouseCode}">WH001</td>
-          <td th:text="${wh.warehouseName}">자재창고 A</td>
-          <td th:text="${wh.warehouseType}">자재</td>
-          <td th:text="${wh.description ?: ''}">설명</td>
-          <td th:text="${wh.useYn}">Y</td>
+          <!-- 순번 계산 = (현재 페이지 - 1) * 10 + index -->
+          <td th:text="${(currentPage - 1) * 10 + stat.count}">1</td>
+          <td th:text="${whs.warehouseCode}">WH001</td>
+          <td th:text="${whs.warehouseName}">자재창고 A</td>
+          <td th:text="${whs.warehouseType}">자재</td>
+          <td th:text="${whs.description ?: ''}">설명</td>
+          <td th:text="${whs.useYn}">Y</td>
           <td>
-            <button type="button"
+            <!-- 수정 버튼: JSON 데이터 바인딩 → JS edit-btn 처리 -->
+            <button type="button" 
               class="btn btn-sm btn-warning edit-btn"
-              th:data-id="${wh.warehouseId}"
-              th:data-code="${wh.warehouseCode}"
-              th:data-name="${wh.warehouseName}" 
-              th:data-type="${wh.warehouseType}"
-              th:data-description="${wh.description ?: ''}" 
-              th:data-useyn="${wh.useYn}">
+              th:attr="data-whs=${@whsJson.toJson(whs)}">
               수정
             </button>
           </td>
         </tr>
-        <!-- 검색 결과가 없을 때 표시할 행 -->
-        <tr th:if="${#lists.isEmpty(warehouses)}">
+        <!-- 🔍 검색 결과 없을 경우 표시 -->
+        <tr th:if="${#lists.isEmpty(whsList)}">
           <td colspan="8" style="text-align: center; padding: 40px;">
             검색 결과가 없습니다.
           </td>
@@ -87,18 +95,20 @@
     </table>
   </div>
 
-  <!-- 📌 페이징 -->
-  <nav>
-    <ul class="pagination justify-content-center mt-3">
-      <li class="page-item disabled"><a class="page-link" href="#">이전</a></li>
-      <li class="page-item active"><a class="page-link" href="#">1</a></li>
-      <li class="page-item"><a class="page-link" href="#">2</a></li>
-      <li class="page-item"><a class="page-link" href="#">다음</a></li>
-    </ul>
+  <!-- 📌 페이징 영역: JavaScript에서 동적으로 렌더링 -->
+  <nav id="paginationContainer">
+    <!-- JS로 페이징 버튼 생성됨 -->
   </nav>
 
-  <!-- 삭제용 hidden form -->
+  <!-- 📤 삭제 요청용 히든 폼 (현재 사용 안 함) -->
   <form id="dform" method="post" action="/api/warehouses/delete-selected" style="display: none;">
     <input type="hidden" name="ckdel" id="ckdel">
   </form>
+  
+  <!-- 🧾 현재 페이지 정보 - JS 초기 렌더링 시 참조 -->
+  <input type="hidden" id="currentPage" th:value="${currentPage}">
+  <input type="hidden" id="totalPages" th:value="${totalPages}">
+  <input type="hidden" id="totalElements" th:value="${totalElements}">
+  <input type="hidden" id="hasNext" th:value="${hasNext}">
+  <input type="hidden" id="hasPrevious" th:value="${hasPrevious}">
 </div>
