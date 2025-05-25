@@ -1,21 +1,22 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko"
+      xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MRP(자재소요계획) 관리</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" th:href="@{/assets/css/style.css}" />
+  <link rel="stylesheet" th:href="@{https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css}" />
+  <script th:src="@{https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js}"></script>
 </head>
 <body class="d-flex flex-column" style="min-height: 100vh;">
-  <!-- 헤더/사이드바/푸터 등 공통 레이아웃 영역 -->
-  <div id="header"></div>
+  <div th:replace="~{layouts/header :: header}"></div>
   <div class="d-flex flex-grow-1">
-    <div id="sidebar"></div>
+    <div th:replace="~{layouts/sidebar :: sidebar}"></div>
+    <script src="/js/layouts/sidebar.js"></script>
     <main class="p-4 flex-fill">
       <div class="container">
         <h2 class="mb-4">MRP(자재소요계획) 관리</h2>
-
-        <!-- 🔍 검색/필터 + 버튼 한줄 -->
         <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
           <input type="date" class="form-control w-auto" />
           <span>~</span>
@@ -24,120 +25,69 @@
           <button class="btn btn-outline-secondary">MRP 계산</button>
           <button class="btn btn-outline-success ms-auto">엑셀 다운로드</button>
         </div>
-
-        <!-- 📋 MRP 결과 테이블 -->
         <div class="table-responsive">
           <table class="table table-bordered text-center align-middle">
             <thead class="table-light">
               <tr>
                 <th>품목코드</th>
-                <th>품목명</th>
+                <th style="cursor:pointer" onclick="sortMrp('itemName')">품목명 ▲▼</th>
                 <th>품목유형</th>
                 <th>단위</th>
                 <th>기준일자</th>
-                <th>필요수량</th>
-                <th>현재고</th>
+                <th style="cursor:pointer" onclick="sortMrp('requiredQty')">필요수량 ▲▼</th>
+                <th style="cursor:pointer" onclick="sortMrp('stockQty')">현재고 ▲▼</th>
                 <th>확정수량</th>
-                <th>부족수량</th>
+                <th style="cursor:pointer" onclick="sortMrp('shortageQty')">부족수량 ▲▼</th>
                 <th>소요처</th>
-                <th>리드타임(일)</th>
+                <th style="cursor:pointer" onclick="sortMrp('leadTime')">리드타임(일) ▲▼</th>
                 <th>비고</th>
                 <th>상세</th>
               </tr>
             </thead>
-            <tbody>
-              <!-- 샘플 데이터 -->
-              <tr>
-                <td>M001</td>
-                <td>자재 A</td>
-                <td>자재</td>
-                <td>EA</td>
-                <td>2025-06-01</td>
-                <td>200</td>
-                <td>50</td>
-                <td>30</td>
-                <td>120</td>
-                <td>생산계획 #123</td>
-                <td>7</td>
-                <td>-</td>
-                <td>
-                  <!-- 상세 버튼 예시 -->
-                  <button class="btn btn-info btn-sm"
-                    onclick="openMrpDetailModal({
-                      item_code: 'M001',
-                      item_name: '자재 A',
-                      item_type: '자재',
-                      unit: 'EA',
-                      base_date: '2025-06-01',
-                      required_qty: 200,
-                      stock_qty: 50,
-                      confirmed_qty: 30,
-                      short_qty: 120,
-                      demand_source: '생산계획 #123',
-                      lead_time: 7,
-                      note: '긴급구매 필요'
-                    })">상세</button>
-                </td>
-              </tr>
-            </tbody>
+            <tbody id="mrpTableBody"></tbody>
           </table>
+        </div>
+      </div>
+      <nav>
+        <ul class="pagination justify-content-center" id="pagination"></ul>
+      </nav>
+      <!-- 상세 모달 -->
+      <div class="modal fade" id="mrpDetailModal" tabindex="-1" aria-labelledby="mrpDetailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="mrpDetailModalLabel">MRP 상세 정보</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table table-bordered">
+                <tbody>
+                  <tr><th>품목코드</th><td id="modalItemCode"></td></tr>
+                  <tr><th>품목명</th><td id="modalItemName"></td></tr>
+                  <tr><th>품목유형</th><td id="modalItemType"></td></tr>
+                  <tr><th>단위</th><td id="modalUnit"></td></tr>
+                  <tr><th>기준일자</th><td id="modalBaseDate"></td></tr>
+                  <tr><th>필요수량</th><td id="modalRequiredQty"></td></tr>
+                  <tr><th>현재고</th><td id="modalStockQty"></td></tr>
+                  <tr><th>확정수량</th><td id="modalConfirmedQty"></td></tr>
+                  <tr><th>부족수량</th><td id="modalShortageQty"></td></tr>
+                  <tr><th>소요처</th><td id="modalSource"></td></tr>
+                  <tr><th>리드타임</th><td id="modalLeadTime"></td></tr>
+                  <tr><th>비고</th><td id="modalComment"></td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+			  <button type="button" class="btn btn-secondary" id="modalPrevBtn" onclick="moveModal(-1)">이전 자재</button>
+			  <button type="button" class="btn btn-secondary" id="modalNextBtn" onclick="moveModal(1)">다음 자재</button>
+			  <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">닫기</button>
+			</div>
+          </div>
         </div>
       </div>
     </main>
   </div>
-
-  <!-- ✅ 상세 모달이 렌더링될 영역. 반드시 body 안에 있어야 함 -->
-  <div id="mrpDetailModalWrapper"></div>
-
-  <!-- 푸터 -->
-  <div id="footer"></div>
-
-  <!-- ✅ 공통 레이아웃/모달 fetch (DOMContentLoaded 이후 실행) -->
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      // 공통 레이아웃 로딩
-      fetch('/layouts/header.html').then(res => res.text()).then(html => document.getElementById('header').innerHTML = html);
-      fetch('/layouts/sidebar.html').then(res => res.text()).then(html => document.getElementById('sidebar').innerHTML = html);
-      fetch('/layouts/footer.html').then(res => res.text()).then(html => document.getElementById('footer').innerHTML = html);
-
-      // 상세 모달 fetch (한 번만)
-      fetch('/pages/mrp/mrp-detail-modal.html')
-        .then(res => res.text())
-        .then(html => {
-          document.getElementById('mrpDetailModalWrapper').innerHTML = html;
-        });
-    });
-  </script>
-  
- <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-  <!-- openMrpDetailModal 함수 및 fetch 모달 코드 반드시 아래에 위치! -->
-  <script>
-    // 모달 HTML fetch
-    fetch('/pages/mrp/mrp-detail-modal.html')
-      .then(res => res.text())
-      .then(html => {
-        document.getElementById('mrpDetailModalWrapper').innerHTML = html;
-      });
-
-    // [반드시 전역 범위에서 선언]
-    function openMrpDetailModal(data) {
-      document.getElementById('mrpDetailItemCode').textContent = data.item_code;
-      document.getElementById('mrpDetailItemName').textContent = data.item_name;
-      document.getElementById('mrpDetailItemType').textContent = data.item_type;
-      document.getElementById('mrpDetailUnit').textContent = data.unit;
-      document.getElementById('mrpDetailBaseDate').textContent = data.base_date;
-      document.getElementById('mrpDetailRequiredQty').textContent = data.required_qty;
-      document.getElementById('mrpDetailStock').textContent = data.stock_qty;
-      document.getElementById('mrpDetailConfirmedQty').textContent = data.confirmed_qty;
-      document.getElementById('mrpDetailShortQty').textContent = data.short_qty;
-      document.getElementById('mrpDetailDemandSource').textContent = data.demand_source;
-      document.getElementById('mrpDetailLeadTime').textContent = data.lead_time;
-      document.getElementById('mrpDetailNote').textContent = data.note;
-
-      // 모달 띄우기
-      const modal = new bootstrap.Modal(document.getElementById('mrpDetailModal'));
-      modal.show();
-    }
-  </script>
+  <div th:replace="~{layouts/footer :: footer}"></div>
+  <script src="/js/mrp/mrp.js"></script>
+</body>
 </html>
