@@ -29,7 +29,7 @@ from workplace where workplace_id=#{workplace_id}
 select * from workplace
 </select>
 
-<delete id="workplace_list_del" parameterType="long">
+<delete id="workplace_list_del" parameterType="">
 delete from workplace where workplace_id=#{workplace_id}
 </delete>
 

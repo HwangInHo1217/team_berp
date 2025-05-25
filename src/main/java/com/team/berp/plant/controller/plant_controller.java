@@ -18,7 +18,7 @@ import jakarta.annotation.Resource;
 
 @Controller
 public class plant_controller {
- 
+
 //	@Resource(name="plant_DTO")
 //	plant_DTO dto;
 	

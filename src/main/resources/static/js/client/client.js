@@ -4,7 +4,7 @@ function execDaumPostcode() {
       // 주소 유형 (도로명 or 지번)
       const isRoad = data.userSelectedType === 'R';
       document.getElementById("addressType").value = isRoad ? "도로명" : "지번";
- 
+
       // 기본 주소 값 (선택한 주소)
       const address = isRoad ? data.roadAddress : data.jibunAddress;
       document.getElementById("mainAddress").value = address;

@@ -6,7 +6,7 @@ import lombok.Data;
 
 @Data
 @Repository("plant_DTO")
-public class plant_DTO { 
+public class plant_DTO {
  
 	//번호(자동 순번)
 	private int workplace_id;

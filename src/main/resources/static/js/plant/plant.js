@@ -1,7 +1,7 @@
 function openplantEditModal(workplace_name, workplace_president_nm, workplace_no, workplace_cond,
 	  workplace_item, workplace_tel, workplace_fax, workplace_addr, workplace_manname,
 	  workplace_manemail, workplace_mantel) {
-  // 폼에 값 채우기 
+  // 폼에 값 채우기
   document.getElementById("workplace_name").value = workplace_name;
   document.getElementById("workplace_president_nm").value = workplace_president_nm;
   document.getElementById("workplace_no").value = workplace_no;
