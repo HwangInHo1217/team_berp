@@ -6,7 +6,7 @@ import org.apache.ibatis.annotations.Mapper;
 
 import com.team.berp.plant.DTO.plant_DTO;
 
-@Mapper
+@Mapper 
 public interface plant_mapper {
 
 	//사업장 정보 insert

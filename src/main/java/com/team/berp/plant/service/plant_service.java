@@ -14,3 +14,4 @@ public interface plant_service {
 	List<plant_DTO> workplace_list_all();
 	public int workplace_list_del(long workplace_id);
 }
+ 

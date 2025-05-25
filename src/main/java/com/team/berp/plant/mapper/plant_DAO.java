@@ -10,7 +10,7 @@ import com.team.berp.plant.service.plant_service;
 
 @Repository("plant_DAO")
 public class plant_DAO implements plant_service {
-
+ 
 	@Autowired
 	plant_mapper pm;
 	
