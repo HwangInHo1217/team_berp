@@ -2,143 +2,56 @@
 package com.team.berp.domain;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 @Table(name = "company")
+@Getter
+@Setter
 public class Company {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer companyId;
+    private Integer company_id;
 
-    @Column(nullable = false, length = 100)
-    private String companyName;
+    @Column(nullable = false, length = 100, unique = true)
+    private String company_name;
 
     public enum CompanyType { CUSTOMER, SUPPLIER, BOTH }
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private CompanyType companyType;
+    private CompanyType company_type;
 
     @Column(length = 10)
-    private String custCd;
+    private String cust_cd;
 
     @Column(length = 20)
-    private String presidentNm;
+    private String president_nm;
 
     @Column(length = 20)
-    private String companyNo;
+    private String company_no;
 
     @Column(length = 20)
-    private String companyCond;
+    private String company_cond;
 
     @Column(length = 20)
-    private String companyItem;
+    private String company_item;
 
     @Column(length = 100)
-    private String companyAddr;
+    private String company_addr;
 
     @Column(length = 20)
-    private String companyTel;
+    private String company_tel;
 
     @Column(length = 20)
-    private String companyFax;
+    private String company_fax;
 
+    // 외래키로 참조하는 엔티티의 컬럼명과 같아도 상관은 없음, 그냥 이렇게 사용하는게 좋아서 이렇게 사용함
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id")
     private Employee employee;
 
     @Column(nullable = false, length = 1)
-    private String useYn = "Y";
-
-    // getters and setters
-    public Integer getCompanyId() {
-        return companyId;
-    }
-    public void setCompanyId(Integer companyId) {
-        this.companyId = companyId;
-    }
-
-    public String getCompanyName() {
-        return companyName;
-    }
-    public void setCompanyName(String companyName) {
-        this.companyName = companyName;
-    }
-
-    public CompanyType getCompanyType() {
-        return companyType;
-    }
-    public void setCompanyType(CompanyType companyType) {
-        this.companyType = companyType;
-    }
-
-    public String getCustCd() {
-        return custCd;
-    }
-    public void setCustCd(String custCd) {
-        this.custCd = custCd;
-    }
-
-    public String getPresidentNm() {
-        return presidentNm;
-    }
-    public void setPresidentNm(String presidentNm) {
-        this.presidentNm = presidentNm;
-    }
-
-    public String getCompanyNo() {
-        return companyNo;
-    }
-    public void setCompanyNo(String companyNo) {
-        this.companyNo = companyNo;
-    }
-
-    public String getCompanyCond() {
-        return companyCond;
-    }
-    public void setCompanyCond(String companyCond) {
-        this.companyCond = companyCond;
-    }
-
-    public String getCompanyItem() {
-        return companyItem;
-    }
-    public void setCompanyItem(String companyItem) {
-        this.companyItem = companyItem;
-    }
-
-    public String getCompanyAddr() {
-        return companyAddr;
-    }
-    public void setCompanyAddr(String companyAddr) {
-        this.companyAddr = companyAddr;
-    }
-
-    public String getCompanyTel() {
-        return companyTel;
-    }
-    public void setCompanyTel(String companyTel) {
-        this.companyTel = companyTel;
-    }
-
-    public String getCompanyFax() {
-        return companyFax;
-    }
-    public void setCompanyFax(String companyFax) {
-        this.companyFax = companyFax;
-    }
-
-    public Employee getEmployee() {
-        return employee;
-    }
-    public void setEmployee(Employee employee) {
-        this.employee = employee;
-    }
-
-    public String getUseYn() {
-        return useYn;
-    }
-    public void setUseYn(String useYn) {
-        this.useYn = useYn;
-    }
+    private String use_yn = "Y";
 }

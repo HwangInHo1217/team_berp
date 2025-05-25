@@ -2,56 +2,27 @@
 package com.team.berp.domain;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 @Table(name = "bom")
+@Getter
+@Setter
 public class Bom {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer bomId;
+    private Integer bom_id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_item_id", nullable = false)
-    private Item parentItem;
+    private Item parent_item_id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "child_item_id", nullable = false)
-    private Item childItem;
+    private Item child_item_id;
 
     @Column(nullable = false)
     private Integer qty;
-
-    // getters and setters
-    public Integer getBomId() {
-        return bomId;
-    }
-
-    public void setBomId(Integer bomId) {
-        this.bomId = bomId;
-    }
-
-    public Item getParentItem() {
-        return parentItem;
-    }
-
-    public void setParentItem(Item parentItem) {
-        this.parentItem = parentItem;
-    }
-
-    public Item getChildItem() {
-        return childItem;
-    }
-
-    public void setChildItem(Item childItem) {
-        this.childItem = childItem;
-    }
-
-    public Integer getQty() {
-        return qty;
-    }
-
-    public void setQty(Integer qty) {
-        this.qty = qty;
-    }
 }
 

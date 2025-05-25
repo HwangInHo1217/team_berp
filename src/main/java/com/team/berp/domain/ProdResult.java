@@ -2,43 +2,22 @@
 package com.team.berp.domain;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 @Table(name = "prod_result")
+@Getter
+@Setter
 public class ProdResult {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer resultId;
+    private Integer result_id;
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "prod_order_id", nullable = false)
-    private ProdOrder prodOrder;
+    private ProdOrder prod_order;
 
     @Column(nullable = false)
-    private Integer resultQty;
-
-    // getters and setters
-    public Integer getResultId() {
-        return resultId;
-    }
-
-    public void setResultId(Integer resultId) {
-        this.resultId = resultId;
-    }
-
-    public ProdOrder getProdOrder() {
-        return prodOrder;
-    }
-
-    public void setProdOrder(ProdOrder prodOrder) {
-        this.prodOrder = prodOrder;
-    }
-
-    public Integer getResultQty() {
-        return resultQty;
-    }
-
-    public void setResultQty(Integer resultQty) {
-        this.resultQty = resultQty;
-    }
+    private Integer result_qty;
 }

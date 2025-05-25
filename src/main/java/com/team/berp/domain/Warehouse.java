@@ -2,56 +2,27 @@
 package com.team.berp.domain;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 @Table(name = "warehouse")
+@Getter
+@Setter
 public class Warehouse {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer warehouseId;
+    private Integer warehouse_id;
 
     @Column(nullable = false, length = 100)
-    private String warehouseName;
+    private String warehouse_name;
 
     public enum WarehouseType { RAW, PRODUCT }
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private WarehouseType warehouseType;
+    private WarehouseType warehouse_type;
 
     @Column(nullable = false, length = 1)
-    private String useYn = "Y";
-
-    // getters and setters
-    public Integer getWarehouseId() {
-        return warehouseId;
-    }
-
-    public void setWarehouseId(Integer warehouseId) {
-        this.warehouseId = warehouseId;
-    }
-
-    public String getWarehouseName() {
-        return warehouseName;
-    }
-
-    public void setWarehouseName(String warehouseName) {
-        this.warehouseName = warehouseName;
-    }
-
-    public WarehouseType getWarehouseType() {
-        return warehouseType;
-    }
-
-    public void setWarehouseType(WarehouseType warehouseType) {
-        this.warehouseType = warehouseType;
-    }
-
-    public String getUseYn() {
-        return useYn;
-    }
-
-    public void setUseYn(String useYn) {
-        this.useYn = useYn;
-    }
+    private String use_yn = "Y";
 }

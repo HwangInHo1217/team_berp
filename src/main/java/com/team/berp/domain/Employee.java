@@ -2,64 +2,27 @@
 package com.team.berp.domain;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
 
 @Entity
 @Table(name = "employee")
+@Getter
+@Setter
 public class Employee {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long employeeId;
+    private Integer employee_id;
 
     @Column(nullable = false, length = 50)
-    private String empName;
+    private String emp_name;
 
     @Column(nullable = false, length = 100, unique = true)
-    private String empEmail;
+    private String emp_email;
 
     @Column(length = 20)
-    private String empTel;
+    private String emp_tel;
 
     @Column(length = 20)
-    private String empHp;
-
-    // getters and setters
-    public Long getEmployeeId() {
-        return employeeId;
-    }
-
-    public void setEmployeeId(Long employeeId) {
-        this.employeeId = employeeId;
-    }
-
-    public String getEmpName() {
-        return empName;
-    }
-
-    public void setEmpName(String empName) {
-        this.empName = empName;
-    }
-
-    public String getEmpEmail() {
-        return empEmail;
-    }
-
-    public void setEmpEmail(String empEmail) {
-        this.empEmail = empEmail;
-    }
-
-    public String getEmpTel() {
-        return empTel;
-    }
-
-    public void setEmpTel(String empTel) {
-        this.empTel = empTel;
-    }
-
-    public String getEmpHp() {
-        return empHp;
-    }
-
-    public void setEmpHp(String empHp) {
-        this.empHp = empHp;
-    }
+    private String emp_hp;
 }
