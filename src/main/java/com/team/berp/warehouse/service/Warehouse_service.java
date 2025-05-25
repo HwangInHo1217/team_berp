@@ -42,7 +42,12 @@ public class Warehouse_service {
      */
     @Transactional(readOnly = true)
     public String generateWhsCode(WarehouseType type) {
-        String prefix = type == WarehouseType.RAW ? "RWWH" : "PDWH";
+    	String prefix;
+    	if (type == WarehouseType.RAW) {
+    	    prefix = "RWWH";
+    	} else {
+    	    prefix = "PDWH";
+    	}
         List<Integer> existingNumbers = repo.findAllCodeNumbersByType(type, prefix + "%");
         int nextNumber = findFirstAvailableNumber(existingNumbers);
         return String.format("%s%04d", prefix, nextNumber);
@@ -202,16 +207,36 @@ public class Warehouse_service {
      */ 
     @Transactional(readOnly = true)
     public Map<String, Object> getWhsPageData(String useYn, String keyword, String searchType, Integer page) {
-        int currentPage = (page != null && page > 0) ? page : 1;
-        String filter = (useYn != null) ? useYn : "ALL";
+    	int currentPage;
+    	if (page != null && page > 0) {
+    	    currentPage = page;
+    	} else {
+    	    currentPage = 1;
+    	}
+
+    	String filter;
+    	if (useYn != null) {
+    	    filter = useYn;
+    	} else {
+    	    filter = "ALL";
+    	}
 
 		Map<String, Object> result = new HashMap<>(
 				StringUtils.hasText(keyword) ? searchWhsFromAllWithPaging(keyword.trim(), searchType, currentPage)
 						: getWhsByFilterWithPaging(filter, currentPage));
 
 		result.put("useYnFilter", filter);
-		result.put("keyword", keyword != null ? keyword : "");
-		result.put("searchType", searchType != null ? searchType : "");
+		if (keyword != null) {
+		    result.put("keyword", keyword);
+		} else {
+		    result.put("keyword", "");
+		}
+
+		if (searchType != null) {
+		    result.put("searchType", searchType);
+		} else {
+		    result.put("searchType", "");
+		}
 
         return result;
     }
@@ -219,7 +244,12 @@ public class Warehouse_service {
 
     @Transactional(readOnly = true)
     public Map<String, Object> getWhsPageData(String useYn, String keyword, String searchType) {
-        String filter = (useYn != null) ? useYn : "ALL";
+    	String filter;
+    	if (useYn != null) {
+    	    filter = useYn;
+    	} else {
+    	    filter = "ALL";
+    	}
         List<WarehouseResponseDTO> whsList = StringUtils.hasText(keyword)
             ? searchWhsFromAll(keyword, searchType)
             : getWhsByFilter(filter);
@@ -337,9 +367,19 @@ public class Warehouse_service {
      * 창고 코드가 유형에 맞는 prefix인지 확인
      */    
     private void validateWhsCodeFormat(String code, WarehouseType type) {
-        String expectedPrefix = type == WarehouseType.RAW ? "RWWH" : "PDWH";
+    	String expectedPrefix;
+    	if (type == WarehouseType.RAW) {
+    	    expectedPrefix = "RWWH";
+    	} else {
+    	    expectedPrefix = "PDWH";
+    	}
         if (!code.startsWith(expectedPrefix)) {
-            String typeName = type == WarehouseType.RAW ? "자재창고" : "완제품창고";
+        	String typeName;
+        	if (type == WarehouseType.RAW) {
+        	    typeName = "자재창고";
+        	} else {
+        	    typeName = "완제품창고";
+        	}
             throw new IllegalArgumentException(
                 String.format("창고 유형을 %s로 변경하려면 창고 코드가 %s로 시작해야 합니다. 현재 코드: %s", 
                     typeName, expectedPrefix, code)
