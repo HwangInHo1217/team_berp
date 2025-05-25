@@ -2,8 +2,8 @@ package com.team.berp.mrp.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.team.berp.mrp.domain.DomainStock;
+import com.team.berp.domain.Stock;
 
-public interface EntityStockRepository extends JpaRepository<DomainStock, Integer> {
+public interface EntityStockRepository extends JpaRepository<Stock, Integer> {
 	//
 }
