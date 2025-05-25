@@ -14,10 +14,10 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
   # ================================
   # [🔧 데이터베이스 설정 - 아직 실제 사용 안하므로 주석처리]
-  # datasource:
+  #datasource:
   #   url: jdbc:mysql://localhost:3306/berp_db?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
-  #   username: berp_user         # DB 접속 ID
-  #   password: berp_password     # DB 접속 비밀번호
+  #   username: root         # DB 접속 ID
+  #   password: 0236     # DB 접속 비밀번호
   #   driver-class-name: com.mysql.cj.jdbc.Driver  # MySQL 드라이버 클래스
   # ================================
 
@@ -81,6 +81,6 @@ logging:
     org.hibernate.type: trace       # 바인딩되는 파라미터 값까지 출력
 
 mybatis:
-  maper-locations: classpath:mapper/**/*.xml
+  mapper-locations: classpath:mapper/*.xml
   type-aliases-package: com.team.berp.plant.DTO
 

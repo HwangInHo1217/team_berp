@@ -19,67 +19,67 @@
     <main class="p-4 flex-fill">
       <div class="container">
         <h2 class="mb-4">사업장 등록</h2>
-        <form>
+        <form method="post" action="/plant/insert">
           <div class="row mb-3">
             <div class="col-md-6">
               <label for="name" class="form-label">사업장 명</label>
-              <input type="text" class="form-control" id="workName" placeholder="예: (주)스마트제조" />
+              <input type="text" class="form-control" id="workplace_name" name="workplace_name" placeholder="예: (주)스마트제조" required/>
             </div>
             <div class="col-md-6">
               <label for="ceo" class="form-label">대표자</label>
-              <input type="text" class="form-control" id="workPreName" placeholder="예: 홍길동" />
+              <input type="text" class="form-control" id="workplace_president_nm" name="workplace_president_nm" placeholder="예: 홍길동" required/>
             </div>
           </div>
           
           <div class="row mb-3">
             <div class="col-md-6">
               <label for="biznum" class="form-label">사업자 번호</label>
-              <input type="text" class="form-control" id="workNo" placeholder="예: 123-45-67890" />
+              <input type="text" class="form-control" id="workplace_no" name="workplace_no" placeholder="예: 123-45-67890" required/>
             </div>
             <div class="col-md-3">
               <label for="type" class="form-label">업태</label>
-              <input type="text" class="form-control" id="workCond" placeholder="예: 제조업" />
+              <input type="text" class="form-control" id="workplace_cond" name="workplace_cond" placeholder="예: 제조업" required/>
             </div>
             <div class="col-md-3">
               <label for="item" class="form-label">종목</label>
-              <input type="text" class="form-control" id="workItem" placeholder="예: 전자부품" />
+              <input type="text" class="form-control" id="workplace_item" name="workplace_item" placeholder="예: 전자부품" required/>
             </div>
           </div>
           
           <div class="row mb-3">
             <div class="col-md-6">
               <label for="phone" class="form-label">전화번호</label>
-              <input type="tel" class="form-control" id="workTel" placeholder="예: 02-1234-5678" />
+              <input type="tel" class="form-control" id="workplace_tel" name="workplace_tel" placeholder="예: 02-1234-5678" required/>
             </div>
             <div class="col-md-6">
               <label for="fax" class="form-label">팩스</label>
-              <input type="tel" class="form-control" id="workFax" placeholder="예: 02-8765-4321" />
+              <input type="tel" class="form-control" id="workplace_fax" name="workplace_fax" placeholder="예: 02-8765-4321" required/>
             </div>
           </div>
           
           <div class="mb-3">
             <label for="address" class="form-label">주소</label>
-            <input type="text" class="form-control" id="workAddr" placeholder="예: 서울특별시 성동구 성수이로 113" />
+            <input type="text" class="form-control" id="workplace_addr" name="workplace_addr" placeholder="예: 서울특별시 성동구 성수이로 113" required/>
           </div>
           
           <div class="row mb-3">
             <div class="col-md-4">
               <label for="type" class="form-label">담당자 명</label>
-              <input type="text" class="form-control" id="workManName"/>
+              <input type="text" class="form-control" id="workplace_manname" name="workplace_manname" required/>
             </div>
             <div class="col-md-4">
               <label for="item" class="form-label">담당자 이메일</label>
-              <input type="text" class="form-control" id="workManEmail"/>
+              <input type="text" class="form-control" id="workplace_manemail" name="workplace_manemail" required/>
             </div>
             <div class="col-md-4">
               <label for="item" class="form-label">담당자 번호</label>
-              <input type="text" class="form-control" id="workManTel"/>
+              <input type="text" class="form-control" id="workplace_mantel" name="workplace_mantel" required/>
             </div>
           </div>
           
           <div class="text-end">
-            <button type="reset" class="btn btn-secondary">초기화</button>
-            <button type="submit" class="btn btn-primary">등록</button>
+            <button type="button" class="btn btn-secondary" onclick="resetcheck()">초기화</button>
+            <button type="button" class="btn btn-primary" onclick="submitcheck()">등록</button>
           </div>
         </form>
         <hr class="my-5" />
@@ -101,46 +101,160 @@
       </tr>
     </thead>
     <tbody>
-      <tr>
-        <td>1</td>
-        <td>스마트제조(주)</td>
-        <td>홍길동</td>
-        <td>123-45-67890</td>
-        <td>제조업</td>
-        <td>전자부품</td>
-        <td>02-1234-5678</td>
-        <td>서울 성수동 123-4</td>
-        <td><button class="btn btn-sm btn-warning">수정</button></td>
-        <td><button class="btn btn-sm btn-danger">삭제</button></td>
-      </tr>
-      <tr>
-        <td>2</td>
-        <td>베르프테크</td>
-        <td>이순신</td>
-        <td>234-56-78901</td>
-        <td>도소매업</td>
-        <td>부품유통</td>
-        <td>031-222-3333</td>
-        <td>경기도 성남시 판교대로 123</td>
-        <td><button class="btn btn-sm btn-warning">수정</button></td>
-        <td><button class="btn btn-sm btn-danger">삭제</button></td>
-      </tr>
       <!-- 더미 데이터 or 추후 Thymeleaf 반복문 적용 -->
+		<tr th:each= "plant, stat : ${list}">
+			 <td th:text="${stat.index + 1}"></td> <!-- 순서번호 1부터 시작 -->
+			<td th:text ="${plant.workplace_name}"></td>
+			<td th:text ="${plant.workplace_president_nm}"></td>
+			<td th:text ="${plant.workplace_no}"></td>
+			<td th:text ="${plant.workplace_cond}"></td>
+			<td th:text ="${plant.workplace_item}"></td>
+			<td th:text ="${plant.workplace_tel}"></td>
+			<td th:text ="${plant.workplace_addr}"></td>
+			<td>
+			<button class="btn btn-sm btn-warning" onclick="openplantEditModal()")>수정</button>
+			<!-- 
+			<button class="btn btn-sm btn-warning"
+       		 th:onclick="'openplantEditModal(' +
+                    '\'' + ${plant.workplace_name} + '\',' +
+                    '\'' + ${plant.workplace_president_nm} + '\',' +
+                    '\'' + ${plant.workplace_no} + '\',' +
+                    '\'' + ${plant.workplace_cond} + '\',' +
+                    '\'' + ${plant.workplace_item} + '\',' +
+                    '\'' + ${plant.workplace_tel} + '\',' +
+                    '\'' + ${plant.workplace_fax} + '\',' +
+                    '\'' + ${plant.workplace_addr} + '\',' +
+                    '\'' + ${plant.workplace_manname} + '\',' +
+                    '\'' + ${plant.workplace_manemail} + '\',' +
+                    '\'' + ${plant.workplace_mantel} + '\')'">
+			    수정
+			</button>
+			 -->			
+					
+			</td>
+       		<td>
+       	<!-- 
+       	 <button class="btn btn-sm btn-danger" onclick="listdelete()">삭제</button>
+       	 -->	
+       		<form th:action="@{/plant/delete}" method="post" onsubmit="return confirm('정말 삭제하시겠습니까?');">
+            <input type="hidden" name="workplace_id" th:value="${plant.workplace_id}" />
+            <button type="submit" class="btn btn-sm btn-danger">삭제</button>
+        </form>
+       		</td>
+		</tr>
     </tbody>
   </table>
 </div>
-        
+            <!-- 사업장 수정 모달 -->
+	<div class="modal fade" id="plantRegisterModal" tabindex="-1"
+		aria-labelledby="plantRegisterModalLabel" aria-hidden="true">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+				<form id="plantRegisterForm" method="post" action="#">
+					<div class="modal-header">
+						<h5 class="modal-title" id="plantRegisterModalLabel">사업장 수정</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal"
+							aria-label="닫기"></button>
+					</div>
+					<div class="modal-body">
+						<div class="row mb-3">
+							<div class="col-md-6">
+								<label for="workplace_name" class="form-label">회사명</label> <input
+									type="text" class="form-control" id="workplace_name"
+									name="workplace_name" required />
+							</div>
+							<div class="col-md-6">
+								<label for="workplace_president_name" class="form-label">대표자명</label> <input
+									type="text" class="form-control" id="workplace_president_name" name="workplace_president_name"
+									required />
+							</div>
+						</div>
+
+						<div class="row mb-3">
+							<div class="col-md-4">
+								<label for="workplace_no" class="form-label">사업자 번호</label> <input
+									type="text" class="form-control" id="workplace_no" name="workplace_no"
+									placeholder="000-00-00000" />
+							</div>
+							<div class="col-md-4">
+								<label for="workplace_cond" class="form-label">업태</label> <input
+									type="tel" class="form-control" id="workplace_cond" name="workplace_cond"
+									placeholder="예: 제조업" />
+							</div>
+							<div class="col-md-4">
+								<label for="workplace_item" class="form-label">종목</label> <input
+									type="tel" class="form-control" id="workplace_item" name="workplace_item"
+									placeholder="예: 제조업" />
+							</div>
+						</div>
+
+						<div class="row mb-3">
+								<div class="col-md-6">
+								<label for="workplace_tel" class="form-label">전화번호</label> <input
+									type="tel" class="form-control" id="workplacet_tel" name="workplace_tel"
+									placeholder="예: 02-1234-5678" />
+							</div>
+							<div class="col-md-6">
+								<label for="workplace_fax" class="form-label">팩스</label> <input
+									type="text" class="form-control" id="workplace_fax" name="workplace_fax" />
+							</div>
+						</div>
+
+						<!-- 주소 검색 (지번/도로명 + 상세주소 분리) -->
+						<div class="mb-3">
+							<label class="form-label">주소</label>
+
+							<!-- 주소 유형 표시 (도로명/지번) -->
+							<input type="text" id="addressType" class="form-control mb-2"
+								placeholder="도로명 or 지번 주소" readonly />
+
+							<!-- 기본 주소 (API에서 채워짐) -->
+							<input type="text" id="mainAddress" name="mainAddress"
+								class="form-control mb-2" placeholder="기본 주소" readonly />
+
+							<!-- 상세 주소 (사용자 입력) -->
+							<input type="text" id="detailAddress" name="detailAddress"
+								class="form-control" placeholder="상세 주소 입력" />
+
+							<!-- 주소 검색 버튼 -->
+							<button type="button" class="btn btn-outline-secondary mt-2"
+								onclick="execDaumPostcode()">주소 검색</button>
+						</div>
+
+
+						<div class="row mb-3">
+							<div class="col-md-4">
+								<label for="workplace_manname" class="form-label">담당자 명</label> <input
+									type="text" class="form-control" id="workplace_manname" name="workplace_manname" />
+							</div>
+							<div class="col-md-4">
+								<label for="workplace_manemail" class="form-label">담당자 이메일</label> <input
+									type="tel" class="form-control" id="workplace_manemail" name="workplace_manemail"/>
+							</div>
+							<div class="col-md-4">
+								<label for="workplace_mantel" class="form-label">담당자 번호</label> <input
+									type="tel" class="form-control" id="workplace_mantel" name="workplace_mantel"
+									placeholder="예: 02-1234-5678" />
+							</div>
+						</div>
+					</div>
+
+					<div class="modal-footer">
+						<button type="reset" class="btn btn-secondary">초기화</button>
+						<button type="submit" class="btn btn-primary">등록</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+
+	
       </div>
     </main>
   </div>
 
   <!-- 공통 푸터 -->
   <div th:replace="~{/layouts/footer :: footer}"></div>
-  
-  <script>
-    fetch('/layouts/header.html').then(res => res.text()).then(data => document.getElementById('header').innerHTML = data);
-    fetch('/layouts/sidebar.html').then(res => res.text()).then(data => document.getElementById('sidebar').innerHTML = data);
-    fetch('/layouts/footer.html').then(res => res.text()).then(data => document.getElementById('footer').innerHTML = data);
-  </script>
 </body>
+]<script src="/js/plant/plant.js"></script>
 </html>

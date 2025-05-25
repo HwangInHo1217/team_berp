@@ -122,6 +122,120 @@
 
   <!-- 공통 푸터 -->
   <div th:replace="~{/layouts/footer :: footer}"></div>
+=======
+  <!-- ✅ 공통 헤더/사이드바 영역 -->
+  <div id="header"></div>
+  <div class="d-flex flex-grow-1">
+    <div id="sidebar"></div>
+    <main class="p-4 flex-fill">
+      <div class="container">
+        <h2 class="mb-4">입고 관리</h2>
+
+        <!-- 🔍 검색창 + 버튼 한 줄 정렬 -->
+        <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+          <input type="text" class="form-control w-auto" placeholder="품목명" />
+          <input type="date" class="form-control w-auto" />
+          <span class="align-self-center">~</span>
+          <input type="date" class="form-control w-auto" />
+          <select class="form-select w-auto">
+            <option>전체 창고</option>
+            <option>자재창고 A</option>
+            <option>완제품창고</option>
+          </select>
+          <select class="form-select w-auto" id="statusFilter">
+            <option value="ALL">전체 상태</option>
+            <option value="TEMP">가입고</option>
+            <option value="CONFIRMED">실입고</option>
+          </select>
+          <button class="btn btn-outline-secondary">검색</button>
+
+          <!-- ✅ 우측 버튼들 -->
+          <button class="btn btn-outline-success ms-auto" onclick="alert('엑셀 다운로드 기능은 추후 제공될 예정입니다.')">엑셀 다운로드</button>
+          <button class="btn btn-danger" onclick="deleteSelectedRows()">삭제</button>
+          <button class="btn btn-success" onclick="confirmSelectedRows()">실입고 전환</button>
+          <button class="btn btn-primary" onclick="openReceiveAddModal()" data-bs-toggle="modal" data-bs-target="#receiveRegisterModal">+ 입고 등록</button>
+        </div>
+
+        <!-- 📋 입고 테이블 -->
+        <div class="table-responsive">
+          <table class="table table-bordered text-center align-middle" id="receiveTable">
+            <thead class="table-light">
+              <tr>
+                <th><input type="checkbox" /></th>
+                <th>순번</th>
+                <th>입고일자</th>
+                <th>매입처</th>
+                <th>품목코드</th>
+                <th>품목명</th>
+                <th>수량</th>
+                <th>단위</th>
+                <th>창고</th>
+                <th>입고유형</th>
+                <th>담당자</th>
+                <th>입고상태</th>
+                <th>비고</th>
+                <th>상세</th>
+                <th>수정</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr data-status="TEMP">
+                <td><input type="checkbox" /></td>
+                <td>1</td>
+                <td>2025-05-18</td>
+                <td>매입처회사이름</td>
+                <td>M001</td>
+                <td>자재 A</td>
+                <td>100</td>
+                <td>EA</td>
+                <td>자재창고 A</td>
+                <td>구매입고</td>
+                <td>김인호</td>
+                <td>가입고</td>
+                <td>-</td>
+                <td>
+                  <!-- 🔍 상세 버튼 -->
+                  <button class="btn btn-info btn-sm" onclick="openReceiveDetailModal({
+                    date: '2025-05-18',
+                    company_id : '매입처회사이름',
+                    itemCode: 'M001',
+                    itemName: '자재 A',
+                    quantity: 100,
+                    unit: 'EA',
+                    warehouse: '자재창고 A',
+                    type: '구매입고',
+                    status: '가입고',
+                    manager: '김인호',
+                    note: '-'
+                  })">상세</button>
+                </td>
+                <td>
+                  <!-- ✏️ 수정 버튼 -->
+                  <button class="btn btn-warning btn-sm" onclick="openReceiveEditModal({
+                    id: 1,
+                    date: '2025-05-18',
+                    company_id: '매입처회사이름',
+                    item_id: '1',
+                    qty: 100,
+                    unit: 'EA',
+                    warehouse_id: '1',
+                    type: 'PURCHASE',
+                    status: 'TEMP',
+                    manager: '김인호',
+                    note: '-'
+                  })">수정</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ✅ 공통 footer 및 모달 로드 영역 -->
+  <div id="footer"></div>
+>>>>>>> branch 'develop' of https://github.com/HwangInHo1217/team_berp.git
   <div id="receiveModals"></div>
   <div id="receiveDetailModals"></div>
 
