@@ -1,0 +1,52 @@
+/* style.css */
+body {
+  background-color: #f8f9fa;
+}
+
+main h2 {
+  color: #343a40;
+}
+
+input::placeholder {
+  font-size: 0.9rem;
+  color: #aaa;
+}
+
+/* 상위 메뉴 */
+.list-group-item.fw-bold {
+  background: #f8fafc;
+  font-size: 1.1em;
+  border-bottom: 1px solid #eee;
+  cursor: pointer;
+}
+
+/* 하위 메뉴(서브) */
+.sub-menu {
+  background: #f9f9fc;
+  color: #333;
+  border-left: 4px solid #2d7ff9;
+  margin-bottom: 2px;
+  transition: background 0.2s, color 0.2s;
+}
+.sub-menu:hover, .sub-menu.active {
+  background: #e8f0fe !important;
+  color: #1565c0 !important;
+  font-weight: bold;
+}
+
+/* 현재(활성) 메뉴 강조: active 클래스 추가해서 동적으로 적용 가능 */
+.sub-menu.active {
+  background: #d0e4fd !important;
+  color: #0d47a1 !important;
+  font-weight: bold;
+  border-left: 4px solid #0d47a1;
+}
+
+/* 화살표(▶/▼) */
+.collapse-icon {
+  font-size: 1em;
+  transition: transform 0.2s;
+}
+a[aria-expanded="true"] .collapse-icon {
+  transform: rotate(90deg); /* 펼쳤을 때 화살표 아래로 */
+}
