@@ -1,0 +1,58 @@
+<!-- BOM 구성 수정 모달 -->
+<div th:fragment="bomEditModal">
+  <div class="modal fade" id="bomEditModal" tabindex="-1" aria-labelledby="bomEditModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+      <div class="modal-content">
+        <form id="bomEditForm" method="post" action="#">
+          <div class="modal-header">
+            <h5 class="modal-title" id="bomEditModalLabel">BOM 구성 수정</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+          </div>
+
+          <div class="modal-body">
+            <!-- 완제품 정보 -->
+            <div class="mb-3">
+              <label class="form-label fw-bold">완제품</label>
+              <input type="text" class="form-control" id="editParentItemText" readonly />
+              <input type="hidden" id="editParentItemId" name="parent_item_id" />
+            </div>
+
+            <!-- 자재 구성 행 목록 -->
+            <div id="bomEditTableArea"></div>
+
+            <!-- 자재 추가 버튼 -->
+            <div class="text-end mt-2">
+              <button type="button" class="btn btn-outline-secondary" onclick="addEditRow()">+ 자재 추가</button>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+            <button type="submit" class="btn btn-primary">저장</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✅ 자재 셀렉트 템플릿 -->
+  <template id="editChildItemTemplate">
+    <div class="row mb-2">
+      <div class="col-md-6">
+        <select name="child_item_id[]" class="form-select" required>
+          <option value="">-- 선택 --</option>
+          <option th:each="item : ${selectMaterialList}"
+                  th:value="${item.id}"
+                  th:text="${item.code + ' - ' + item.name}">
+          </option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <input type="number" name="qty[]" class="form-control" required placeholder="예: 10" />
+      </div>
+      <div class="col-md-3 d-flex align-items-end">
+        <button type="button" class="btn btn-outline-danger w-100" onclick="this.closest('.row').remove()">삭제</button>
+      </div>
+    </div>
+  </template>
+</div>

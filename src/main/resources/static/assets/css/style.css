@@ -1,0 +1,13 @@
+/* style.css */
+body {
+  background-color: #f8f9fa;
+}
+
+main h2 {
+  color: #343a40;
+}
+
+input::placeholder {
+  font-size: 0.9rem;
+  color: #aaa;
+}

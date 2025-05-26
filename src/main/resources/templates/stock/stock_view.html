@@ -1,0 +1,79 @@
+      <div class="container" th:fragment="stock_view">
+        <h2 class="mb-4">재고 관리</h2>
+
+        <!-- 🔍 검색 및 버튼 영역 -->
+        <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+          <input type="text" class="form-control w-auto" placeholder="품목명 or 품목코드" />
+          <select class="form-select w-auto">
+            <option>전체 창고</option>
+            <option>자재창고</option>
+            <option>완제품창고</option>
+          </select>
+          <button class="btn btn-outline-secondary">검색</button>
+
+          <button class="btn btn-outline-success ms-auto" onclick="alert('엑셀 다운로드는 추후 제공 예정입니다.')">엑셀 다운로드</button>
+        </div>
+
+        <!-- 📋 재고 현황 테이블 -->
+        <div class="table-responsive">
+          <table class="table table-bordered text-center align-middle">
+            <thead class="table-light">
+              <tr>
+                <th>순번</th>
+                <th>품목코드</th>
+                <th>품목명</th>
+                <th>창고</th>
+                <th>재고수량</th>
+                <th>단위</th>
+                <th>최종입고일</th>
+                <th>최종출고일</th>
+                <th>상세</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>1</td>
+                <td>M001</td>
+                <td>자재 A</td>
+                <td>자재창고</td>
+                <td>320</td>
+                <td>EA</td>
+                <td>2025-05-19</td>
+                <td>2025-05-21</td>
+                <td>
+                  <button class="btn btn-info btn-sm" onclick="openStockDetailModal({
+                    item_code: 'M001',
+                    item_name: '자재 A',
+                    warehouse: '자재창고',
+                    qty: 320,
+                    unit: 'EA',
+                    last_in: '2025-05-19',
+                    last_out: '2025-05-21'
+                  })">상세</button>
+                </td>
+              </tr>
+              <tr>
+                <td>2</td>
+                <td>P001</td>
+                <td>완제품 A</td>
+                <td>완제품창고</td>
+                <td>110</td>
+                <td>EA</td>
+                <td>2025-05-17</td>
+                <td>2025-05-20</td>
+                <td>
+                  <button class="btn btn-info btn-sm" onclick="openStockDetailModal({
+                    item_code: 'P001',
+                    item_name: '완제품 A',
+                    warehouse: '완제품창고',
+                    qty: 110,
+                    unit: 'EA',
+                    last_in: '2025-05-17',
+                    last_out: '2025-05-20'
+                  })">상세</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
