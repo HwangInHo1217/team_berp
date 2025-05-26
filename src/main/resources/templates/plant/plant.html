@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>사업장 관리</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <link rel="stylesheet" href="/assets/css/style.css" />
+</head>
+<body class="d-flex flex-column" style="min-height: 100vh;">
+  <!-- 공통 헤더 -->
+  <div th:replace="~{/layouts/header :: header}"></div>
+  
+  <div class="d-flex flex-grow-1">
+    <!-- 공통 사이드바 -->
+   <div th:replace="~{/layouts/sidebar :: sidebar}"></div>
+    <!-- 메인 콘텐츠 -->
+    <main class="p-4 flex-fill">
+      <div class="container">
+        <h2 class="mb-4">사업장 등록</h2>
+        <form method="post" action="/plant/insert">
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="name" class="form-label">사업장 명</label>
+              <input type="text" class="form-control" id="work_name" name="work_name" placeholder="예: (주)스마트제조" required/>
+            </div>
+            <div class="col-md-6">
+              <label for="ceo" class="form-label">대표자</label>
+              <input type="text" class="form-control" id="work_ceonm" name="work_ceonm" placeholder="예: 홍길동" required/>
+            </div>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="biznum" class="form-label">사업자 번호</label>
+              <input type="text" class="form-control" id="work_no" name="work_no" placeholder="예: 123-45-67890" required/>
+            </div>
+            <div class="col-md-3">
+              <label for="type" class="form-label">업태</label>
+              <input type="text" class="form-control" id="work_cond" name="work_cond" placeholder="예: 제조업" required/>
+            </div>
+            <div class="col-md-3">
+              <label for="item" class="form-label">종목</label>
+              <input type="text" class="form-control" id="work_item" name="work_item" placeholder="예: 전자부품" required/>
+            </div>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="phone" class="form-label">전화번호</label>
+              <input type="tel" class="form-control" id="work_tel" name="work_tel" placeholder="예: 02-1234-5678" required/>
+            </div>
+            <div class="col-md-6">
+              <label for="fax" class="form-label">팩스</label>
+              <input type="tel" class="form-control" id="work_fax" name="work_fax" placeholder="예: 02-8765-4321" required/>
+            </div>
+          </div>
+          
+            <div class="mb-3">
+              <label class="form-label">주소</label>
+              <input type="text" id="work_addr" name="work_addr" class="form-control mb-2" placeholder="도로명 or 지번 주소" readonly />
+              <input type="text" id="work_mainadd" name="work_mainadd" class="form-control mb-2" placeholder="기본 주소" readonly />
+              <input type="text" id="work_detailadd" name="work_detailadd" class="form-control" placeholder="상세 주소 입력" />
+              <button type="button" class="btn btn-outline-secondary mt-2" onclick="execDaumPostcodeMain()">주소 검색</button>
+            </div>
+          
+          <div class="row mb-3">
+            <div class="col-md-4">
+              <label for="type" class="form-label">담당자 명</label>
+              <input type="text" class="form-control" id="work_manname" name="work_manname" required/>
+            </div>
+            <div class="col-md-4">
+              <label for="item" class="form-label">담당자 이메일</label>
+              <input type="text" class="form-control" id="work_manemail" name="work_manemail" required/>
+            </div>
+            <div class="col-md-4">
+              <label for="item" class="form-label">담당자 번호</label>
+              <input type="text" class="form-control" id="work_mantel" name="work_mantel" required/>
+            </div>
+          </div>
+          
+          <div class="text-end">
+            <button type="button" class="btn btn-secondary" onclick="resetcheck()">초기화</button>
+            <button type="button" class="btn btn-primary" onclick="submitcheck()">등록</button>
+          </div>
+        </form>
+        <hr class="my-5" />
+<h4 class="mb-3">사업장 목록</h4>
+<div class="table-responsive">
+  <table class="table table-bordered table-hover align-middle text-center">
+    <thead class="table-secondary">
+      <tr>
+        <th>번호</th>
+        <th>사업장 명</th>
+        <th>대표자</th>
+        <th>사업자 번호</th>
+        <th>업태</th>
+        <th>종목</th>
+        <th>전화번호</th>
+        <th>수정</th>
+        <th>삭제</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- 더미 데이터 or 추후 Thymeleaf 반복문 적용 -->
+      <tr th:each= "plant, stat : ${list}">
+          <td th:text="${stat.index + 1}"></td> <!-- 순서번호 1부터 시작 -->
+         <td th:text ="${plant.work_name}"></td>
+         <td th:text ="${plant.work_ceonm}"></td>
+         <td th:text ="${plant.work_no}"></td>
+         <td th:text ="${plant.work_cond}"></td>
+         <td th:text ="${plant.work_item}"></td>
+         <td th:text ="${plant.work_tel}"></td>
+         <td>
+         <!-- 
+         <button class="btn btn-sm btn-warning" onclick="openplantEditModal()")>수정</button>
+          -->         
+      <button class="btn btn-sm btn-warning"
+              th:data-work-name="${plant.work_name}"
+              th:data-work-ceonm="${plant.work_ceonm}"
+              th:data-work-no="${plant.work_no}"
+              th:data-work-cond="${plant.work_cond}"
+              th:data-work-item="${plant.work_item}"
+              th:data-work-tel="${plant.work_tel}"
+              th:data-work-fax="${plant.work_fax}"
+              th:data-work-addr="${plant.work_addr}"
+              th:data-work-mainadd="${plant.work_mainadd}"
+              th:data-work-detailadd="${plant.work_detailadd}"
+              th:data-work-manname="${plant.work_manname}"
+              th:data-work-manemail="${plant.work_manemail}"
+              th:data-work-mantel="${plant.work_mantel}"
+              onclick="handlePlantEdit(this)">
+        수정
+      </button>
+
+   </td>
+             <td>
+             <form th:action="@{/plant/delete}" method="post" onsubmit="return confirm('정말 삭제하시겠습니까?');">
+               <input type="hidden" name="work_id" th:value="${plant.work_id}" />
+               <button type="submit" class="btn btn-sm btn-danger">삭제</button>
+           </form>
+             </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+            <!-- 사업장 수정 모달 -->
+   <div class="modal fade" id="plantRegisterModal" tabindex="-1"
+      aria-labelledby="plantRegisterModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+         <div class="modal-content">
+            <form id="plantRegisterForm" method="post" action="/plant/update">
+               <div class="modal-header">
+                  <h5 class="modal-title" id="plantRegisterModalLabel">사업장 수정</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal"
+                     aria-label="닫기"></button>
+               </div>
+               <div class="modal-body">
+                  <div class="row mb-3">
+                     <div class="col-md-6">
+                        <label for="work_name" class="form-label">회사명</label> <input
+                           type="text" class="form-control" id="modal_work_name"
+                           name="work_name" required />
+                     </div>
+                     <div class="col-md-6">
+                        <label for="work_ceonm" class="form-label">대표자명</label> <input
+                           type="text" class="form-control" id="modal_work_ceonm" name="work_ceonm"
+                           required />
+                     </div>
+                  </div>
+
+                  <div class="row mb-3">
+                     <div class="col-md-4">
+                        <label for="work_no" class="form-label">사업자 번호</label> <input
+                           type="text" class="form-control" id="modal_work_no" name="work_no"
+                           placeholder="000-00-00000" />
+                     </div>
+                     <div class="col-md-4">
+                        <label for="work_cond" class="form-label">업태</label> <input
+                           type="tel" class="form-control" id="modal_work_cond" name="work_cond"
+                           placeholder="예: 제조업" />
+                     </div>
+                     <div class="col-md-4">
+                        <label for="work_item" class="form-label">종목</label> <input
+                           type="tel" class="form-control" id="modal_work_item" name="work_item"
+                           placeholder="예: 제조업" />
+                     </div>
+                  </div>
+
+                  <div class="row mb-3">
+                        <div class="col-md-6">
+                        <label for="work_tel" class="form-label">전화번호</label> <input
+                           type="tel" class="form-control" id="modal_work_tel" name="work_tel"
+                           placeholder="예: 02-1234-5678" />
+                     </div>
+                     <div class="col-md-6">
+                        <label for="work_fax" class="form-label">팩스</label> <input
+                           type="text" class="form-control" id="modal_work_fax" name="work_fax" />
+                     </div>
+                  </div>
+
+                  <!-- 주소 검색 (지번/도로명 + 상세주소 분리) -->
+                  <div class="mb-3">
+                     <label class="form-label">주소</label>
+
+                     <!-- 주소 유형 표시 (도로명/지번) -->
+                     <input type="text" id="modal_work_addr" name="work_addr" class="form-control mb-2"
+                        placeholder="도로명 or 지번 주소" readonly />
+
+                     <!-- 기본 주소 (API에서 채워짐) -->
+                     <input type="text" id="modal_work_mainadd" name="work_mainadd"
+                        class="form-control mb-2" placeholder="기본 주소" readonly />
+
+                     <!-- 상세 주소 (사용자 입력) -->
+                     <input type="text" id="modal_work_detailadd" name="work_detailadd"
+                        class="form-control" placeholder="상세 주소 입력" />
+
+                     <!-- 주소 검색 버튼 -->
+                     <button type="button" class="btn btn-outline-secondary mt-2"
+                        onclick="execDaumPostcodeModal()">주소 검색</button>
+                  </div>
+
+
+                  <div class="row mb-3">
+                     <div class="col-md-4">
+                        <label for="work_manname" class="form-label">담당자 명</label> <input
+                           type="text" class="form-control" id="modal_work_manname" name="work_manname" />
+                     </div>
+                     <div class="col-md-4">
+                        <label for="work_manemail" class="form-label">담당자 이메일</label> <input
+                           type="tel" class="form-control" id="modal_work_manemail" name="work_manemail"/>
+                     </div>
+                     <div class="col-md-4">
+                        <label for="work_mantel" class="form-label">담당자 번호</label> <input
+                           type="tel" class="form-control" id="modal_work_mantel" name="work_mantel"
+                           placeholder="예: 02-1234-5678" />
+                     </div>
+                  </div>
+               </div>
+
+               <div class="modal-footer">
+                  <button type="reset" class="btn btn-secondary">초기화</button>
+                  <button type="submit" class="btn btn-primary">등록</button>
+               </div>
+            </form>
+         </div>
+      </div>
+   </div>
+
+   
+      </div>
+    </main>
+  </div>
+
+  <!-- 공통 푸터 -->
+  <div th:replace="~{/layouts/footer :: footer}"></div>
+ <script src="/js/plant/plant.js"></script>
+ <script src="https://ssl.daumcdn.net/dmaps/map_js_init/postcode.v2.js"></script>
+ 
+</body>
+</html>

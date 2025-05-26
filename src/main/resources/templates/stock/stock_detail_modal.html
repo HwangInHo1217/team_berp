@@ -1,0 +1,25 @@
+<!-- 재고 상세 모달 -->
+<div class="modal fade" id="stockDetailModal" tabindex="-1" aria-hidden="true" th:fragment="stock_modal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">재고 상세</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+      </div>
+      <div class="modal-body">
+        <ul class="list-group">
+          <li class="list-group-item"><b>품목코드:</b> <span id="detailItemCode"></span></li>
+          <li class="list-group-item"><b>품목명:</b> <span id="detailItemName"></span></li>
+          <li class="list-group-item"><b>창고:</b> <span id="detailWarehouse"></span></li>
+          <li class="list-group-item"><b>재고수량:</b> <span id="detailQty"></span></li>
+          <li class="list-group-item"><b>단위:</b> <span id="detailUnit"></span></li>
+          <li class="list-group-item"><b>최종입고일:</b> <span id="detailLastIn"></span></li>
+          <li class="list-group-item"><b>최종출고일:</b> <span id="detailLastOut"></span></li>
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+      </div>
+    </div>
+  </div>
+</div>
