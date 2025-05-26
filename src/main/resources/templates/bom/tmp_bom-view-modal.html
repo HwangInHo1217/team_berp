@@ -1,0 +1,24 @@
+<div th:fragment="bomViewModal">
+  <div class="modal fade" id="bomViewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">BOM 구성 보기</h5>
+          <button class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p><strong>완제품:</strong> <span id="bomParentCode"></span> - <span id="bomParentName"></span></p>
+          <table class="table table-bordered text-center">
+            <thead class="table-light">
+              <tr><th>자재코드</th><th>자재명</th><th>수량</th></tr>
+            </thead>
+            <tbody id="bomComponentTableBody"></tbody>
+          </table>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
