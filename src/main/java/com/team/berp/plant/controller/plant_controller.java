@@ -28,20 +28,20 @@ public class plant_controller {
 	/*Model m: 클라이언트에게 전달할 데이터를 저장하는 객체
 	 * */
 	
-	@GetMapping("/pages/plant.html") //url 경로 - 해당 경로로 접속하면 실행됨
-	public String plant(@RequestParam(value = "workplace_id", required = false) String workplace_id, Model m) {
-		List<plant_DTO> list = ps.workplace_list(workplace_id); //특정 id로 리스트 조회
+	@GetMapping("/plant") //url 경로 - 해당 경로로 접속하면 실행됨
+	public String plant(@RequestParam(value = "workplace_id", required = false) String work_id, Model m) {
+		List<plant_DTO> list = ps.workplace_list(work_id); //특정 id로 리스트 조회
 		
 		  // 파라미터가 안 넘어왔을 경우 전체 목록 조회
-	    if (workplace_id == null || workplace_id.isEmpty()) {
+	    if (work_id == null || work_id.isEmpty()) {
 	        list = ps.workplace_list_all();  // 💡 이 메서드를 추가해야 함!
 	    } else {
-	        list = ps.workplace_list(workplace_id);
+	        list = ps.workplace_list(work_id);
 	    }
 		
 		m.addAttribute("list", list);
 		
-		System.out.println("넘어온 workplace_id = " + workplace_id);
+		System.out.println("넘어온 workplace_id = " + work_id);
 		System.out.println("조회된 리스트 개수 = " + list.size());
 		
 		return "plant/plant"; //파일 경로 - src/main/resources/templates/plant/plant(.html)
@@ -56,8 +56,8 @@ public class plant_controller {
 	}
 	
 	@PostMapping("/plant/delete")
-	public String deleteworkplace(@RequestParam(value="workplace_id") long workplace_id) {
-		 ps.workplace_list_del(workplace_id);
+	public String deleteworkplace(@RequestParam(value="work_id") long work_id) {
+		 ps.workplace_list_del(work_id);
 		return "redirect:/pages/plant.html";
 	}
 	
