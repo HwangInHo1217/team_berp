@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.team.berp.plant.mapper.plant_mapper">
+<!-- 
+resultMap: 비즈니스 로직으로부터 반환할 결과값을 담은 객체
+resultType: 비즈니스 로직으로부터 반환할 결과값의 자료형
+   - 조회 결과 갑을 저장하기 위한 데이터 타입(데이터 하나에 대한 타입 지정)
+parameterMap
+parameterType: 전달받은 파라미터 데이터 타입 지정
+
+ -->
+ 
+<!-- 사업장 정보 등록 -->
+<insert id="workplace_info" parameterType="com.team.berp.plant.DTO.plant_DTO">
+insert into workplace(work_id, work_name, work_ceonm, work_no, work_cond, work_item, work_tel, work_fax, work_addr, work_mainadd, work_detailadd, work_manname, work_manemail, work_mantel) 
+VALUES (#{work_id}, #{work_name}, #{work_ceonm}, #{work_no}, #{work_cond}, #{work_item}, #{work_tel}, #{work_fax}, #{work_addr}, #{work_mainadd}, #{work_detailadd},#{work_manname}, #{work_manemail}, #{work_mantel})
+</insert> 
+
+<!-- 등록한 사업장 정보 가져와서 게시판(사업장 목록)에 출력 -->
+<!-- 
+ , work_president_nm=#{work_president_nm}, work_cond=#{work_cond}, work_item=#{work_item}, work_tel=#{work_tel}, work_fax=#{work_fax}, work_addr=#{work_addr}, work_manname=#{work_manname}, work_manemail=#{work_manemail}, work_mantel=#{work_mantel}
+ -->
+<select id="workplace_list" resultType="com.team.berp.plant.DTO.plant_DTO" parameterType="String">
+select work_id, work_name, work_ceonm, work_cond, work_item, work_tel, work_fax, work_addr, work_mainadd, work_detailadd, work_manname, work_manemail, work_mantel
+from workplace where work_id=#{work_id}
+</select>
+
+<select id="workplace_list_all" resultType="com.team.berp.plant.DTO.plant_DTO">
+select * from workplace
+</select>
+
+<delete id="workplace_list_del" parameterType="String">
+delete from workplace where work_id=#{work_id}
+</delete>
+
+</mapper>

@@ -1,0 +1,63 @@
+<!-- 출고 등록/수정 모달 -->
+<div class="modal fade" id="shipmentRegisterModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form id="shipmentForm" method="post" action="/shipment/add">
+        <div class="modal-header">
+          <h5 class="modal-title">출고 등록</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-2">
+            <label class="form-label">출고일자</label>
+            <input type="date" class="form-control" name="shipment_date" id="shipmentDate" required />
+          </div>
+          <div class="mb-2">
+            <label class="form-label">고객사</label>
+            <select class="form-select" name="customer_id" id="customerId" required>
+              <option value="">-- 고객사 선택 --</option>
+              <option value="1">삼성전자</option>
+              <option value="2">LG전자</option>
+            </select>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">품목</label>
+            <select class="form-select" name="item_id" id="itemId" required>
+              <option value="">-- 품목 선택 --</option>
+              <option value="P001">P001 - 완제품 A</option>
+              <option value="P002">P002 - 완제품 B</option>
+            </select>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">수량</label>
+            <input type="number" class="form-control" name="quantity" id="quantity" required min="1" />
+          </div>
+          <div class="mb-2">
+            <label class="form-label">단위</label>
+            <input type="text" class="form-control" name="unit" id="unit" value="EA" required />
+          </div>
+          <div class="mb-2">
+            <label class="form-label">출고 창고</label>
+            <select class="form-select" name="warehouse_id" id="warehouseId" required>
+              <option value="">-- 창고 선택 --</option>
+              <option value="1">완제품창고</option>
+              <option value="2">자재창고</option>
+            </select>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">담당자</label>
+            <input type="text" class="form-control" name="manager" id="manager" required />
+          </div>
+          <div class="mb-2">
+            <label class="form-label">비고</label>
+            <textarea class="form-control" name="note" id="note" rows="2"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="reset" class="btn btn-secondary">초기화</button>
+          <button type="submit" class="btn btn-primary" id="submitBtn">등록</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

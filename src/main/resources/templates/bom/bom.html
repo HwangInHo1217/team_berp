@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BOM(품목관리)</title>
+
+<!-- ✅ Bootstrap 5 CSS -->
+<link
+	href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+	rel="stylesheet" />
+
+<!-- ✅ Bootstrap 5 JS (모달, 드롭다운 등 동작 필수) -->
+<script
+	src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+
+<body class="d-flex flex-column" style="min-height: 100vh;">
+	<!-- ✅ 상단 공통 헤더 자리 -->
+	<div th:replace="~{/layouts/header :: header}"></div>
+
+	<!-- ✅ 좌측 사이드바 + 본문 레이아웃 -->
+	<div class="d-flex flex-grow-1">
+		<div th:replace="~{/layouts/sidebar :: sidebar}"></div>
+
+		<!-- ✅ 메인 본문 -->
+		<main class="p-4 flex-fill">
+			<div class="container">
+				<h2 class="mb-4">BOM (품목관리)</h2>
+
+				<!-- ✅ 검색 & 버튼 영역 (드롭다운 검색으로 개선) -->
+				<form id="searchForm" method="get" th:action="@{/bom/bom}"
+					class="row mb-3">
+					<div class="row mb-3">
+						<div class="col-md-5 d-flex">
+							<select id="searchType" name="type" class="form-select me-2">
+								<option value="name" th:selected="${type} == 'name'">품목명</option>
+								<option value="code" th:selected="${type} == 'code'">품목코드</option>
+							</select> <input type="text" name="keyword" th:value="${keyword}"
+								class="form-control me-2" placeholder="검색어 입력" />
+							<button class="btn btn-outline-secondary" type="submit">검색</button>
+						</div>
+
+						<div class="col-md-7 text-end">
+
+							<button class="btn btn-danger me-2"
+								onclick="deleteSelectedBoms()">삭제</button>
+
+							<button type="button" id="openBomRegisterModalBtn"
+								class="btn btn-primary" data-bs-toggle="modal"
+								data-bs-target="#bomRegisterModal" title="새로운 BOM 등록">+
+								BOM 등록</button>
+						</div>
+					</div>
+				</form>
+
+				<!-- ✅ 품목 테이블 -->
+				<div class="table-responsive">
+					<table class="table table-bordered text-center align-middle">
+						<thead class="table-light">
+							<tr>
+								<th><input type="checkbox" /></th>
+								<th>품목코드</th>
+								<th>품목명</th>
+								<th>품목유형</th>
+								<th>규격</th>
+								<th>단위</th>
+								<th>사용여부</th>
+								<th>구성보기</th>
+								<th>자재 상세 보기</th>
+								<th>수정</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr th:each="item : ${product}">
+								<td><input type="checkbox" th:value="${item.id}" /></td>
+								<td th:text="${item.code}">품목코드</td>
+								<td th:text="${item.name}">품목명</td>
+								<td th:text="${item.type}">품목유형</td>
+								<td th:text="${item.spec}">규격</td>
+								<td th:text="${item.unit}">단위</td>
+								<td th:text="${item.use}">Y/N</td>
+
+								<td>
+									<!-- 권장 방식: data-*에 값 저장하고 JS에서 꺼내기 -->
+									<button class="btn btn-sm btn-info" th:data-id="${item.id}"
+										onclick="openBomViewModal(this.getAttribute('data-id'))">보기</button>
+
+
+								</td>
+
+
+								<td>
+									<button class="btn btn-sm btn-outline-info"
+										th:attr="data-code=${item.code}"
+										onclick="openItemDetailModal(this.getAttribute('data-code'))">보기</button>
+								</td>
+								<td>
+									<button class="btn btn-sm btn-outline-secondary"
+										th:attr="data-id=${item.id}" onclick="openBomEditModal(this)">수정</button>
+
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+
+				<!-- ✅ 페이징 -->
+				<nav>
+					<ul class="pagination justify-content-center mt-3">
+						<li class="page-item disabled"><a class="page-link" href="#">이전</a></li>
+						<li class="page-item active"><a class="page-link" href="#">1</a></li>
+						<li class="page-item"><a class="page-link" href="#">2</a></li>
+						<li class="page-item"><a class="page-link" href="#">다음</a></li>
+					</ul>
+				</nav>
+			</div>
+		</main>
+	</div>
+
+	<div th:replace="~{/bom/bom-edit-modal :: bomEditModal}"></div>
+	<div th:replace="~{/bom/bom-modal :: bomRegisterModal}"></div>
+	<div th:replace="~{/bom/bom-view-modal :: bomViewModal}"></div>
+	<div th:replace="~{/bom/item-detail-modal :: itemDetailModal}"></div>
+	<div th:replace="~{/layouts/footer :: footer}"></div>
+	<!-- ✅ 자재 목록을 JS에서 사용할 수 있도록 선언 -->
+
+
+</body>
+<script th:inline="javascript">
+  /*<![CDATA[*/
+  window.allRawItemOptions = [
+    /*[# th:each="item : ${selectMaterialList}" ]*/
+    {
+      value: /*[[${item.id}]]*/,
+      code: /*[[${item.code}]]*/,
+      label: '[[${item.code}]] - [[${item.name}]]'
+    }/*[# th:if="${!itemStat.last}" ]*/,/*[/]*/
+    /*[/]*/
+  ];
+  /*]]>*/
+</script>
+
+
+<script src="/js/bom/bom.js"></script>
+</html>

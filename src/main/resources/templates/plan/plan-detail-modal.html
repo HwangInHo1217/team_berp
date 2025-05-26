@@ -1,0 +1,50 @@
+<!-- 생산계획 상세 모달 -->
+<div class="modal fade" id="planDetailModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">생산계획 상세정보</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+      </div>
+      <div class="modal-body">
+        <table class="table table-bordered">
+          <tbody>
+            <tr>
+              <th>계획번호</th>
+              <td id="planDetailPlanNo"></td>
+              <th>계획일자</th>
+              <td id="planDetailPlanDate"></td>
+            </tr>
+            <tr>
+              <th>품목코드</th>
+              <td id="planDetailItemCode"></td>
+              <th>품목명</th>
+              <td id="planDetailItemName"></td>
+            </tr>
+            <tr>
+              <th>계획수량</th>
+              <td id="planDetailQuantity"></td>
+              <th>단위</th>
+              <td id="planDetailUnit"></td>
+            </tr>
+            <tr>
+              <th>납기일</th>
+              <td id="planDetailDueDate"></td>
+              <th>생산상태</th>
+              <td id="planDetailStatus"></td>
+            </tr>
+            <tr>
+              <th>담당자</th>
+              <td id="planDetailManager"></td>
+              <th>비고</th>
+              <td id="planDetailNote"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+      </div>
+    </div>
+  </div>
+</div>
