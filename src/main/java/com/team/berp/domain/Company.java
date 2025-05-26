@@ -1,3 +1,4 @@
+
 package com.team.berp.domain;
 
 import jakarta.persistence.*;
@@ -50,5 +51,6 @@ public class Company {
 
     @Column(nullable = false, length = 1)
     private String useYn = "Y";
+
 
 }

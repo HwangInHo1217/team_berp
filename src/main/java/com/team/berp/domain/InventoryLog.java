@@ -1,20 +1,26 @@
-// File: /Team_BERP/src/main/java/com/team/berp/domain/InventoryLog.java
 package com.team.berp.domain;
 
 import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "inventory_log")
+@Getter
+@Setter
+@NoArgsConstructor
 public class InventoryLog {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer logId;
-
-    public enum LogType { IN, OUT }
+    @Column(name = "log_id")
+    private Long id;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "log_type", nullable = false, length = 20)
     private LogType logType;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -28,92 +34,25 @@ public class InventoryLog {
     @Column(nullable = false)
     private Integer quantity;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_line_item_id")
-    private OrderLineItem orderLineItem;
-
-    @Column
+    @Column(name = "log_datetime")
     private LocalDateTime logDatetime;
 
     @Column(columnDefinition = "TEXT")
     private String comment;
 
-    public enum LogStatus { PENDING, CONFIRMED }
-
     @Enumerated(EnumType.STRING)
+    @Column(name = "log_status", length = 20)
     private LogStatus logStatus;
 
-    // getters and setters
-    public Integer getLogId() {
-        return logId;
-    }
+    // Optional: 출고 근거 (nullable)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_line_item_id")
+    private OrderLineItem orderLineItem; // 이 클래스가 아직 없으면 주석처리해도 됨
 
-    public void setLogId(Integer logId) {
-        this.logId = logId;
-    }
-
-    public LogType getLogType() {
-        return logType;
-    }
-
-    public void setLogType(LogType logType) {
-        this.logType = logType;
-    }
-
-    public Item getItem() {
-        return item;
-    }
-
-    public void setItem(Item item) {
-        this.item = item;
-    }
-
-    public Warehouse getWarehouse() {
-        return warehouse;
-    }
-
-    public void setWarehouse(Warehouse warehouse) {
-        this.warehouse = warehouse;
-    }
-
-    public Integer getQuantity() {
-        return quantity;
-    }
-
-    public void setQuantity(Integer quantity) {
-        this.quantity = quantity;
-    }
-
-    public OrderLineItem getOrderLineItem() {
-        return orderLineItem;
-    }
-
-    public void setOrderLineItem(OrderLineItem orderLineItem) {
-        this.orderLineItem = orderLineItem;
-    }
-
-    public LocalDateTime getLogDatetime() {
-        return logDatetime;
-    }
-
-    public void setLogDatetime(LocalDateTime logDatetime) {
-        this.logDatetime = logDatetime;
-    }
-
-    public String getComment() {
-        return comment;
-    }
-
-    public void setComment(String comment) {
-        this.comment = comment;
-    }
-
-    public LogStatus getLogStatus() {
-        return logStatus;
-    }
-
-    public void setLogStatus(LogStatus logStatus) {
-        this.logStatus = logStatus;
+    @PrePersist
+    protected void onCreate() {
+        if (logDatetime == null) {
+            logDatetime = LocalDateTime.now();
+        }
     }
 }
-
