@@ -1,0 +1,108 @@
+<!-- /pages/bom/bom-modal.html -->
+<div th:fragment="bomRegisterModal">
+	<div class="modal fade" id="bomRegisterModal" tabindex="-1"
+		aria-labelledby="bomRegisterModalLabel" aria-hidden="true">
+		<div class="modal-dialog modal-xl"> <!-- ⬅ modal-lg → modal-xl로 확장 -->
+			<div class="modal-content">
+				<form id="bomForm" method="post" action="#">
+					<div class="modal-header">
+						<h5 class="modal-title" id="bomRegisterModalLabel">BOM 등록</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+					</div>
+
+					<div class="modal-body">
+						<!-- ✅ 완제품 선택 -->
+						<div class="mb-3">
+							<label class="form-label">완제품 (Parent Item)</label>
+							<select class="form-select" name="parent_item_id" required>
+								<option value="">-- 선택하세요 --</option>
+								<option th:each="item : ${selectProductList}" th:value="${item.id}"
+									th:text="${item.code + ' - ' + item.name}"></option>
+							</select>
+						</div>
+
+						<!-- ✅ 자재 구성 행 -->
+						<div id="child-items-area">
+							<div class="row g-2 align-items-end mb-2">
+								<div class="col-md-2">
+									<label class="form-label">자재</label>
+									<select class="form-select" name="child_item_id[]" required>
+										<option value="">-- 선택 --</option>
+										<option th:each="item : ${selectMaterialList}" th:value="${item.id}"
+											th:text="${item.code + ' - ' + item.name}"></option>
+									</select>
+								</div>
+
+								<div class="col-md-1">
+									<label class="form-label">순번</label>
+									<input type="number" name="seq_no[]" class="form-control" />
+								</div>
+
+								<div class="col-md-1">
+									<label class="form-label">수량</label>
+									<input type="number" name="qty[]" class="form-control" placeholder="예: 10" required />
+								</div>
+
+								<div class="col-md-1">
+									<label class="form-label">로스율</label>
+									<input type="number" step="0.01" name="loss_rt[]" class="form-control" placeholder="%" />
+								</div>
+
+								<div class="col-md-2">
+									<label class="form-label">재료비</label>
+									<input type="number" name="item_price[]" class="form-control" placeholder="원" />
+								</div>
+
+								<div class="col-md-3">
+									<label class="form-label">비고</label>
+									<input type="text" name="remark[]" class="form-control" />
+								</div>
+
+								<div class="col-md-2">
+									<button type="button" class="btn btn-outline-secondary w-100" onclick="addChildRow()">+ 자재 추가</button>
+								</div>
+							</div>
+						</div>
+
+						<!-- ✅ JS 템플릿 (동적 추가용) -->
+						<template id="child-item-select-template">
+							<div class="row g-2 align-items-end mb-2">
+								<div class="col-md-2">
+									<select class="form-select" name="child_item_id[]" required>
+										<option value="">-- 선택 --</option>
+										<option th:each="item : ${selectMaterialList}" th:value="${item.id}"
+											th:text="${item.code + ' - ' + item.name}"></option>
+									</select>
+								</div>
+								<div class="col-md-1">
+									<input type="number" name="seq_no[]" class="form-control" />
+								</div>
+								<div class="col-md-1">
+									<input type="number" name="qty[]" class="form-control" placeholder="예: 10" required />
+								</div>
+								<div class="col-md-1">
+									<input type="number" step="0.01" name="loss_rt[]" class="form-control" placeholder="%" />
+								</div>
+								<div class="col-md-2">
+									<input type="number" name="item_price[]" class="form-control" placeholder="원" />
+								</div>
+								<div class="col-md-3">
+									<input type="text" name="remark[]" class="form-control" />
+								</div>
+								<div class="col-md-2">
+									<button type="button" class="btn btn-outline-danger w-100" onclick="this.closest('.row').remove()">삭제</button>
+								</div>
+							</div>
+						</template>
+
+					</div>
+
+					<div class="modal-footer">
+						<button type="reset" class="btn btn-secondary">초기화</button>
+						<button type="submit" class="btn btn-primary">등록</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+</div>

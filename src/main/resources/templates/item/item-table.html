@@ -1,0 +1,43 @@
+<!-- 전체 품목 테이블 -->
+<div th:fragment="itemTable (items)">
+	<table class="table table-bordered text-center align-middle">
+		<thead class="table-light">
+			<tr>
+				<th><input type="checkbox" /></th>
+				<th>품목 코드</th>
+				<th>품목명</th>
+				<th>품목유형</th>
+				<th>규격</th>
+				<th>단위</th>
+				<th>사용 여부</th>
+				<th>관리</th>
+			</tr>
+		</thead>
+		<tbody>
+			<th:block th:if="${itemPage != null and !#lists.isEmpty(itemPage)}">
+				<tr th:each="item : ${itemPage}">
+					<td><input type="checkbox" name="ids" th:value="${item.id}" /></td>
+					<td th:text="${item.code}">MAT001</td>
+					<td th:text="${item.name}">품목명</td>
+					<td th:text="${item.type}">raw</td>
+					<td th:text="${item.spec}">규격</td>
+					<td th:text="${item.unit}">EA</td>
+					<td th:text="${item.use}">Y</td>
+					<td>
+						<!-- 수정 버튼에 data-* 속성만 설정 -->
+						<button type="button" class="btn btn-sm btn-outline-primary"
+							th:attr="data-id=${item.id}, data-name=${item.name}, data-type=${item.type.name()}, data-spec=${item.spec}, data-unit=${item.unit}, data-use=${item.use}"
+							onclick="openEditModal(this)">수정</button>
+
+
+					</td>
+				</tr>
+			</th:block>
+			<th:block th:if="${itemPage == null or #lists.isEmpty(itemPage)}">
+				<tr>
+					<td colspan="7">등록된 품목이 없습니다.</td>
+				</tr>
+			</th:block>
+		</tbody>
+	</table>
+</div>

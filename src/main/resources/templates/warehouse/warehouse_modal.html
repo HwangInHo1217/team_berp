@@ -1,0 +1,73 @@
+<!-- warehouse_modal.html -->
+<!--  창고 등록/수정 모달 창 -->
+<div class="modal fade" id="warehouseRegisterModal" tabindex="-1" aria-labelledby="warehouseRegisterModalLabel" aria-hidden="true" th:fragment="warehouse_modal">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <!-- 📄 창고 등록/수정 form (동일한 form을 등록·수정 모두에 사용) -->
+      <form id="warehouseForm" method="post" action="#">
+        <!-- 🟦 모달 상단: 제목 및 닫기 버튼 -->
+        <div class="modal-header">
+          <h5 class="modal-title" id="warehouseRegisterModalLabel">창고 등록</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+        </div>
+		<!-- 🧾 모달 본문: 입력 항목들 -->
+        <div class="modal-body">
+          <!-- (숨김) 창고 ID 필드 - 수정 시 서버에 전달됨 -->
+          <input type="hidden" id="warehouseId" name="warehouseId">
+          
+          <!-- 🔢 창고 코드 입력 및 중복확인 -->
+          <div class="mb-3">
+            <label for="warehouseCode" class="form-label">창고 코드</label>
+            <div class="input-group">
+              <input type="text" class="form-control" id="warehouseCode" name="warehouseCode" 
+                     placeholder="예: RWWH0001, PDWH0002" />
+              <button type="button" class="btn btn-outline-info" id="checkDuplicateBtn">중복확인</button>
+            </div>
+            <!-- ✅ 중복확인 결과 메시지 출력 영역 -->
+            <div id="codeCheckResult" class="form-text mt-1"></div>
+            <!-- (숨김) 중복확인 여부 플래그 -->
+            <input type="hidden" id="isCodeChecked" value="false">
+          </div>
+		
+		  <!-- 🏷️ 창고명 입력 -->
+          <div class="mb-3">
+            <label for="warehouseName" class="form-label">창고 명</label>
+            <input type="text" class="form-control" id="warehouseName" name="warehouseName" required />
+          </div>
+		  
+		  <!-- 🏭 창고 구분 선택 (자재 / 완제품) -->
+          <div class="mb-3">
+            <label for="warehouseType" class="form-label">창고 구분</label>
+            <select class="form-select" id="warehouseType" name="warehouseType" required>
+              <option value="">-- 선택 --</option>
+              <option value="RAW">자재 창고</option>
+              <option value="PRODUCT">완제품 창고</option>
+            </select>
+          </div>
+		  
+		  <!-- 📝 설명 입력 -->
+          <div class="mb-3">
+            <label for="description" class="form-label">설명</label>
+            <textarea class="form-control" id="description" name="description" rows="2"></textarea>
+          </div>
+	      
+	      
+	      <!-- ✅ 사용 여부 선택 -->
+          <div class="mb-3">
+            <label for="useYn" class="form-label">사용 여부</label>
+            <select class="form-select" id="useYn" name="useYn" required>
+              <option value="Y" selected>사용</option>
+              <option value="N">미사용</option>
+            </select>
+          </div>
+        </div>
+		
+		<!-- 🟩 모달 하단: 초기화 및 등록 버튼 -->
+        <div class="modal-footer">
+          <button type="reset" class="btn btn-secondary">초기화</button>
+          <button type="submit" class="btn btn-primary">등록</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
