@@ -1,202 +1,174 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>거래처 관리</title>
-  <link
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-    rel="stylesheet" />
-  <script
-    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <link rel="stylesheet" href="/assets/css/style.css" />
+  <link rel="stylesheet" th:href="@{/assets/css/style.css}" />
+  <link rel="stylesheet" th:href="@{https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css}" />
+  <script th:src="@{https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js}"></script>
 </head>
 <body class="d-flex flex-column" style="min-height: 100vh;">
-  
   <!-- 공통 헤더 -->
-  <div th:replace="~{/layouts/header :: header}"></div>
-
+  <div th:replace="~{layouts/header :: header}"></div>
   <div class="d-flex flex-grow-1">
-    
     <!-- 공통 사이드바 -->
-    <div th:replace="~{/layouts/sidebar :: sidebar}"></div>
-
+    <div th:replace="~{layouts/sidebar :: sidebar}"></div>
     <main class="p-4 flex-fill">
       <div class="container">
         <h2 class="mb-4">거래처 관리</h2>
-
         <!-- 🔹 탭 버튼 -->
         <div class="mb-3">
           <button class="btn btn-outline-primary active me-2" id="tab-client">고객사</button>
           <button class="btn btn-outline-secondary" id="tab-supplier">매입처</button>
         </div>
-
-        <!-- 🔍 검색 및 등록/삭제 버튼 -->
-        <div class="row align-items-center mb-3">
-          <div class="col-md-6 d-flex">
-            <select class="form-select w-25 me-2" id="searchType">
-              <option value="name">거래처명</option>
-              <option value="ceo">대표자명</option>
-            </select>
-            <input type="text" class="form-control me-2" id="searchKeyword" placeholder="검색어 입력" />
-            <button class="btn btn-outline-secondary" onclick="searchClients()">검색</button>
-          </div>
-          <div class="col-md-6 text-end">
-            <button class="btn btn-danger me-2">삭제</button>
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#clientRegisterModal">+ 거래처 등록</button>
-          </div>
-        </div>
-
+        <!-- 🔍 검색 및 등록/삭제 버튼 (수정됨) -->
+		<div class="row align-items-center mb-3">
+		  <div class="col-md-7 d-flex">
+		    <!-- ⬇️ 여기 filterType 셀렉트 추가 -->
+		    <select id="filterType" class="form-select w-25 me-2">
+		      <option value="">전체</option>
+		      <option value="CUSTOMER">고객사</option>
+		      <option value="SUPPLIER">매입처</option>
+		      <option value="BOTH">겸용</option>
+		    </select>
+		    <select class="form-select w-25 me-2" id="searchType">
+		      <option value="name">고객사명</option>
+		      <option value="ceo">대표자명</option>
+		    </select>
+		    <input type="text" class="form-control me-2" id="searchKeyword" placeholder="검색어 입력" />
+		    <button class="btn btn-outline-secondary" onclick="searchClients()">검색</button>
+		  </div>
+		  <div class="col-md-5 text-end">
+		    <button class="btn btn-danger me-2" onclick="deleteChecked()">삭제</button>
+		    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#clientRegisterModal">+ 거래처 등록</button>
+		  </div>
+		</div>
         <!-- 📋 거래처 목록 테이블 -->
         <div class="table-responsive">
           <table class="table table-bordered table-hover align-middle text-center">
             <thead class="table-light">
               <tr>
-                <th><input type="checkbox" /></th>
+                <th><input type="checkbox" id="all-check" /></th>
                 <th>거래처명</th>
                 <th>대표자명</th>
                 <th>전화번호</th>
-                <th>이메일</th>
+                <th>팩스</th>
+                <th>상태</th>
+                <th>상세</th>
                 <th>수정</th>
                 <th>삭제</th>
               </tr>
             </thead>
             <tbody id="client-table">
-              <tr>
-                <td><input type="checkbox" /></td>
-                <td>삼성전자</td>
-                <td>이재용</td>
-                <td>02-1234-5678</td>
-                <td>samsung@example.com</td>
-                <td>
-                  <button class="btn btn-sm btn-warning"
-                    onclick="openEditModal('삼성전자', '이재용', '123-45-67890', '02-1234-5678', 'samsung@example.com', '02-1234-9999', '서울시 강남구 테헤란로 1', '제조업', '반도체', 'CLIENT')">
-                    수정
-                  </button>
-                </td>
-                <td><button class="btn btn-sm btn-danger">삭제</button></td>
-              </tr>
-              <tr>
-                <td><input type="checkbox" /></td>
-                <td>LG화학</td>
-                <td>구광모</td>
-                <td>02-9876-5432</td>
-                <td>lgchem@example.com</td>
-                <td>
-                  <button class="btn btn-sm btn-warning"
-                    onclick="openEditModal('LG화학', '구광모', '123-45-67390', '02-1234-5678', '구광모@example.com', '02-1234-8888', '서울시 강남구', '제조업', '반도체', 'CLIENT')">
-                    수정
-                  </button>
-                </td>
-                <td><button class="btn btn-sm btn-danger">삭제</button></td>
-              </tr>
+              <!-- JS로 데이터 렌더링 -->
             </tbody>
           </table>
         </div>
-
         <!-- ◀️ 페이징 -->
         <nav>
-          <ul class="pagination justify-content-center mt-3">
-            <li class="page-item disabled"><a class="page-link" href="#">이전</a></li>
-            <li class="page-item active"><a class="page-link" href="#">1</a></li>
-            <li class="page-item"><a class="page-link" href="#">2</a></li>
-            <li class="page-item"><a class="page-link" href="#">3</a></li>
-            <li class="page-item"><a class="page-link" href="#">다음</a></li>
-          </ul>
+          <ul class="pagination justify-content-center mt-3"></ul>
         </nav>
+      </div>
+      <!-- 거래처 등록/수정 모달 -->
+      <div class="modal fade" id="clientRegisterModal" tabindex="-1" aria-labelledby="clientRegisterModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+          <div class="modal-content">
+            <form id="clientRegisterForm">
+              <div class="modal-header">
+                <h5 class="modal-title" id="clientRegisterModalLabel">거래처 등록</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+              </div>
+              <div class="modal-body">
+                <input type="hidden" id="editCompanyId" name="editCompanyId" />
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <label for="companyName" class="form-label">회사명</label>
+                    <input type="text" class="form-control" id="companyName" name="companyName" required />
+                  </div>
+                  <div class="col-md-6">
+                    <label for="ceoName" class="form-label">대표자명</label>
+                    <input type="text" class="form-control" id="ceoName" name="ceoName" required />
+                  </div>
+                </div>
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <label for="bizNum" class="form-label">사업자 번호</label>
+                    <input type="text" class="form-control" id="bizNum" name="bizNum" />
+                  </div>
+                  <div class="col-md-6">
+                    <label for="phone" class="form-label">전화번호</label>
+                    <input type="tel" class="form-control" id="phone" name="phone" />
+                  </div>
+                </div>
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <label for="fax" class="form-label">팩스</label>
+                    <input type="text" class="form-control" id="fax" name="fax" />
+                  </div>
+                  <div class="col-md-6">
+                    <label for="mainAddress" class="form-label">주소</label>
+                    <input type="text" class="form-control" id="mainAddress" name="mainAddress" />
+                  </div>
+                </div>
+                <div class="row mb-3">
+                  <div class="col-md-6">
+                    <label for="type" class="form-label">업태</label>
+                    <input type="text" class="form-control" id="type" name="type" />
+                  </div>
+                  <div class="col-md-6">
+                    <label for="item" class="form-label">종목</label>
+                    <input type="text" class="form-control" id="item" name="item" />
+                  </div>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">거래처 유형</label>
+                  <div>
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="radio" name="clientType" id="client" value="CUSTOMER" checked />
+                      <label class="form-check-label" for="client">고객사</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="radio" name="clientType" id="supplier" value="SUPPLIER" />
+                      <label class="form-check-label" for="supplier">매입처</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="radio" name="clientType" id="both" value="BOTH" />
+                      <label class="form-check-label" for="both">겸용</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="reset" class="btn btn-secondary">초기화</button>
+                <button type="submit" class="btn btn-primary" id="modalSubmitBtn">등록</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+      <!-- 거래처 상세정보 모달: form 밖에 위치 -->
+      <div class="modal fade" id="clientDetailModal" tabindex="-1" aria-labelledby="clientDetailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="clientDetailModalLabel">거래처 상세정보</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+            </div>
+            <div class="modal-body" id="clientDetailBody">
+              <!-- JS로 내용 채움 -->
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+            </div>
+          </div>
+        </div>
       </div>
     </main>
   </div>
-
-  <!-- 거래처 등록 모달 -->
-  <div class="modal fade" id="clientRegisterModal" tabindex="-1" aria-labelledby="clientRegisterModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-        <form id="clientRegisterForm" method="post" action="#">
-          <div class="modal-header">
-            <h5 class="modal-title" id="clientRegisterModalLabel">거래처 등록</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
-          </div>
-          <div class="modal-body">
-            <div class="row mb-3">
-              <div class="col-md-6">
-                <label for="companyName" class="form-label">회사명</label>
-                <input type="text" class="form-control" id="companyName" name="companyName" required />
-              </div>
-              <div class="col-md-6">
-                <label for="ceoName" class="form-label">대표자명</label>
-                <input type="text" class="form-control" id="ceoName" name="ceoName" required />
-              </div>
-            </div>
-
-            <div class="row mb-3">
-              <div class="col-md-6">
-                <label for="bizNum" class="form-label">사업자 번호</label>
-                <input type="text" class="form-control" id="bizNum" name="bizNum" placeholder="000-00-00000" />
-              </div>
-              <div class="col-md-6">
-                <label for="phone" class="form-label">전화번호</label>
-                <input type="tel" class="form-control" id="phone" name="phone" placeholder="예: 02-1234-5678" />
-              </div>
-            </div>
-
-            <div class="row mb-3">
-              <div class="col-md-6">
-                <label for="email" class="form-label">이메일</label>
-                <input type="email" class="form-control" id="email" name="email" />
-              </div>
-              <div class="col-md-6">
-                <label for="fax" class="form-label">팩스</label>
-                <input type="text" class="form-control" id="fax" name="fax" />
-              </div>
-            </div>
-
-            <div class="mb-3">
-              <label class="form-label">주소</label>
-              <input type="text" id="addressType" class="form-control mb-2" placeholder="도로명 or 지번 주소" readonly />
-              <input type="text" id="mainAddress" name="mainAddress" class="form-control mb-2" placeholder="기본 주소" readonly />
-              <input type="text" id="detailAddress" name="detailAddress" class="form-control" placeholder="상세 주소 입력" />
-              <button type="button" class="btn btn-outline-secondary mt-2" onclick="execDaumPostcode()">주소 검색</button>
-            </div>
-
-            <div class="row mb-3">
-              <div class="col-md-6">
-                <label for="type" class="form-label">업태</label>
-                <input type="text" class="form-control" id="type" name="type" />
-              </div>
-              <div class="col-md-6">
-                <label for="item" class="form-label">종목</label>
-                <input type="text" class="form-control" id="item" name="item" />
-              </div>
-            </div>
-
-            <div class="mb-3">
-              <label class="form-label">거래처 유형</label>
-              <div>
-                <div class="form-check form-check-inline">
-                  <input class="form-check-input" type="radio" name="clientType" id="client" value="CLIENT" checked />
-                  <label class="form-check-label" for="client">고객사</label>
-                </div>
-                <div class="form-check form-check-inline">
-                  <input class="form-check-input" type="radio" name="clientType" id="supplier" value="SUPPLIER" />
-                  <label class="form-check-label" for="supplier">매입처</label>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="modal-footer">
-            <button type="reset" class="btn btn-secondary">초기화</button>
-            <button type="submit" class="btn btn-primary">등록</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
   <!-- 공통 푸터 -->
-  <div th:replace="~{/layouts/footer :: footer}"></div>
-
+  <div th:replace="~{layouts/footer :: footer}"></div>
+  <!-- 분리된 JS 파일 불러오기 -->
+  <script src="/js/client/client.js"></script>
 </body>
-<script src="/js/client/client.js"></script>
 </html>
