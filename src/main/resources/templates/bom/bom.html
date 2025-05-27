@@ -28,31 +28,45 @@
 			<div class="container">
 				<h2 class="mb-4">BOM (품목관리)</h2>
 
-				<!-- ✅ 검색 & 버튼 영역 (드롭다운 검색으로 개선) -->
+				<!-- 🔍 검색 & 버튼 영역 -->
 				<form id="searchForm" method="get" th:action="@{/bom/bom}"
 					class="row mb-3">
-					<div class="row mb-3">
-						<div class="col-md-5 d-flex">
-							<select id="searchType" name="type" class="form-select me-2">
-								<option value="name" th:selected="${type} == 'name'">품목명</option>
-								<option value="code" th:selected="${type} == 'code'">품목코드</option>
-							</select> <input type="text" name="keyword" th:value="${keyword}"
-								class="form-control me-2" placeholder="검색어 입력" />
-							<button class="btn btn-outline-secondary" type="submit">검색</button>
-						</div>
+					<!-- 좌측: 검색 조건 -->
+					<div class="col-md-6 d-flex">
+						<!-- 검색 유형 -->
+						<select id="searchType" name="type"
+							class="form-select w-auto me-2">
+							<option value="name" th:selected="${type} == 'name'">품목명</option>
+							<option value="code" th:selected="${type} == 'code'">품목코드</option>
+						</select>
+						<!-- 검색어 입력 -->
+						<input type="text" name="keyword" th:value="${keyword}"
+							class="form-control me-2" placeholder="검색어 입력" />
+						<!-- 검색 버튼 -->
+						<button class="btn btn-outline-secondary" type="submit">검색</button>
+					</div>
 
-						<div class="col-md-7 text-end">
+					<!-- 우측: 사용여부 필터 + 삭제/등록 버튼 -->
+					<div class="col-md-6 d-flex justify-content-end align-items-center">
+						<!-- 사용여부 필터 -->
+						<select name="useYn" class="form-select w-auto me-2">
+							<option value="" th:selected="${useYn} == null">전체</option>
+							<option value="Y" th:selected="${useYn} == 'Y'">Y (사용중)</option>
+							<option value="N" th:selected="${useYn} == 'N'">N (미사용)</option>
+						</select>
 
-							<button class="btn btn-danger me-2"
-								onclick="deleteSelectedBoms()">삭제</button>
+						<!-- 삭제 버튼 -->
+						<button class="btn btn-danger me-2" type="button"
+							onclick="deleteSelectedBoms()">삭제</button>
 
-							<button type="button" id="openBomRegisterModalBtn"
-								class="btn btn-primary" data-bs-toggle="modal"
-								data-bs-target="#bomRegisterModal" title="새로운 BOM 등록">+
-								BOM 등록</button>
-						</div>
+						<!-- BOM 등록 버튼 -->
+						<button type="button" id="openBomRegisterModalBtn"
+							class="btn btn-primary" data-bs-toggle="modal"
+							data-bs-target="#bomRegisterModal">+ BOM 등록</button>
 					</div>
 				</form>
+
+
 
 				<!-- ✅ 품목 테이블 -->
 				<div class="table-responsive">
@@ -106,12 +120,26 @@
 				</div>
 
 				<!-- ✅ 페이징 -->
-				<nav>
-					<ul class="pagination justify-content-center mt-3">
-						<li class="page-item disabled"><a class="page-link" href="#">이전</a></li>
-						<li class="page-item active"><a class="page-link" href="#">1</a></li>
-						<li class="page-item"><a class="page-link" href="#">2</a></li>
-						<li class="page-item"><a class="page-link" href="#">다음</a></li>
+				<nav th:if="${bomPage.totalPages > 0}" aria-label="페이지 네비게이션">
+					<ul class="pagination justify-content-center">
+						<li class="page-item"
+							th:classappend="${bomPage.first} ? 'disabled'"><a
+							class="page-link"
+							th:href="@{/bom/bom(page=${bomPage.number - 1}, keyword=${keyword})}">이전</a>
+						</li>
+
+						<li class="page-item"
+							th:each="i : ${#numbers.sequence(0, bomPage.totalPages - 1)}"
+							th:classappend="${i == bomPage.number} ? 'active'"><a
+							class="page-link"
+							th:href="@{/bom/bom(page=${i}, keyword=${keyword})}"
+							th:text="${i + 1}">1</a></li>
+
+						<li class="page-item"
+							th:classappend="${bomPage.last} ? 'disabled'"><a
+							class="page-link"
+							th:href="@{/bom/bom(page=${bomPage.number + 1}, keyword=${keyword})}">다음</a>
+						</li>
 					</ul>
 				</nav>
 			</div>

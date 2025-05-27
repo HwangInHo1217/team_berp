@@ -1,3 +1,4 @@
+// ✅ 자재 행 추가 함수
 function addChildRow() {
   const container = document.getElementById('child-items-area');
   const template = document.getElementById('child-item-select-template');
@@ -5,77 +6,119 @@ function addChildRow() {
   container.appendChild(row);
 }
 
+// ✅ BOM 등록 요청
+const bomForm = document.getElementById('bomForm');
+if (bomForm) {
+  bomForm.addEventListener('submit', function(e) {
+    e.preventDefault();
+    const form = e.target;
 
-document.getElementById('bomForm').addEventListener('submit', function(e) { //bom 등록에 관한 메ㅔ소드
-  e.preventDefault();
-  const form = e.target;
-  const parentItemId = form.querySelector('select[name="parent_item_id"]').value;
+    const parentItemId = form.querySelector('select[name="parent_item_id"]').value;
+    const childItemIds = [...form.querySelectorAll('select[name="child_item_id[]"]')].map(el => el.value);
+    const quantities   = [...form.querySelectorAll('input[name="qty[]"]')].map(el => el.value);
+    const seqNos       = [...form.querySelectorAll('input[name="seq_no[]"]')].map(el => el.value);
+    const lossRates    = [...form.querySelectorAll('input[name="loss_rt[]"]')].map(el => el.value);
+    const itemPrices   = [...form.querySelectorAll('input[name="item_price[]"]')].map(el => el.value);
+    const remarks      = [...form.querySelectorAll('input[name="remark[]"]')].map(el => el.value);
 
-  const childItemIds = [...form.querySelectorAll('select[name="child_item_id[]"]')].map(el => el.value);
-  const quantities   = [...form.querySelectorAll('input[name="qty[]"]')].map(el => el.value);
-  const seqNos       = [...form.querySelectorAll('input[name="seq_no[]"]')].map(el => el.value);
-  const lossRates    = [...form.querySelectorAll('input[name="loss_rt[]"]')].map(el => el.value);
-  const itemPrices   = [...form.querySelectorAll('input[name="item_price[]"]')].map(el => el.value);
-  const remarks      = [...form.querySelectorAll('input[name="remark[]"]')].map(el => el.value);
-
-  if (!parentItemId || childItemIds.includes("") || quantities.includes("")) {
-    alert("모든 필수 항목을 입력해주세요.");
-    return;
-  }
-
-  const payload = {
-    parentItemId: parseInt(parentItemId),
-    components: childItemIds.map((id, i) => ({
-      childItemId: parseInt(id),
-      qty: parseInt(quantities[i]),
-      seqNo: seqNos[i] ? parseInt(seqNos[i]) : null,
-      lossRt: lossRates[i] ? parseFloat(lossRates[i]) : null,
-      itemPrice: itemPrices[i] ? parseInt(itemPrices[i]) : null,
-      remark: remarks[i] || ""
-    }))
-  };
-
-  fetch('/bom/bom', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  }).then(res => {
-    if (res.ok) {
-      alert('BOM 등록 성공!');
-      location.reload();
-    } else {
-      alert('등록 실패');
+    if (!parentItemId || childItemIds.includes("") || quantities.includes("")) {
+      alert("모든 필수 항목을 입력해주세요.");
+      return;
     }
-  }).catch(err => {
-    console.error(err);
-    alert('에러가 발생했습니다.');
+
+    const payload = {
+      parentItemId: parseInt(parentItemId),
+      components: childItemIds.map((id, i) => ({
+        childItemId: parseInt(id),
+        qty: parseInt(quantities[i]),
+        seqNo: seqNos[i] ? parseInt(seqNos[i]) : null,
+        lossRt: lossRates[i] ? parseFloat(lossRates[i]) : null,
+        itemPrice: itemPrices[i] ? parseInt(itemPrices[i]) : null,
+        remark: remarks[i] || ""
+      }))
+    };
+
+    fetch('/bom/bom', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(res => {
+      if (res.ok) {
+        alert('BOM 등록 성공!');
+        location.reload();
+      } else {
+        alert('등록 실패');
+      }
+    }).catch(err => {
+      console.error(err);
+      alert('에러가 발생했습니다.');
+    });
   });
-});
+}
 
-
-let bomViewModalInstance;
-
+// ✅ BOM 보기 (모달)
 function openBomViewModal(parentId) {
+  const modalEl = document.getElementById("bomViewModal");
+  if (!modalEl) return alert("모달 요소가 없습니다.");
+
   fetch(`/bom/bom/${parentId}`)
-    .then(response => response.json())
+    .then(res => res.json())
     .then(data => {
-      document.getElementById("bomParentCode").innerText = data.parentCode;
-      document.getElementById("bomParentName").innerText = data.parentName;
+      const parentNameEl = document.getElementById("bomParentName");
+      const productTbody = document.getElementById("bomProductList");
+      const materialTbody = document.getElementById("bomMaterialList");
+      const treeList = document.getElementById("bomTreeList");
+      const tableBody = document.getElementById("bomComponentTableBody");
 
-      const tbody = document.getElementById("bomComponentTableBody");
-      tbody.innerHTML = "";
+      if (!parentNameEl || !productTbody || !materialTbody || !treeList || !tableBody) return;
 
-      data.components.forEach(c => {
-        const row = `<tr><td>${c.childCode}</td><td>${c.childName}</td><td>${c.qty}</td></tr>`;
-        tbody.insertAdjacentHTML("beforeend", row);
+      parentNameEl.innerText = data.parentName;
+
+      productTbody.innerHTML = `
+        <tr>
+          <td>1</td>
+          <td>${data.parentCode}</td>
+          <td>${data.parentName}</td>
+          <td>${data.components[0]?.spec || '-'}</td>
+          <td>${data.components[0]?.unit || '-'}</td>
+        </tr>`;
+
+      materialTbody.innerHTML = "";
+      data.components.forEach((c, i) => {
+        materialTbody.insertAdjacentHTML("beforeend", `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${c.childCode}</td>
+            <td>${c.childName}</td>
+            <td>${c.spec || '-'}</td>
+            <td>${c.unit || '-'}</td>
+          </tr>`);
       });
 
-      // 기존 모달 인스턴스가 있으면 사용, 없으면 새로 생성
-      const modalEl = document.getElementById("bomViewModal");
-      if (!bomViewModalInstance) {
-        bomViewModalInstance = new bootstrap.Modal(modalEl);
-      }
-      bomViewModalInstance.show();
+      treeList.innerHTML = "";
+      data.components.forEach(c => {
+        treeList.insertAdjacentHTML("beforeend", `
+          <li>└ <span>${c.childName}</span>
+            <span class="text-muted small">수량: ${c.qty}, 로스율: ${c.lossRate}, 단가: ${c.unitPrice}, 비고: ${c.remark}</span>
+          </li>`);
+      });
+
+      tableBody.innerHTML = "";
+      data.components.forEach((c, i) => {
+        tableBody.insertAdjacentHTML("beforeend", `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${data.parentName}</td>
+            <td>${c.childName}</td>
+            <td>${c.seqNo ?? '-'}</td>
+            <td>${c.qty}</td>
+            <td>${c.lossRate}</td>
+            <td>${c.unitPrice}</td>
+            <td>${c.remark}</td>
+          </tr>`);
+      });
+
+      bootstrap.Modal.getOrCreateInstance(modalEl).show();
     })
     .catch(err => {
       alert("BOM 정보를 불러오지 못했습니다.");
@@ -83,26 +126,24 @@ function openBomViewModal(parentId) {
     });
 }
 
+// ✅ 모달 닫힐 때 클린업
+const modalEl = document.getElementById('bomViewModal');
+if (modalEl) {
+  modalEl.addEventListener('hidden.bs.modal', () => {
+    document.getElementById('bomComponentTableBody').innerHTML = '';
+    document.getElementById('bomParentName').innerText = '선택된 제품 없음';
+    document.getElementById('bomProductList').innerHTML = '';
+    document.getElementById('bomMaterialList').innerHTML = '';
+    document.getElementById('bomTreeList').innerHTML = '';
+  });
+}
 
-// 모달 닫힐 때 cleanup
-document.getElementById('bomViewModal').addEventListener('hidden.bs.modal', function () {
-  document.getElementById('bomComponentTableBody').innerHTML = '';
-  document.getElementById('bomParentCode').innerText = '';
-  document.getElementById('bomParentName').innerText = '';
-
-  // 인스턴스 삭제
-  if (bomViewModalInstance) {
-    bomViewModalInstance.dispose();
-    bomViewModalInstance = null;
-  }
-});
-
-
+// ✅ BOM 수정 모달 열기
 function openBomEditModal(button) {
   const parentId = button.getAttribute('data-id');
 
   fetch(`/bom/bom/${parentId}`)
-    .then(response => response.json())
+    .then(res => res.json())
     .then(data => {
       document.getElementById("editParentItemId").value = parentId;
       document.getElementById("editParentItemText").value = `${data.parentCode} - ${data.parentName}`;
@@ -124,16 +165,11 @@ function openBomEditModal(button) {
           </div>
           <div class="col-md-3 d-flex align-items-end">
             <button type="button" class="btn btn-outline-danger w-100" onclick="this.closest('.row').remove()">삭제</button>
-          </div>
-        `;
+          </div>`;
         container.appendChild(row);
       });
 
       new bootstrap.Modal(document.getElementById("bomEditModal")).show();
-    })
-    .catch(err => {
-      console.error(err);
-      alert("BOM 정보를 불러오지 못했습니다.");
     });
 }
 
@@ -152,8 +188,7 @@ function addEditRow() {
     </div>
     <div class="col-md-3 d-flex align-items-end">
       <button type="button" class="btn btn-outline-danger w-100" onclick="this.closest('.row').remove()">삭제</button>
-    </div>
-  `;
+    </div>`;
   container.appendChild(row);
 }
 
@@ -164,32 +199,29 @@ function childItemOptionsHtml(selectedCode) {
   ).join('');
 }
 
+// ✅ BOM 수정 요청
+const bomEditForm = document.getElementById('bomEditForm');
+if (bomEditForm) {
+  bomEditForm.addEventListener('submit', function(e) {
+    e.preventDefault();
 
-document.getElementById('bomEditForm').addEventListener('submit', function(e) {
-  e.preventDefault();
+    const parentItemId = document.getElementById('editParentItemId').value;
+    const childItemIds = [...document.querySelectorAll('select[name="child_item_id[]"]')].map(el => el.value);
+    const quantities = [...document.querySelectorAll('input[name="qty[]"]')].map(el => el.value);
 
-  const parentItemId = document.getElementById('editParentItemId').value;
-  const childItemIds = [...document.querySelectorAll('select[name="child_item_id[]"]')].map(el => el.value);
-  const quantities = [...document.querySelectorAll('input[name="qty[]"]')].map(el => el.value);
+    const payload = {
+      parentItemId: parseInt(parentItemId),
+      components: childItemIds.map((id, i) => ({
+        childItemId: parseInt(id),
+        qty: parseInt(quantities[i])
+      }))
+    };
 
-  const cleanedComponents = childItemIds
-    .map((id, i) => ({ id, qty: quantities[i] }))
-    .filter(c => c.id !== "" && c.qty !== "");
-
-  const payload = {
-    parentItemId: parseInt(parentItemId),
-    components: cleanedComponents.map(c => ({
-      childItemId: parseInt(c.id),
-      qty: parseInt(c.qty)
-    }))
-  };
-
-  fetch('/bom/bom', {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  })
-    .then(res => {
+    fetch('/bom/bom', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(res => {
       if (res.ok) {
         alert('수정 완료');
         location.reload();
@@ -197,36 +229,29 @@ document.getElementById('bomEditForm').addEventListener('submit', function(e) {
         alert('수정 실패');
       }
     });
-});
+  });
+}
 
-
-// 삭제 함수
+// ✅ BOM 삭제 요청
 function deleteSelectedBoms() {
-  const checkedIds = [...document.querySelectorAll('input[type="checkbox"]:checked')]
-    .map(cb => cb.value);
+  const checkedIds = [...document.querySelectorAll('input[type="checkbox"]:checked')].map(cb => cb.value);
 
-  if (checkedIds.length === 0) {
-    alert("삭제할 BOM을 선택하세요.");
-    return;
-  }
-
+  if (checkedIds.length === 0) return alert("삭제할 BOM을 선택하세요.");
   if (!confirm("정말 삭제하시겠습니까?")) return;
 
   fetch('/bom/bom', {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(checkedIds)
-  })
-    .then(res => {
-      if (res.ok) {
-        alert("삭제 완료");
-        location.reload();
-      } else {
-        alert("삭제 실패");
-      }
-    })
-    .catch(err => {
-      console.error(err);
-      alert("에러가 발생했습니다.");
-    });
+  }).then(res => {
+    if (res.ok) {
+      alert("삭제 완료");
+      location.reload();
+    } else {
+      alert("삭제 실패");
+    }
+  }).catch(err => {
+    console.error(err);
+    alert("에러가 발생했습니다.");
+  });
 }

@@ -67,5 +67,25 @@ public interface BomRepository extends JpaRepository<Bom, Integer> {
 			    ORDER BY b.parentItem.code
 			""")
 	Page<BomProductItemDTO> findAllParentItems(Pageable pageable);
+	
+	@Query("""
+		    SELECT new com.team.berp.bom.dto.BomProductItemDTO(
+		        i.id, i.code, i.name, i.spec, i.unit, i.use, i.type)
+		    FROM Item i
+		    WHERE ( 
+		        (:searchField = 'name' AND (:keyword IS NULL OR i.name LIKE %:keyword%)) OR
+		        (:searchField = 'code' AND (:keyword IS NULL OR i.code LIKE %:keyword%)) OR
+		        (:searchField IS NULL AND (:keyword IS NULL OR i.name LIKE %:keyword% OR i.code LIKE %:keyword%))
+		    )
+		    AND (:useYn IS NULL OR i.use = :useYn)
+		    AND i.type = 'product'
+		    """)
+		Page<BomProductItemDTO> searchBomProducts(
+		    @Param("searchField") String searchField,
+		    @Param("keyword") String keyword,
+		    @Param("useYn") String useYn,
+		    Pageable pageable);
+
+
 
 }

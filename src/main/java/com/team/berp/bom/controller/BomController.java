@@ -26,29 +26,33 @@ public class BomController {
 	private final BomService bomService;
 	@GetMapping("/bom/bom")
 	public String showBomPage(
-	        @RequestParam(name="keyword", value = "keyword", required = false) String keyword,
+	        @RequestParam(name = "type", required = false) String type,
+	        @RequestParam(name = "keyword", required = false) String keyword,
+	        @RequestParam(name = "useYn", required = false) String useYn,
 	        @PageableDefault(size = 10) Pageable pageable,
 	        Model model) {
 
-	    // 검색 및 페이징 처리된 제품 리스트 (완제품)
-	    Page<BomProductItemDTO> bomPage = bomService.getPagedParentProductList(keyword, pageable);
-	    System.out.println("bom_page_getContent: "+bomPage.getContent());
-	    System.out.println("bom_page: "+bomPage);
-	    // 검색조건과 결과를 model에 추가
+	    // ✅ type, keyword, useYn을 모두 넘김
+	    Page<BomProductItemDTO> bomPage = bomService.getPagedParentProductList(type, keyword, useYn, pageable);
+	    System.out.println("bom_page_getContent: " + bomPage.getContent());
+
 	    model.addAttribute("product", bomPage.getContent());
 	    model.addAttribute("bomPage", bomPage);
+	    model.addAttribute("type", type);
 	    model.addAttribute("keyword", keyword);
-	    
-	    
+	    model.addAttribute("useYn", useYn); // ✅ 선택 값 유지용
+
 	    List<BomProductItemDTO> productList = bomService.getParentProductDTOList();
 	    model.addAttribute("productList", productList);
-	    // 자재/완제품 선택용 리스트 추가
+
 	    ItemSelectionDTO itemSelectionDto = bomService.getSelectableItems();
 	    model.addAttribute("selectMaterialList", itemSelectionDto.getMaterials());
 	    model.addAttribute("selectProductList", itemSelectionDto.getProducts());
 
 	    return "bom/bom";
 	}
+
+
 
 	
 }
