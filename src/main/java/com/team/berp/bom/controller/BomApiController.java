@@ -51,7 +51,7 @@ public class BomApiController {
 	    bomService.deleteBomsByParentIds(parentIds);
 	    return ResponseEntity.ok().build();
 	}
-	@GetMapping("/bom")
+	@GetMapping("/bom/bom/list")
 	public ResponseEntity<BomListResponseDTO> getBomList(
 	        @RequestParam(name = "searchField", required = false) String searchField,
 	        @RequestParam(name = "keyword", required = false) String keyword,

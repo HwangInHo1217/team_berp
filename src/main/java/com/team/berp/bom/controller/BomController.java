@@ -51,7 +51,7 @@ public class BomController {
 
 	    return "bom/bom";
 	}*/
-	  @GetMapping("/bom")
+	  @GetMapping("/bom/bom")
 	    public String bomViewPage() {
 	        return "bom/bom";  // => resources/templates/bom/bom.html
 	    }

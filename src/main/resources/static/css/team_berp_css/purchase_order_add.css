@@ -1,0 +1,79 @@
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f8f9fa;
+  margin: 0;
+  padding: 2rem;
+}
+
+.modal {
+  background: white;
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 20px;
+  color: #333;
+}
+
+.modal-header .close {
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.form-area {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.form-group input[type="text"],
+.form-group select {
+  padding: 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.form-buttons {
+  text-align: right;
+  margin-top: 2rem;
+}
+
+.form-buttons button {
+  padding: 0.5rem 1.2rem;
+  border: none;
+  margin-left: 0.5rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.form-buttons .save {
+  background-color: #007bff;
+  color: white;
+}
+
+.form-buttons .cancel {
+  background-color: #6c757d;
+  color: white;
+}
