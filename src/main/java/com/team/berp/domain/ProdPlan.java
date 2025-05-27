@@ -2,13 +2,20 @@
 package com.team.berp.domain;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+
+@NoArgsConstructor
+@Data
+@AllArgsConstructor
 @Entity
 @Table(name = "prod_plan")
 public class ProdPlan {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer planId;
+    private Long planId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "item_id", nullable = false)
@@ -17,28 +24,5 @@ public class ProdPlan {
     @Column(nullable = false)
     private Integer planQty;
 
-    // getters and setters
-    public Integer getPlanId() {
-        return planId;
-    }
-
-    public void setPlanId(Integer planId) {
-        this.planId = planId;
-    }
-
-    public Item getItem() {
-        return item;
-    }
-
-    public void setItem(Item item) {
-        this.item = item;
-    }
-
-    public Integer getPlanQty() {
-        return planQty;
-    }
-
-    public void setPlanQty(Integer planQty) {
-        this.planQty = planQty;
-    }
+ 
 }

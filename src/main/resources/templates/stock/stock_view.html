@@ -1,79 +1,102 @@
-      <div class="container" th:fragment="stock_view">
-        <h2 class="mb-4">재고 관리</h2>
+<div class="container" th:fragment="stock_view">
+    <h2 class="mb-4">재고 관리</h2>
 
-        <!-- 🔍 검색 및 버튼 영역 -->
-        <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
-          <input type="text" class="form-control w-auto" placeholder="품목명 or 품목코드" />
-          <select class="form-select w-auto">
+    <!-- 🔍 검색 및 버튼 영역 -->
+    <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+        <input type="text" class="form-control w-auto" placeholder="품목명 or 품목코드" />
+        <select class="form-select w-auto">
             <option>전체 창고</option>
             <option>자재창고</option>
             <option>완제품창고</option>
-          </select>
-          <button class="btn btn-outline-secondary">검색</button>
+        </select>
+        <button class="btn btn-outline-secondary">검색</button>
 
-          <button class="btn btn-outline-success ms-auto" onclick="alert('엑셀 다운로드는 추후 제공 예정입니다.')">엑셀 다운로드</button>
-        </div>
+        <button class="btn btn-outline-success ms-auto" onclick="alert('엑셀 다운로드는 추후 제공 예정입니다.')">엑셀 다운로드</button>
+    </div>
 
-        <!-- 📋 재고 현황 테이블 -->
-        <div class="table-responsive">
-          <table class="table table-bordered text-center align-middle">
+    <!-- 📋 재고 현황 테이블 -->
+    <div class="table-responsive">
+        <table class="table table-bordered text-center align-middle">
             <thead class="table-light">
-              <tr>
-                <th>순번</th>
-                <th>품목코드</th>
-                <th>품목명</th>
-                <th>창고</th>
-                <th>재고수량</th>
-                <th>단위</th>
-                <th>최종입고일</th>
-                <th>최종출고일</th>
-                <th>상세</th>
-              </tr>
+                <tr>
+                    <th>순번</th>
+                    <th>품목코드</th>
+                    <th>품목명</th>
+                    <th>창고</th>
+                    <th>재고수량</th>
+                    <th>단위</th>
+                    <th>최종입고일</th>
+                    <th>최종출고일</th>
+                    <th>상세</th>
+                </tr>
             </thead>
             <tbody>
-              <tr>
-                <td>1</td>
-                <td>M001</td>
-                <td>자재 A</td>
-                <td>자재창고</td>
-                <td>320</td>
-                <td>EA</td>
-                <td>2025-05-19</td>
-                <td>2025-05-21</td>
-                <td>
-                  <button class="btn btn-info btn-sm" onclick="openStockDetailModal({
-                    item_code: 'M001',
-                    item_name: '자재 A',
-                    warehouse: '자재창고',
-                    qty: 320,
-                    unit: 'EA',
-                    last_in: '2025-05-19',
-                    last_out: '2025-05-21'
-                  })">상세</button>
-                </td>
-              </tr>
-              <tr>
-                <td>2</td>
-                <td>P001</td>
-                <td>완제품 A</td>
-                <td>완제품창고</td>
-                <td>110</td>
-                <td>EA</td>
-                <td>2025-05-17</td>
-                <td>2025-05-20</td>
-                <td>
-                  <button class="btn btn-info btn-sm" onclick="openStockDetailModal({
-                    item_code: 'P001',
-                    item_name: '완제품 A',
-                    warehouse: '완제품창고',
-                    qty: 110,
-                    unit: 'EA',
-                    last_in: '2025-05-17',
-                    last_out: '2025-05-20'
-                  })">상세</button>
-                </td>
-              </tr>
+                <!-- Thymeleaf로 초기 데이터 렌더링 (서버에서 데이터가 있을 때) -->
+                <tr th:each="stock, stat : ${stocks != null ? stocks.content : #lists.emptyList()}">
+                    <td th:text="${stat.index + 1}">1</td>
+                    <td th:text="${stock.itemCode}">M001</td>
+                    <td th:text="${stock.itemName}">자재 A</td>
+                    <td th:text="${stock.warehouseName}">자재창고</td>
+                    <td th:text="${stock.quantity}">320</td>
+                    <td>EA</td>
+                    <td th:text="${stock.firstAt != null ? #temporals.format(stock.firstAt, 'yyyy-MM-dd') : '-'}">2025-05-19</td>
+                    <td th:text="${stock.lastAt != null ? #temporals.format(stock.lastAt, 'yyyy-MM-dd') : '-'}">2025-05-21</td>
+                    <td>
+                        <button class="btn btn-info btn-sm stock-detail-btn"
+                                th:data-stock-id="${stock.stockId}"
+                                th:data-item-code="${stock.itemCode}"
+                                th:data-item-name="${stock.itemName}"
+                                th:data-warehouse="${stock.warehouseName}"
+                                th:data-qty="${stock.quantity}"
+                                th:data-last-in="${stock.firstAt != null ? #temporals.format(stock.firstAt, 'yyyy-MM-dd') : '-'}"
+                                th:data-last-out="${stock.lastAt != null ? #temporals.format(stock.lastAt, 'yyyy-MM-dd') : '-'}">
+                            상세
+                        </button>
+                    </td>
+                </tr>
+                
+                <!-- 재고가 없을 때 표시할 메시지 -->
+                <tr th:if="${stocks == null or stocks.content.empty}" class="no-data-row">
+                    <td colspan="9" class="text-center text-muted py-5">
+                        <div class="d-flex flex-column align-items-center">
+                            <i class="fas fa-box-open fa-3x mb-3 text-secondary"></i>
+                            <h5 class="mb-2">검색된 재고가 없습니다</h5>
+                            <p class="mb-0">다른 검색 조건을 시도해보세요</p>
+                        </div>
+                    </td>
+                </tr>
+                
+                <!-- 기본 샘플 데이터 (데이터 로딩 실패시) -->
+                <tr th:if="${stocks == null or stocks.content.empty}" style="display: none;" class="sample-data">
+                    <td>1</td>
+                    <td>M001</td>
+                    <td>자재 A</td>
+                    <td>자재창고</td>
+                    <td>320</td>
+                    <td>EA</td>
+                    <td>2025-05-19</td>
+                    <td>2025-05-21</td>
+                    <td>
+                        <button class="btn btn-info btn-sm" onclick="openStockDetailModal({
+                            item_code: 'M001',
+                            item_name: '자재 A',
+                            warehouse: '자재창고',
+                            qty: 320,
+                            unit: 'EA',
+                            last_in: '2025-05-19',
+                            last_out: '2025-05-21'
+                        })">상세</button>
+                    </td>
+                </tr>
             </tbody>
-          </table>
-        </div>
-      </div>
+        </table>
+    </div>
+
+    <!-- 간단한 페이징 정보 -->
+    <div class="d-flex justify-content-between align-items-center mt-3" th:if="${stocks != null and !stocks.content.empty}">
+        <span class="text-muted">
+            총 <span th:text="${stocks.totalElements}">0</span>개 
+            (현재 <span th:text="${stocks.number + 1}">1</span>/<span th:text="${stocks.totalPages}">1</span> 페이지)
+        </span>
+    </div>
+</div>
