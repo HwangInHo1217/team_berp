@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 
@@ -30,7 +31,21 @@ public class CompanyOrder {
     private OrderType orderType;
 
     @Column
-    private LocalDateTime orderDate;
+    private LocalDate orderDate;
+    
+    @Column(name = "order_qty", nullable = false)
+    private Long orderQty;
 
+    @Column(name = "unit_qty")
+    private Long unitQty;
+    
+    @Column(name = "amount")
+    private Long amount;
+    
+    @Column(name = "due_date", nullable = false)
+    private LocalDate dueDate;
+    
+    @Column(name = "note")
+    private String note;
 
 }

@@ -1,5 +1,7 @@
 package com.team.berp.domain;
 
+import java.math.BigDecimal;
+
 import com.team.berp.item.dto.AddItemRequestDTO;
 import com.team.berp.item.dto.UpdateItemRequestDTO;
 
@@ -35,9 +37,15 @@ public class Item {
 	@Enumerated(EnumType.STRING)
 	@Column(name="item_type")
 	private ItemType type;//자재인지 완제품인지
+	
+	@Column(name = "item_code", nullable = false)
+    private String itemCode;
 
 	@Column(name="unit") //단위
 	private String unit; 
+	
+	@Column(name = "unit_price", nullable = false)
+    private BigDecimal unitPrice;
 	
 	@Column(name="spec") //규격
 	private String spec;

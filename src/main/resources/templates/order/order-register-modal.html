@@ -1,69 +1,142 @@
-<div class="modal fade" id="orderRegisterModal" tabindex="-1" aria-labelledby="orderRegisterModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="orderRegisterModalLabel">주문 등록</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="orderForm" method="POST">
-                    <div class="mb-3">
-                        <label for="customer_id" class="form-label">고객사</label>
-                        <input type="text" class="form-control" name="customer_id" required />
-                    </div>
-                    <div class="mb-3">
-                        <label for="order_date" class="form-label">주문일자</label>
-                        <input type="date" class="form-control" name="order_date" required />
-                    </div>
-                    <div class="mb-3">
-                        <label for="due_date" class="form-label">납기일자</label>
-                        <input type="date" class="form-control" name="due_date" required />
-                    </div>
-                    <div class="mb-3">
-                        <label for="manager" class="form-label">담당자</label>
-                        <input type="text" class="form-control" name="manager" required />
-                    </div>
-                    <div class="mb-3">
-                        <label for="note" class="form-label">비고</label>
-                        <input type="text" class="form-control" name="note" />
-                    </div>
+ <script th:inline="javascript">
+   /*<![CDATA[*/
+   window.customersList = /*[[${customers}]]*/ [];
+   window.itemsList     = /*[[${items}]]*/ [];
+   /*]]>*/
+ </script>
 
-                    <table id="orderItemTable" class="table">
-                        <thead>
-                            <tr>
-                                <th>품목</th>
-                                <th>수량</th>
-                                <th>단위</th>
-                                <th>단가</th>
-                                <th>총액</th>
-                                <th>삭제</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Initial row for item -->
-                            <tr>
-                                <td>
-                                    <select class="form-select" name="item_id[]" required>
-                                        <option value="">-- 선택 --</option>
-                                        <option value="P001">P001 - 완제품 A</option>
-                                        <option value="P002">P002 - 완제품 B</option>
-                                    </select>
-                                </td>
-                                <td><input type="number" name="quantity[]" class="form-control" required oninput="calculateRowTotal(this)" /></td>
-                                <td><input type="text" name="unit[]" class="form-control" value="EA" required /></td>
-                                <td><input type="number" name="unit_price[]" class="form-control" required oninput="calculateRowTotal(this)" /></td>
-                                <td><input type="text" class="form-control total" readonly value="0" /></td>
-                                <td><button type="button" class="btn btn-sm btn-outline-danger" onclick="removeOrderItemRow(this)">삭제</button></td>
-                            </tr>
-                        </tbody>
-                    </table>
 
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
-                        <button type="submit" class="btn btn-primary" id="submitBtn">등록</button>
-                    </div>
-                </form>
+
+<div th:fragment="registerModal(customers, items)">
+  <div class="modal fade" id="orderRegisterModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <form id="orderForm" method="post" th:action="@{/order/add}">
+          <!-- 행 개수 전달 -->
+          <input type="hidden" name="unitQty" />
+
+          <div class="modal-header">
+            <h5 class="modal-title">주문 등록</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row g-3 mb-4">
+            	<div class="col-md-4">
+				  <label class="form-label">주문 구분</label>
+				  <select class="form-select" name="orderType" required>
+				    <option value="" disabled selected>-- 선택 --</option>
+				    <option value="CUSTOMER">판매(고객)</option>
+				    <option value="SUPPLIER">구매(납품)</option>
+				  </select>
+				</div>
+            
+              <div class="col-md-4">
+                <label class="form-label">고객사</label>
+                <!-- 2) 고객사 select -->
+				<select class="form-select"
+				        name="companyId"
+				        onchange="onCompanyChange(this)"
+				        required>
+				  <option value="" disabled selected>-- 선택 --</option>
+				  <option th:each="c : ${customers}"
+				          th:value="${c.companyId}"
+				          th:data-emp-name="${c.employee.empName}"
+				          th:text="${c.companyName}"></option>
+				</select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">주문일</label>
+                <input type="date" class="form-control" name="orderDate" required />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">납기일</label>
+                <input type="date" class="form-control" name="dueDate" required />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">담당자</label>
+                <!-- 원본 name(emp_name) 그대로 -->
+                <input type="text" class="form-control" name="empName" readonly />
+              </div>
+              <div class="col-md-8">
+                <label class="form-label">비고</label>
+                <textarea class="form-control" name="note" rows="2"></textarea>
+              </div>
             </div>
-        </div>
+
+            <div class="mb-3">
+              <button
+                type="button"
+                class="btn btn-sm btn-outline-primary mb-2"
+                onclick="addOrderItemRow()"
+              >품목 추가</button>
+
+              <div class="table-responsive">
+                <table class="table table-bordered" id="orderItemTable">
+                  <thead>
+                    <tr>
+                      <th>품목</th>
+                      <th>수량</th>
+                      <th>단위</th>
+                      <th>단가</th>
+                      <th>금액</th>
+                      <th>액션</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>
+                        <!-- 품목 select 에도 onchange 추가 -->
+						<select class="form-select" name="itemId[]" required
+						        onchange="onItemChange(this)">
+						  <option value="" disabled selected>-- 선택 --</option>
+						  <option th:each="i : ${items}"
+						          th:value="${i.itemId}"
+						          th:data-unit="${i.unit}"
+						          th:data-price="${i.unitPrice}"
+						          th:text="${i.itemCode + ' - ' + i.itemName}"></option>
+						</select>
+                      </td>
+                      <!-- 원본 name(order_qty[]) 그대로 -->
+                      <td>
+                        <input
+                          type="number"
+                          name="orderQty[]"
+                          class="form-control"
+                          required
+                          oninput="calculateRowTotal(this)"
+                        />
+                      </td>
+                      <td><input type="text" name="unit[]" class="form-control" readonly /></td>
+                      <td>
+                        <input
+                          type="number"
+                          name="unitPrice[]"
+                          class="form-control"
+                          required
+                          oninput="calculateRowTotal(this)"
+                        />
+                      </td>
+                      <td><input type="text" class="form-control total" readonly value="0" /></td>
+                      <td>
+                        <button
+                          type="button"
+                          class="btn btn-sm btn-outline-danger"
+                          onclick="removeOrderItemRow(this)"
+                        >삭제</button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="reset" class="btn btn-secondary">초기화</button>
+            <button type="submit" class="btn btn-primary" id="submitBtn">등록</button>
+          </div>
+        </form>
+      </div>
     </div>
+  </div>
 </div>

@@ -44,6 +44,9 @@ public class Company {
 
     @Column(length = 20)
     private String companyFax;
+    
+    @Column(length = 20)
+    private String companyEmpName;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "employee_id")
