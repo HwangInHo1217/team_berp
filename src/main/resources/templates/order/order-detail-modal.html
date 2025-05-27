@@ -1,0 +1,54 @@
+<div class="modal fade" id="orderDetailModal" tabindex="-1" aria-labelledby="orderDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="orderDetailModalLabel">주문 상세</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <table class="table table-bordered">
+                    <tbody>
+                        <tr>
+                            <th>고객사</th>
+                            <td id="detailCustomer"></td>
+                        </tr>
+                        <tr>
+                            <th>주문일자</th>
+                            <td id="detailOrderDate"></td>
+                        </tr>
+                        <tr>
+                            <th>납기일자</th>
+                            <td id="detailDueDate"></td>
+                        </tr>
+                        <tr>
+                            <th>담당자</th>
+                            <td id="detailManager"></td>
+                        </tr>
+                        <tr>
+                            <th>비고</th>
+                            <td id="detailNote"></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h5>주문 품목</h5>
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>품목 코드</th>
+                            <th>품목명</th>
+                            <th>수량</th>
+                            <th>단위</th>
+                            <th>단가</th>
+                            <th>금액</th>
+                        </tr>
+                    </thead>
+                    <tbody id="orderDetailItems"></tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+            </div>
+        </div>
+    </div>
+</div>

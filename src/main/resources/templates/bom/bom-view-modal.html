@@ -1,0 +1,134 @@
+<!-- /templates/bom/bom-view-modal.html -->
+<style>
+  .table-fixed {
+    table-layout: fixed;
+    width: 100%;
+  }
+
+  .table-fixed th,
+  .table-fixed td {
+    white-space: nowrap !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+    word-break: keep-all !important;
+  }
+
+  .card-body-scrollable {
+    max-height: 300px;
+    overflow-x: auto;
+  }
+</style>
+
+<div th:fragment="bomViewModal">
+  <div class="modal fade" id="bomViewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">BOM 구성 상세 보기</h5>
+          <button class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+          <div class="container-fluid">
+            <div class="row gx-4">
+              <!-- 좌측: 품목 + 자재 리스트 -->
+              <div class="col-md-3">
+                <!-- 품목 리스트 -->
+                <div class="card mb-3">
+                  <div class="card-header text-center fw-bold">품목 리스트</div>
+                  <div class="card-body card-body-scrollable p-2">
+                    <table class="table table-sm table-bordered text-center table-fixed">
+                      <thead class="table-light">
+                        <tr>
+                          <th style="width: 40px;">No</th>
+                          <th style="width: 90px;">코드</th>
+                          <th style="width: 120px;">명</th>
+                          <th style="width: 140px;">규격</th>
+                          <th style="width: 60px;">단위</th>
+                        </tr>
+                      </thead>
+                      <tbody id="bomProductList">
+                        <!-- JS로 채워짐 -->
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <!-- 자재 리스트 -->
+                <div class="card mb-4">
+                  <div class="card-header text-center fw-bold">자재 리스트</div>
+                  <div class="card-body card-body-scrollable p-2">
+                    <table class="table table-sm table-bordered text-center table-fixed">
+                      <thead class="table-light">
+                        <tr>
+                          <th style="width: 40px;">No</th>
+                          <th style="width: 90px;">코드</th>
+                          <th style="width: 120px;">명</th>
+                          <th style="width: 140px;">규격</th>
+                          <th style="width: 60px;">단위</th>
+                        </tr>
+                      </thead>
+                      <tbody id="bomMaterialList">
+                        <!-- JS로 채워짐 -->
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 우측: 트리 구조 -->
+              <div class="col-md-9">
+                <div class="card mb-4">
+                  <div class="card-header fw-bold">BOM 트리 구조</div>
+                  <div class="card-body">
+                    <ul class="list-unstyled">
+                      <li>
+                        <strong id="bomParentName">선택된 제품 없음</strong>
+                        <ul class="list-unstyled ms-3" id="bomTreeList">
+                          <!-- JS로 자재 항목 구성 -->
+                        </ul>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 하단: 구성 상세 테이블 -->
+            <div class="row">
+              <div class="col-12">
+                <div class="card">
+                  <div class="card-header fw-bold">BOM 구성 상세</div>
+                  <div class="card-body card-body-scrollable p-2">
+                    <table class="table table-sm table-bordered text-center table-fixed">
+                      <thead class="table-light">
+                        <tr>
+                          <th style="width: 40px;">No</th>
+                          <th style="width: 150px;">품목명</th>
+                          <th style="width: 150px;">원자재명</th>
+                          <th style="width: 60px;">순번</th>
+                          <th style="width: 80px;">소요량</th>
+                          <th style="width: 80px;">로스율</th>
+                          <th style="width: 80px;">재료비</th>
+                          <th style="width: 100px;">비고</th>
+                        </tr>
+                      </thead>
+                      <tbody id="bomComponentTableBody">
+                        <!-- JS로 구성 상세 채움 -->
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

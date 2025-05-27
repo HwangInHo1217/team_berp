@@ -1,0 +1,67 @@
+# ✅ 서버 포트 설정
+server:
+  port: 8080
+
+# ✅ Spring 설정
+spring:
+  # 1. DataSource 자동 설정을 제외하는 부분을 반드시! 삭제하거나 주석 처리(#) 해야 해.
+  #    이게 남아있으면 Spring Boot가 DataSource 빈을 만들지 않아 JPA가 동작 안 해.
+  # autoconfigure:
+  #   exclude: org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+
+  # ================================
+  # [🔧 데이터베이스 설정 수정]
+  # "datasource"는 "spring" 바로 아래 레벨이어야 해.
+  datasource:
+    url: jdbc:mysql://210.178.108.186:13306/erp
+    username: erp
+    password: erp1234
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  # ================================
+
+  # ================================
+  # [🧠 JPA 설정 활성화 및 수정]
+  # "jpa"는 "spring" 바로 아래 레벨이어야 해.
+  jpa:
+    # "hibernate"는 "jpa" 아래 레벨
+    hibernate:
+      ddl-auto: none        # 엔티티 변경 시 DB 테이블 자동 반영
+                              # (개발 초기: update 또는 validate, 운영: none 또는 validate)
+    # "show-sql"은 "jpa" 바로 아래 레벨
+    show-sql: true            # 콘솔에 실행되는 SQL 쿼리 출력
+    # "properties"는 "jpa" 아래 레벨
+    properties:
+      # "hibernate"는 "properties" 아래 레벨
+      hibernate:
+        format_sql: true      # SQL 쿼리를 보기 좋게 포맷팅
+        dialect: org.hibernate.dialect.MySQLDialect # MySQL 8용 SQL 문법
+  # ================================
+
+  # ================================
+  # [🖥️ 타임리프 설정 - 현재 설정 유지]
+  thymeleaf:
+    cache: false
+    prefix: classpath:/templates/
+    suffix: .html
+    mode: HTML
+    encoding: UTF-8
+  # ================================
+
+# ✅ Swagger 설정 - 현재 설정 유지
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+  api-docs:
+    path: /v3/api-docs
+
+# ✅ 로깅 설정 - 현재 설정 유지
+logging:
+  level:
+    org.hibernate.SQL: debug
+    org.hibernate.type: trace
+
+
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.team.berp.plant.DTO     
