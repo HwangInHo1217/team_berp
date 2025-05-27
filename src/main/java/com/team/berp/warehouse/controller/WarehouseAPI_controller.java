@@ -10,7 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.util.StringUtils;
 
-import com.team.berp.domain.Warehouse.WarehouseType;
+import com.team.berp.domain.WarehouseType;
 import com.team.berp.warehouse.dto.WarehouseCreateRequestDTO;
 import com.team.berp.warehouse.dto.WarehouseResponseDTO;
 import com.team.berp.warehouse.service.Warehouse_service;

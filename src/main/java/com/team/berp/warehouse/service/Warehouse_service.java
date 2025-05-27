@@ -18,7 +18,7 @@ import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
 
 import com.team.berp.domain.Warehouse;
-import com.team.berp.domain.Warehouse.WarehouseType;
+import com.team.berp.domain.WarehouseType;
 import com.team.berp.warehouse.dto.WarehouseCreateRequestDTO;
 import com.team.berp.warehouse.dto.WarehouseResponseDTO;
 import com.team.berp.warehouse.repository.Warehouse_repository;
@@ -62,7 +62,7 @@ public class Warehouse_service {
     public Map<String, String> checkWhsCodeDuplicate(String code, Integer excludeId) {
         Optional<Warehouse> existing = repo.findByWarehouseCode(code);
         
-        if (existing.isPresent() && (excludeId == null || !existing.get().getWarehouseId().equals(excludeId))) {
+        if (existing.isPresent() && (excludeId == null || !existing.get().getId().equals(excludeId))) {
             return Map.of("status", "duplicate", "message", "이미 사용 중인 창고 코드입니다.");
         }
         return Map.of("status", "ok", "message", "사용 가능한 창고 코드입니다.");
@@ -143,8 +143,8 @@ public class Warehouse_service {
         
         Pageable pageable = PageRequest.of(page - 1, PAGE_SIZE);
         Page<Warehouse> whsPage = isAllFilter(useYnFilter) 
-            ? repo.findAllByOrderByWarehouseIdDesc(pageable)
-            : repo.findByUseYnOrderByWarehouseIdDesc(useYnFilter, pageable);
+            ? repo.findAllByOrderByIdDesc(pageable)
+            : repo.findByUseYnOrderByIdDesc(useYnFilter, pageable);
             
         return wrapPagedResult(whsPage, page);
     }
@@ -158,14 +158,31 @@ public class Warehouse_service {
         
         Pageable pageable = PageRequest.of(page - 1, PAGE_SIZE);
         Page<Warehouse> whsPage = switch (searchType) {
-            case "code" -> repo.findByWarehouseCodeContainingOrderByWarehouseIdDesc(keyword, pageable);
-            case "name" -> repo.findByWarehouseNameContainingOrderByWarehouseIdDesc(keyword, pageable);
-            default -> repo.findByWarehouseNameContainingOrderByWarehouseIdDesc(keyword, pageable);
+            case "code" -> repo.findByWarehouseCodeContainingOrderByIdDesc(keyword, pageable);
+            case "name" -> repo.findByWarehouseNameContainingOrderByIdDesc(keyword, pageable);
+            default -> repo.findByWarehouseNameContainingOrderByIdDesc(keyword, pageable);
         };
         
         return wrapPagedResult(whsPage, page);
     }
     
+    
+    
+    
+    /**
+     * 사용 중인("Y") 모든 창고 목록을 DTO 리스트로 반환합니다.
+     * (프론트엔드 드롭다운 채우기 용도 등)
+     */
+    @Transactional(readOnly = true)
+    public List<WarehouseResponseDTO> getActiveWarehouses() {
+        log.debug("사용 중인 활성 창고 목록 조회 요청");
+        // Warehouse_repository에 findByUseYnOrderByIdDesc(String useYn) 메소드가 있다고 가정
+        // 이 메소드가 List<Warehouse>를 반환해야 함.
+        List<Warehouse> activeWarehouses = repo.findByUseYnOrderByIdDesc("Y"); // 'Y'를 사용
+        return activeWarehouses.stream()
+                               .map(WarehouseResponseDTO::from)
+                               .collect(Collectors.toList());
+    }
     // ========== ✅ 비페이징 조회 (JS 호환 유지용) ==========
     
     @Transactional(readOnly = true)
@@ -173,8 +190,8 @@ public class Warehouse_service {
         log.debug("필터로 창고 목록 조회: useYnFilter=[{}]", useYnFilter);
         
         List<Warehouse> whsList = isAllFilter(useYnFilter)
-            ? repo.findAllByOrderByWarehouseIdDesc()
-            : repo.findByUseYnOrderByWarehouseIdDesc(useYnFilter);
+            ? repo.findAllByOrderByIdDesc()
+            : repo.findByUseYnOrderByIdDesc(useYnFilter);
             
         return whsList.stream().map(WarehouseResponseDTO::from).collect(Collectors.toList());
     }
@@ -184,9 +201,9 @@ public class Warehouse_service {
         log.debug("전체 데이터 대상 검색: keyword={}, searchType={}", keyword, searchType);
         
         List<Warehouse> whsList = switch (searchType) {
-            case "code" -> repo.findByWarehouseCodeContainingOrderByWarehouseIdDesc(keyword);
-            case "name" -> repo.findByWarehouseNameContainingOrderByWarehouseIdDesc(keyword);
-            default -> repo.findByWarehouseNameContainingOrderByWarehouseIdDesc(keyword);
+            case "code" -> repo.findByWarehouseCodeContainingOrderByIdDesc(keyword);
+            case "name" -> repo.findByWarehouseNameContainingOrderByIdDesc(keyword);
+            default -> repo.findByWarehouseNameContainingOrderByIdDesc(keyword);
         };
         
         return whsList.stream().map(WarehouseResponseDTO::from).collect(Collectors.toList());
@@ -393,18 +410,18 @@ public class Warehouse_service {
     private List<Warehouse> findWhsList(String keyword, String searchType, String useYnFilter) {
         if (StringUtils.hasText(keyword)) {
             return switch (searchType) {
-                case "code" -> repo.findByWarehouseCodeContainingOrderByWarehouseIdDesc(keyword);
-                case "name" -> repo.findByWarehouseNameContainingOrderByWarehouseIdDesc(keyword);
-                default -> repo.findByWarehouseNameContainingOrderByWarehouseIdDesc(keyword);
+                case "code" -> repo.findByWarehouseCodeContainingOrderByIdDesc(keyword);
+                case "name" -> repo.findByWarehouseNameContainingOrderByIdDesc(keyword);
+                default -> repo.findByWarehouseNameContainingOrderByIdDesc(keyword);
             };
         }
         
         if (StringUtils.hasText(useYnFilter)) {
             return "ALL".equals(useYnFilter) 
-                ? repo.findAllByOrderByWarehouseIdDesc()
-                : repo.findByUseYnOrderByWarehouseIdDesc(useYnFilter);
+                ? repo.findAllByOrderByIdDesc()
+                : repo.findByUseYnOrderByIdDesc(useYnFilter);
         }
         
-        return repo.findByUseYnOrderByWarehouseIdDesc("Y");
+        return repo.findByUseYnOrderByIdDesc("Y");
     }
 }
