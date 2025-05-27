@@ -55,6 +55,7 @@ public class ClientApiController {
     // 🔹 거래처 등록 (중복검사 필요)
     @PostMapping
     public Long register(@RequestBody ClientViewDto dto) {
+
         if (dto.getEmployeeId() == null) {
             throw new IllegalArgumentException("담당자(사원)는 필수입니다.");
         }
@@ -64,6 +65,7 @@ public class ClientApiController {
         if (clientService.existsDuplicate(dto.getCompanyName(), dto.getCompanyNo(), null)) {
             throw new IllegalArgumentException("이미 동일한 회사명/사업자번호로 등록된 거래처가 있습니다.");
         }
+
         return clientService.register(dto, emp);
     }
 
