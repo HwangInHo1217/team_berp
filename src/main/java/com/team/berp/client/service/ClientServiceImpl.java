@@ -19,7 +19,12 @@ public class ClientServiceImpl implements ClientService {
     // 등록
     @Override
     public Long register(ClientViewDto dto, Employee employee) {
+        // 중복체크
+        if (existsDuplicate(dto.getCompanyName(), dto.getCompanyNo(), null)) {
+            throw new IllegalArgumentException("이미 등록된 거래처입니다 (회사명/사업자번호 중복)");
+        }
         Company company = dto.toEntity(employee);
+        company.setUseYn("Y"); // 신규는 항상 사용
         Company saved = companyRepository.save(company);
         return saved.getCompanyId();
     }
@@ -29,6 +34,10 @@ public class ClientServiceImpl implements ClientService {
     public void update(Long companyId, ClientViewDto dto, Employee employee) {
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new RuntimeException("거래처 없음"));
+        // 중복체크 (자기 자신 제외)
+        if (existsDuplicate(dto.getCompanyName(), dto.getCompanyNo(), companyId)) {
+            throw new IllegalArgumentException("이미 등록된 거래처입니다 (회사명/사업자번호 중복)");
+        }
         company.setCompanyName(dto.getCompanyName());
         company.setCompanyType(dto.getCompanyType());
         company.setCustCd(dto.getCustCd());
@@ -36,11 +45,19 @@ public class ClientServiceImpl implements ClientService {
         company.setCompanyNo(dto.getCompanyNo());
         company.setCompanyCond(dto.getCompanyCond());
         company.setCompanyItem(dto.getCompanyItem());
-        company.setCompanyAddr(dto.getCompanyAddr());
+
+        // 주소 필드 분리 적용
+        company.setPostcode(dto.getPostcode());
+        company.setMainAddress(dto.getMainAddress());
+        company.setDetailAddress(dto.getDetailAddress());
+
         company.setCompanyTel(dto.getCompanyTel());
         company.setCompanyFax(dto.getCompanyFax());
         company.setEmployee(employee);
-        company.setUseYn(dto.getUseYn());
+
+        // 논리삭제된 데이터 수정시 useYn 유지
+        if (dto.getUseYn() != null) company.setUseYn(dto.getUseYn());
+
         companyRepository.save(company);
     }
 
@@ -52,50 +69,63 @@ public class ClientServiceImpl implements ClientService {
         return ClientViewDto.fromEntity(company);
     }
 
-    // 리스트조회(검색, 페이징)
+    // 리스트조회 (고급 검색/정렬/논리삭제제외)
     @Override
     public Page<ClientViewDto> getList(CompanyType type, String keyword, String searchType, Pageable pageable) {
         Page<Company> page;
 
-        // 검색 + 유형 분기
+        // 논리삭제 제외 (useYn = 'Y'만)
         if (type == null) {
             // 전체
             if (keyword != null && !keyword.isBlank()) {
                 if ("ceo".equals(searchType)) {
-                    page = companyRepository.findByPresidentNmContaining(keyword, pageable);
+                    page = companyRepository.findByPresidentNmContainingAndUseYn(keyword, "Y", pageable);
                 } else {
-                    page = companyRepository.findByCompanyNameContaining(keyword, pageable);
+                    page = companyRepository.findByCompanyNameContainingAndUseYn(keyword, "Y", pageable);
                 }
             } else {
-                page = companyRepository.findAll(pageable);
+                page = companyRepository.findByUseYn("Y", pageable);
             }
         } else {
             // 유형별
             if (keyword != null && !keyword.isBlank()) {
                 if ("ceo".equals(searchType)) {
-                    page = companyRepository.findByCompanyTypeAndPresidentNmContaining(type, keyword, pageable);
+                    page = companyRepository.findByCompanyTypeAndPresidentNmContainingAndUseYn(type, keyword, "Y", pageable);
                 } else {
-                    page = companyRepository.findByCompanyTypeAndCompanyNameContaining(type, keyword, pageable);
+                    page = companyRepository.findByCompanyTypeAndCompanyNameContainingAndUseYn(type, keyword, "Y", pageable);
                 }
             } else {
-                page = companyRepository.findByCompanyType(type, pageable);
+                page = companyRepository.findByCompanyTypeAndUseYn(type, "Y", pageable);
             }
         }
         return page.map(ClientViewDto::fromEntity);
     }
 
-    // 삭제
+    // 논리삭제 (실제 삭제X, useYn = 'N')
     @Override
     public void delete(Long companyId) {
-        companyRepository.deleteById(companyId);
+        Company company = companyRepository.findById(companyId)
+                .orElseThrow(() -> new RuntimeException("거래처 없음"));
+        company.setUseYn("N");
+        companyRepository.save(company);
     }
 
-    // 상태 변경 (useYn)
+    // 상태 변경 (useYn Y/N)
     @Override
     public void changeUseYn(Long companyId, String useYn) {
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new RuntimeException("거래처 없음"));
         company.setUseYn(useYn);
         companyRepository.save(company);
+    }
+
+    // 회사명+사업자번호로 중복 등록 여부
+    @Override
+    public boolean existsDuplicate(String companyName, String companyNo, Long excludeId) {
+        if (excludeId == null) {
+            return companyRepository.existsByCompanyNameAndCompanyNoAndUseYn(companyName, companyNo, "Y");
+        } else {
+            return companyRepository.existsByCompanyNameAndCompanyNoAndCompanyIdNotAndUseYn(companyName, companyNo, excludeId, "Y");
+        }
     }
 }

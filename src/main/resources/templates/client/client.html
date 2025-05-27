@@ -22,28 +22,39 @@
           <button class="btn btn-outline-primary active me-2" id="tab-client">고객사</button>
           <button class="btn btn-outline-secondary" id="tab-supplier">매입처</button>
         </div>
-        <!-- 🔍 검색 및 등록/삭제 버튼 (수정됨) -->
-		<div class="row align-items-center mb-3">
-		  <div class="col-md-7 d-flex">
-		    <!-- ⬇️ 여기 filterType 셀렉트 추가 -->
-		    <select id="filterType" class="form-select w-25 me-2">
-		      <option value="">전체</option>
-		      <option value="CUSTOMER">고객사</option>
-		      <option value="SUPPLIER">매입처</option>
-		      <option value="BOTH">겸용</option>
-		    </select>
-		    <select class="form-select w-25 me-2" id="searchType">
-		      <option value="name">고객사명</option>
-		      <option value="ceo">대표자명</option>
-		    </select>
-		    <input type="text" class="form-control me-2" id="searchKeyword" placeholder="검색어 입력" />
-		    <button class="btn btn-outline-secondary" onclick="searchClients()">검색</button>
-		  </div>
-		  <div class="col-md-5 text-end">
-		    <button class="btn btn-danger me-2" onclick="deleteChecked()">삭제</button>
-		    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#clientRegisterModal">+ 거래처 등록</button>
-		  </div>
-		</div>
+        <!-- 🔍 고급 검색/정렬 및 등록/삭제 버튼 -->
+        <form id="searchForm" class="row align-items-center mb-3">
+          <div class="col-md-9 d-flex flex-wrap align-items-center">
+            <!-- 유형 -->
+            <select id="filterType" class="form-select me-2 mb-1" style="width: 130px;">
+              <option value="">전체유형</option>
+              <option value="CUSTOMER">고객사</option>
+              <option value="SUPPLIER">매입처</option>
+              <option value="BOTH">겸용</option>
+            </select>
+            <!-- 검색 컬럼 선택 (회사명, 대표자명, 담당자명, 사업자번호) -->
+            <select id="searchType" class="form-select me-2 mb-1" style="width: 130px;">
+              <option value="name">거래처명</option>
+              <option value="ceo">대표자명</option>
+              <option value="employee">담당자명</option>
+              <option value="biznum">사업자번호</option>
+            </select>
+            <input type="text" class="form-control me-2 mb-1" id="searchKeyword" placeholder="검색어 입력" style="width:180px;"/>
+            <!-- 정렬 -->
+            <select id="sortType" class="form-select me-2 mb-1" style="width: 130px;">
+              <option value="">정렬기준</option>
+              <option value="companyName,asc">이름↑</option>
+              <option value="companyName,desc">이름↓</option>
+              <option value="createdDate,desc">최신등록순</option>
+              <option value="createdDate,asc">오래된순</option>
+            </select>
+            <button type="button" class="btn btn-outline-secondary me-2 mb-1" onclick="searchClients()">검색</button>
+          </div>
+          <div class="col-md-3 text-end">
+            <button class="btn btn-danger me-2 mb-1" type="button" onclick="deleteChecked()">삭제</button>
+            <button class="btn btn-primary mb-1" type="button" data-bs-toggle="modal" data-bs-target="#clientRegisterModal">+ 거래처 등록</button>
+          </div>
+        </form>
         <!-- 📋 거래처 목록 테이블 -->
         <div class="table-responsive">
           <table class="table table-bordered table-hover align-middle text-center">
@@ -52,8 +63,9 @@
                 <th><input type="checkbox" id="all-check" /></th>
                 <th>거래처명</th>
                 <th>대표자명</th>
+                <th>사업자번호</th>
                 <th>전화번호</th>
-                <th>팩스</th>
+                <th>담당자</th>
                 <th>상태</th>
                 <th>상세</th>
                 <th>수정</th>
@@ -103,13 +115,32 @@
                 </div>
                 <div class="row mb-3">
                   <div class="col-md-6">
+                    <label for="employeeId" class="form-label">담당자</label>
+                    <select class="form-select" id="employeeId" name="employeeId" required>
+                      <option value="">담당자 선택</option>
+                    </select>
+                  </div>
+                </div>
+                <div class="row mb-3">
+                  <div class="col-md-6">
                     <label for="fax" class="form-label">팩스</label>
                     <input type="text" class="form-control" id="fax" name="fax" />
-                  </div>
-                  <div class="col-md-6">
-                    <label for="mainAddress" class="form-label">주소</label>
-                    <input type="text" class="form-control" id="mainAddress" name="mainAddress" />
-                  </div>
+                  </div> 
+                 <div class="col-md-6">
+			    	<label for="postcode" class="form-label">우편번호</label>
+			    	<input type="text" class="form-control" id="postcode" name="postcode" readonly placeholder="주소 검색으로 자동입력" />
+				  </div>
+				  <div class="col-md-6"></div>
+				</div>
+				<div class="row mb-3">
+				  <div class="col-md-6">
+				    <label for="mainAddress" class="form-label">주소</label>
+				    <input type="text" class="form-control" id="mainAddress" name="mainAddress" readonly placeholder="주소 검색 클릭" style="background:#f6f6f6; cursor:pointer;" />
+				  </div>
+				  <div class="col-md-6">
+				    <label for="detailAddress" class="form-label">상세주소</label>
+				    <input type="text" class="form-control" id="detailAddress" name="detailAddress" placeholder="상세주소 입력" />
+			    </div> 
                 </div>
                 <div class="row mb-3">
                   <div class="col-md-6">
@@ -136,6 +167,12 @@
                       <input class="form-check-input" type="radio" name="clientType" id="both" value="BOTH" />
                       <label class="form-check-label" for="both">겸용</label>
                     </div>
+                  </div>
+                </div>
+                <!-- 중복등록 경고 -->
+                <div class="mb-3 d-none" id="duplicateWarning">
+                  <div class="alert alert-danger py-2 my-2 mb-0">
+                    이미 동일한 거래처(회사명/사업자번호)가 존재합니다.
                   </div>
                 </div>
               </div>
@@ -170,5 +207,8 @@
   <div th:replace="~{layouts/footer :: footer}"></div>
   <!-- 분리된 JS 파일 불러오기 -->
   <script src="/js/client/client.js"></script>
+  <!-- 다음(카카오) 우편번호 API CDN -->
+  <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js">
+  </script>
 </body>
 </html>

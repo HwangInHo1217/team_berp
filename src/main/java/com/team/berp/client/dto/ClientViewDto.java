@@ -4,20 +4,25 @@ import com.team.berp.domain.Company;
 import com.team.berp.domain.Employee;
 import lombok.*;
 
-@Getter @Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class ClientViewDto {
     private Long companyId;
     private String companyName;
-    private Company.CompanyType companyType; // Enum
+    private Company.CompanyType companyType;
     private String custCd;
     private String presidentNm;
     private String companyNo;
     private String companyCond;
     private String companyItem;
-    private String companyAddr;
+
+    // 주소 관련 필드 추가
+    private String postcode;
+    private String mainAddress;
+    private String detailAddress;
+
     private String companyTel;
     private String companyFax;
     private Long employeeId;
@@ -35,7 +40,12 @@ public class ClientViewDto {
         company.setCompanyNo(this.companyNo);
         company.setCompanyCond(this.companyCond);
         company.setCompanyItem(this.companyItem);
-        company.setCompanyAddr(this.companyAddr);
+
+        // 주소 관련
+        company.setPostcode(this.postcode);
+        company.setMainAddress(this.mainAddress);
+        company.setDetailAddress(this.detailAddress);
+
         company.setCompanyTel(this.companyTel);
         company.setCompanyFax(this.companyFax);
         company.setEmployee(employee);
@@ -54,7 +64,12 @@ public class ClientViewDto {
             .companyNo(company.getCompanyNo())
             .companyCond(company.getCompanyCond())
             .companyItem(company.getCompanyItem())
-            .companyAddr(company.getCompanyAddr())
+
+            // 주소 관련
+            .postcode(company.getPostcode())
+            .mainAddress(company.getMainAddress())
+            .detailAddress(company.getDetailAddress())
+
             .companyTel(company.getCompanyTel())
             .companyFax(company.getCompanyFax())
             .employeeId(company.getEmployee() != null ? company.getEmployee().getEmployeeId() : null)
