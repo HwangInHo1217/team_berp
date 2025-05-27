@@ -1,18 +1,12 @@
 package com.team.berp.place.controller;
 
-import com.team.berp.domain.CompanyOrder;
-import com.team.berp.place.dto.PlaceDTO;
-//import com.team.berp.place.service.PlaceService;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 
-import ch.qos.logback.core.model.Model;
 import lombok.RequiredArgsConstructor;
 
-import java.util.List;
-
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-@RestController // @Controller + @ResponseBody (JSON 반환용)
+@Controller // @Controller + @ResponseBody (JSON 반환용)
 @RequestMapping("/place")
 @RequiredArgsConstructor
 public class PlaceController {

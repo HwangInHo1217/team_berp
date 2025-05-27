@@ -29,9 +29,34 @@ public class BomService {
     private final ItemRepository itemRepository; // 품목(완제품/자재) 관련 JPA Repository
     private final BomRepository bomRepository;   // BOM(구성) 관련 Repository
     //bom 사용 여부로 구분하여 조회
-    public Page<BomProductItemDTO> getPagedParentProductList(String type, String keyword, String useYn, Pageable pageable) {
-        return bomRepository.searchBomProducts(type, keyword, useYn, pageable);
+    public Page<BomProductItemDTO> getPagedParentProductList(String field, String keyword, String useYn, Pageable pageable) {
+        String searchValue = (keyword != null) ? keyword : "";
+        String useValue = (useYn != null && !useYn.isEmpty()) ? useYn : null;
+
+        ItemType type = ItemType.product; // 무조건 제품만 검색 대상
+
+        Page<Item> items;
+
+        if (field == null || field.equals("name")) {
+            items = (useValue == null) ?
+                itemRepository.findByNameContainingAndType(searchValue, type, pageable) :
+                itemRepository.findByNameContainingAndTypeAndUse(searchValue, type, useValue, pageable);
+        } else if (field.equals("code")) {
+            items = (useValue == null) ?
+                itemRepository.findByCodeContainingAndType(searchValue, type, pageable) :
+                itemRepository.findByCodeContainingAndTypeAndUse(searchValue, type, useValue, pageable);
+        } else {
+            items = itemRepository.findByType(type, pageable); // fallback
         }
+
+        return items.map(item -> new BomProductItemDTO(
+            item.getId(), item.getCode(), item.getName(),
+            item.getSpec(), item.getUnit(), item.getUse(), item.getType()
+        ));
+    }
+
+
+
 
 
     /*
@@ -126,7 +151,7 @@ public class BomService {
             itemRepository.findByType(ItemType.raw)     // 자재
         );
     }
-
+    
     // ✅ 완제품별로 BOM 구성 목록 그룹화
     public List<BomListViewResponse> getBomGroupedByParent() {
         List<Item> parents = itemRepository.findByType(ItemType.product); // 완제품 리스트

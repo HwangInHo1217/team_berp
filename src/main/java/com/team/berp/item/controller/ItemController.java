@@ -26,13 +26,13 @@ public class ItemController {
 	
 	@GetMapping("/item/item") // 클라이언트가 "/item/item" URL로 GET 요청을 보낼 때 실행됨
 	public String item(
-	    @RequestParam(name="type", value = "type", required = false) String type,       // 검색 조건 종류 (ex: itemName, itemCode)
-	    @RequestParam(name="keyword", value = "keyword", required = false) String keyword, // 검색 키워드 (사용자가 입력한 검색어)
-	    @RequestParam(name="page", defaultValue = "0") int page,                        // 현재 페이지 번호 (0부터 시작), 기본값 0
-	    @RequestParam(name="size", defaultValue = "10") int size,                       // 한 페이지에 보여줄 아이템 수, 기본값 10
-	    @RequestParam(name = "tab", required = false, defaultValue = "all") String tab, // 탭으로 구분해야함
-	    Model model                                                        // 뷰에 데이터를 전달할 Spring의 모델 객체
-	) {
+	   // @RequestParam(name="type", value = "type", required = false) String type,       // 검색 조건 종류 (ex: itemName, itemCode)
+	   // @RequestParam(name="keyword", value = "keyword", required = false) String keyword, // 검색 키워드 (사용자가 입력한 검색어)
+	   // @RequestParam(name="page", defaultValue = "0") int page,                        // 현재 페이지 번호 (0부터 시작), 기본값 0
+	   // @RequestParam(name="size", defaultValue = "10") int size,                       // 한 페이지에 보여줄 아이템 수, 기본값 10
+	   // @RequestParam(name = "tab", required = false, defaultValue = "all") String tab, // 탭으로 구분해야함
+	  //  Model model                                                        // 뷰에 데이터를 전달할 Spring의 모델 객체
+	) {/*
 	    // 페이지 정보와 정렬 기준(itemId 내림차순)을 담은 Pageable 객체 생성
 	    Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
 
@@ -52,7 +52,7 @@ public class ItemController {
 	    model.addAttribute("type", type);           // 선택된 검색 타입 유지
 	    model.addAttribute("keyword", keyword);     // 입력된 검색어 유지
 
-	    // 반환할 뷰의 이름 (템플릿: src/main/resources/templates/item/item.html)
+	    // 반환할 뷰의 이름 (템플릿: src/main/resources/templates/item/item.html)*/
 	    return "item/item";
 	}
 
