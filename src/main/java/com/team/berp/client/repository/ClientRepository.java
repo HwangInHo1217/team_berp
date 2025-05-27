@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
-public interface ClientRepository extends JpaRepository<Company, Integer> {
+public interface ClientRepository extends JpaRepository<Company, Long> {
 
     // 거래처 유형별 페이징 조회 (고객사/매입처/겸용)
     Page<Company> findByCompanyType(CompanyType companyType, Pageable pageable);

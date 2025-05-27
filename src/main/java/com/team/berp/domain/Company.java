@@ -10,7 +10,7 @@ import lombok.Data;
 public class Company {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer companyId;
+    private Long companyId;
 
     @Column(nullable = false, length = 100)
     private String companyName;
