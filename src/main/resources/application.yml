@@ -13,7 +13,7 @@ spring:
   # [🔧 데이터베이스 설정 수정]
   # "datasource"는 "spring" 바로 아래 레벨이어야 해.
   datasource:
-    url: jdbc:mysql://210.178.108.186:13306/mrp?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    url: jdbc:mysql://210.178.108.186:13306/erp
     username: erp
     password: erp1234
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -25,7 +25,7 @@ spring:
   jpa:
     # "hibernate"는 "jpa" 아래 레벨
     hibernate:
-      ddl-auto: update        # 엔티티 변경 시 DB 테이블 자동 반영
+      ddl-auto: none        # 엔티티 변경 시 DB 테이블 자동 반영
                               # (개발 초기: update 또는 validate, 운영: none 또는 validate)
     # "show-sql"은 "jpa" 바로 아래 레벨
     show-sql: true            # 콘솔에 실행되는 SQL 쿼리 출력
