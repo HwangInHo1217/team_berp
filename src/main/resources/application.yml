@@ -13,9 +13,9 @@ spring:
   # [🔧 데이터베이스 설정 수정]
   # "datasource"는 "spring" 바로 아래 레벨이어야 해.
   datasource:
-    url: jdbc:mysql://localhost:3306/mrp?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
-    username: project
-    password: a123456
+    url: jdbc:mysql://210.178.108.186:13306/mrp?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+    username: erp
+    password: erp1234
     driver-class-name: com.mysql.cj.jdbc.Driver
   # ================================
 
