@@ -9,7 +9,7 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class ClientViewDto {
-    private Integer companyId;
+    private Long companyId;
     private String companyName;
     private Company.CompanyType companyType; // Enum
     private String custCd;

@@ -1,7 +1,7 @@
 package com.team.berp.warehouse.dto;
 
 import com.team.berp.domain.Warehouse;
-import com.team.berp.domain.Warehouse.WarehouseType;
+//import com.team.berp.domain.Warehouse.WarehouseType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -29,7 +29,7 @@ public class WarehouseResponseDTO {
 	private String warehouseName;
 
     /** 창고 유형 (RAW, PRODUCT 등) */
-	private WarehouseType warehouseType;
+//	private WarehouseType warehouseType;
 
     /** 사용 여부 ("Y" or "N") */
 	private String useYn;
@@ -43,10 +43,10 @@ public class WarehouseResponseDTO {
      * @param warehouse Entity 객체 (DB로부터 조회된 창고 데이터)
      */
 	public WarehouseResponseDTO(Warehouse warehouse) {
-		this.warehouseId = warehouse.getWarehouseId();
+	//	this.warehouseId = warehouse.getWarehouseId();
 		this.warehouseCode = warehouse.getWarehouseCode();
 		this.warehouseName = warehouse.getWarehouseName();
-        this.warehouseType = warehouse.getWarehouseType();
+  //      this.warehouseType = warehouse.getWarehouseType();
         this.useYn = warehouse.getUseYn();
         this.description = warehouse.getDescription();
 	}

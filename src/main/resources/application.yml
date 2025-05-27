@@ -8,23 +8,31 @@ spring:
   # ================================
   # [🔧 데이터베이스 설정 - 아직 실제 사용 안하므로 주석처리]
   datasource:
+
   #   url: jdbc:mysql://localhost:3306/berp_db?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
      url: jdbc:mysql://210.178.108.186:13306/erp
      username: erp         # DB 접속 ID
      password: erp1234   # DB 접속 비밀번호
      driver-class-name: com.mysql.cj.jdbc.Driver  # MySQL 드라이버 클래스
-  # ================================
 
   # ================================
-  # [🧠 JPA 설정 - DB와 연결되면 사용 예정이므로 주석처리]
-  # jpa:
-     hibernate:
-       ddl-auto: update        # 엔티티 변경 시 테이블 자동 반영. 운영환경에서는 none 권장
-     show-sql: true            # 콘솔에 실행되는 SQL 출력
-     properties:
-       hibernate:
-         format_sql: true      # SQL 포맷팅
-         dialect: org.hibernate.dialect.MySQL8Dialect  # MySQL8용 SQL 문법 사용
+
+  # [🧠 JPA 설정 활성화 및 수정]
+  # "jpa"는 "spring" 바로 아래 레벨이어야 해.
+  jpa:
+    # "hibernate"는 "jpa" 아래 레벨
+    hibernate:
+      ddl-auto: none        # 엔티티 변경 시 DB 테이블 자동 반영
+                              # (개발 초기: update 또는 validate, 운영: none 또는 validate)
+    # "show-sql"은 "jpa" 바로 아래 레벨
+    show-sql: true            # 콘솔에 실행되는 SQL 쿼리 출력
+    # "properties"는 "jpa" 아래 레벨
+    properties:
+      # "hibernate"는 "properties" 아래 레벨
+      hibernate:
+        format_sql: true      # SQL 쿼리를 보기 좋게 포맷팅
+        dialect: org.hibernate.dialect.MySQLDialect # MySQL 8용 SQL 문법
+
   # ================================
 
   # ================================

@@ -1,107 +1,80 @@
-// 재고 모달 관리
-
 const StockModal = {
-    
-    init() {
-        // 모달 관련 초기화 작업
+    modalInstance: null,
+    // DOM 요소 ID
+    elementsMap: {
+        itemCode: 'detailItemCode',
+        itemName: 'detailItemName',
+        warehouse: 'detailWarehouse',
+        qty: 'detailQty',
+        unit: 'detailUnit',
+        lastIn: 'detailLastIn',
+        lastOut: 'detailLastOut'
     },
 
-    // 모달 열기
-    open(stock) {
-        // 모달이 없으면 fetch후 재호출
-        if (!document.getElementById('stockDetailModal')) {
-            this.loadModal(() => this.open(stock));
+    init() {
+        const modalElement = document.getElementById('stockDetailModal');
+        if (modalElement) {
+            this.modalInstance = new bootstrap.Modal(modalElement);
+        }
+    },
+
+    open(stockId) {
+        if (!this.modalInstance) {
+            console.error('상세보기 모달이 초기화되지 않았습니다.');
+            // 필요시 여기서 모달 동적 로딩 또는 에러 처리
+            // this.loadModalAndOpen(stockId); // 만약 모달을 동적으로 가져온다면
             return;
         }
 
-        // stockId가 있으면 API로 최신 데이터 조회
-        if (stock.stockId) {
-            this.fetchDetail(stock.stockId, stock);
+        if (stockId) {
+            this.fetchStockDetail(stockId);
         } else {
-            this.fillData(stock);
-            this.show();
+            StockUtils.showError('상세 정보를 표시할 재고 ID가 없습니다.');
         }
     },
 
-    // 모달 동적 로딩
-    loadModal(callback) {
-        // 실제 동적 로딩이 필요한 경우
-        // fetch('/pages/stock/stock-detail-modal.html')
-        //     .then(res => res.text())
-        //     .then(html => {
-        //         document.getElementById('stockDetailModalWrapper').innerHTML = html;
-        //         setTimeout(callback, 50);
-        //     })
-        //     .catch(error => {
-        //         console.error('모달 로딩 실패:', error);
-        //     });
-        
-        // 임시: Thymeleaf 모달이 이미 있으므로 바로 콜백 실행
-        setTimeout(callback, 10);
-    },
+    // loadModalAndOpen(stockId) { ... } // 모달 HTML을 동적으로 로드해야 하는 경우 사용
 
-    // API로 상세 데이터 조회
-    fetchDetail(stockId, fallbackStock) {
-        fetch(`/api/stocks/${stockId}/detail`)
-            .then(response => response.json())
-            .then(latestStock => {
-                const stockData = {
-                    item_code: latestStock.itemCode,
-                    item_name: latestStock.itemName,
-                    warehouse: latestStock.warehouseName,
-                    qty: latestStock.quantity,
-                    unit: 'EA',
-                    last_in: StockUtils.formatDate(latestStock.firstAt),
-                    last_out: StockUtils.formatDate(latestStock.lastAt)
+    fetchStockDetail(stockId) {
+        StockUtils.showLoading(document.querySelector('#stockDetailModal .modal-body ul')); // 로딩 표시기 위치
+        fetch(`/api/stocks/${stockId}/detail`) // Controller에 이 API 엔드포인트 필요
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`서버 응답 오류 (${response.status})`);
+                }
+                return response.json();
+            })
+            .then(stockDetail => { // stockDetail은 StockResponseDTO 형태
+                const displayData = {
+                    itemCode: stockDetail.itemCode,
+                    itemName: stockDetail.itemName,
+                    warehouse: stockDetail.warehouseName,
+                    qty: StockUtils.formatNumber(stockDetail.quantity),
+                    unit: stockDetail.itemUnit || 'EA', // DTO에 itemUnit 필드 필요
+                    // DTO의 날짜 필드명에 맞춰 수정 (actualLastInAt, actualLastOutAt 등)
+                    lastIn: StockUtils.formatDate(stockDetail.actualLastInAt || stockDetail.firstAt),
+                    lastOut: StockUtils.formatDate(stockDetail.actualLastOutAt || stockDetail.lastAt)
                 };
-                this.fillData(stockData);
-                this.show();
+                this.fillModalData(displayData);
+                this.modalInstance.show();
             })
             .catch(error => {
-                console.error('재고 상세 조회 실패:', error);
-                // API 실패시 전달받은 데이터로 대체
-                this.fillData(fallbackStock);
-                this.show();
+                StockUtils.handleApiError(error, '재고 상세 정보를 가져오는데 실패했습니다.');
+                // 실패 시 모달 내용 초기화 또는 에러 메시지 표시
+                this.fillModalData({}); // 빈 데이터로 채우거나
+                document.querySelector('#stockDetailModal .modal-body ul').innerHTML = `<li class="list-group-item text-danger">정보를 불러오지 못했습니다.</li>`;
             });
     },
 
-    // 모달 데이터 채우기
-    fillData(stock) {
-        const elements = {
-            'detailItemCode': stock.item_code,
-            'detailItemName': stock.item_name,
-            'detailWarehouse': stock.warehouse,
-            'detailQty': stock.qty,
-            'detailUnit': stock.unit,
-            'detailLastIn': stock.last_in,
-            'detailLastOut': stock.last_out
-        };
-
-        Object.entries(elements).forEach(([id, value]) => {
-            const element = document.getElementById(id);
+    fillModalData(data) {
+        for (const key in this.elementsMap) {
+            const element = document.getElementById(this.elementsMap[key]);
             if (element) {
-                element.textContent = value || '-';
+                element.textContent = data[key] || '-';
             }
-        });
-    },
-
-    // 모달 표시
-    show() {
-        const modalElement = document.getElementById('stockDetailModal');
-        if (modalElement) {
-            const modal = new bootstrap.Modal(modalElement);
-            modal.show();
         }
     },
 
-    // 모달 닫기
-    close() {
-        const modalElement = document.getElementById('stockDetailModal');
-        if (modalElement) {
-            const modal = bootstrap.Modal.getInstance(modalElement);
-            if (modal) {
-                modal.hide();
-            }
-        }
-    }
+    // show() 메소드는 this.modalInstance.show()로 대체되어 불필요할 수 있음
+    // close() 메소드는 this.modalInstance.hide()로 대체되어 불필요할 수 있음
 };

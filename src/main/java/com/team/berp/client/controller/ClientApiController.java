@@ -19,7 +19,7 @@ public class ClientApiController {
     // 상태 변경
     @PatchMapping("/{companyId}/status")
     public void changeStatus(
-        @PathVariable("companyId") Integer companyId,
+        @PathVariable("companyId") Long companyId,
         @RequestParam("useYn") String useYn
     ) {
         clientService.changeUseYn(companyId, useYn);
@@ -40,13 +40,13 @@ public class ClientApiController {
 
     // 거래처 단건 조회
     @GetMapping("/{companyId}")
-    public ClientViewDto get(@PathVariable("companyId") Integer companyId) {
+    public ClientViewDto get(@PathVariable("companyId") Long companyId) {
         return clientService.getById(companyId);
     }
 
     // 거래처 등록
     @PostMapping
-    public Integer register(@RequestBody ClientViewDto dto) {
+    public Long register(@RequestBody ClientViewDto dto) {
         Employee emp = new Employee();
         emp.setEmployeeId(dto.getEmployeeId() != null ? dto.getEmployeeId() : 1L); // 임시
         return clientService.register(dto, emp);
@@ -55,7 +55,7 @@ public class ClientApiController {
     // 거래처 수정
     @PutMapping("/{companyId}")
     public void update(
-        @PathVariable("companyId") Integer companyId,
+        @PathVariable("companyId") Long companyId,
         @RequestBody ClientViewDto dto
     ) {
         Employee emp = new Employee();
@@ -65,7 +65,7 @@ public class ClientApiController {
 
     // 거래처 삭제
     @DeleteMapping("/{companyId}")
-    public void delete(@PathVariable("companyId") Integer companyId) {
+    public void delete(@PathVariable("companyId") Long companyId) {
         clientService.delete(companyId);
     }
 }
