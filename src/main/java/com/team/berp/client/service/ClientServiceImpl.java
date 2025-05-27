@@ -18,7 +18,7 @@ public class ClientServiceImpl implements ClientService {
 
     // 등록
     @Override
-    public Integer register(ClientViewDto dto, Employee employee) {
+    public Long register(ClientViewDto dto, Employee employee) {
         Company company = dto.toEntity(employee);
         Company saved = companyRepository.save(company);
         return saved.getCompanyId();
@@ -26,7 +26,7 @@ public class ClientServiceImpl implements ClientService {
 
     // 수정
     @Override
-    public void update(Integer companyId, ClientViewDto dto, Employee employee) {
+    public void update(Long companyId, ClientViewDto dto, Employee employee) {
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new RuntimeException("거래처 없음"));
         company.setCompanyName(dto.getCompanyName());
@@ -46,7 +46,7 @@ public class ClientServiceImpl implements ClientService {
 
     // 상세조회
     @Override
-    public ClientViewDto getById(Integer companyId) {
+    public ClientViewDto getById(Long companyId) {
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new RuntimeException("거래처 없음"));
         return ClientViewDto.fromEntity(company);
@@ -86,13 +86,13 @@ public class ClientServiceImpl implements ClientService {
 
     // 삭제
     @Override
-    public void delete(Integer companyId) {
+    public void delete(Long companyId) {
         companyRepository.deleteById(companyId);
     }
 
     // 상태 변경 (useYn)
     @Override
-    public void changeUseYn(Integer companyId, String useYn) {
+    public void changeUseYn(Long companyId, String useYn) {
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new RuntimeException("거래처 없음"));
         company.setUseYn(useYn);
