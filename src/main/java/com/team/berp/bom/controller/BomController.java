@@ -24,7 +24,7 @@ import lombok.RequiredArgsConstructor;
 public class BomController {
 	
 	private final BomService bomService;
-	@GetMapping("/bom/bom")
+	/*@GetMapping("/bom/bom")
 	public String showBomPage(
 	        @RequestParam(name = "type", required = false) String type,
 	        @RequestParam(name = "keyword", required = false) String keyword,
@@ -50,7 +50,11 @@ public class BomController {
 	    model.addAttribute("selectProductList", itemSelectionDto.getProducts());
 
 	    return "bom/bom";
-	}
+	}*/
+	  @GetMapping("/bom")
+	    public String bomViewPage() {
+	        return "bom/bom";  // => resources/templates/bom/bom.html
+	    }
 
 
 
