@@ -11,8 +11,12 @@ public class UpdateBomRequestDTO {//현재 AddBomRequestDTO와 동일한 구조�
 
     @Data
     public static class BomComponent {
-        private Long childItemId;
-        private int qty;
+        private Long childItemId; // 자재 item_id
+        private int qty;         // 해당 자재의 수량
+        private Integer seqNo;        // 순번
+        private Double lossRt;        // 로스율
+        private Integer itemPrice;    // 단가
+        private String remark;        // 비고
     }
 }
 

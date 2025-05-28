@@ -1,3 +1,4 @@
+
 package com.team.berp.domain;
 
 import jakarta.persistence.*;

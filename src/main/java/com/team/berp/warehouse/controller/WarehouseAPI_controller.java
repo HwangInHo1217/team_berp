@@ -10,7 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.util.StringUtils;
 
-import com.team.berp.domain.Warehouse.WarehouseType;
+import com.team.berp.domain.WarehouseType;
 import com.team.berp.warehouse.dto.WarehouseCreateRequestDTO;
 import com.team.berp.warehouse.dto.WarehouseResponseDTO;
 import com.team.berp.warehouse.service.Warehouse_service;
@@ -56,7 +56,7 @@ public class WarehouseAPI_controller {
     @GetMapping("/check-duplicate")
     public ResponseEntity<Map<String, String>> checkWhsCodeDuplicate(
             @RequestParam("warehouseCode") String code,
-            @RequestParam(value = "excludeId", required = false) Integer excludeId) {
+            @RequestParam(value = "excludeId", required = false) Long excludeId) {
 
         return ResponseEntity.ok(whsService.checkWhsCodeDuplicate(code, excludeId));
     }
@@ -86,7 +86,7 @@ public class WarehouseAPI_controller {
      * - 수정 시 코드 중복 검증 및 유형-코드 형식 일치 여부 확인
      */
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateWhs(@PathVariable("id") Integer id,
+    public ResponseEntity<?> updateWhs(@PathVariable("id") Long id,
                                        @RequestBody WarehouseCreateRequestDTO dto) {
         log.info("창고 수정 요청, ID: {}", id);
         return ApiUtils.handle(() -> {
@@ -145,7 +145,7 @@ public class WarehouseAPI_controller {
      * - 수정 모달 진입 시 단건 조회에 사용 가능
      */
     @GetMapping("/{id}")
-    public ResponseEntity<WarehouseResponseDTO> getWhsById(@PathVariable("id") Integer id) {
+    public ResponseEntity<WarehouseResponseDTO> getWhsById(@PathVariable("id") Long id) {
         return ApiUtils.handleGetById(() -> whsService.getWhsById(id));
     }
 
@@ -157,7 +157,7 @@ public class WarehouseAPI_controller {
      * - 다중 삭제는 프론트에서 여러 DELETE 요청을 보내 처리
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteWhs(@PathVariable("id") Integer id) {
+    public ResponseEntity<Void> deleteWhs(@PathVariable("id") Long id) {
         return ApiUtils.handleDelete(() -> whsService.deleteWhs(id));
     }
 }

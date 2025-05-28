@@ -1,107 +1,99 @@
-// 재고 모달 관리
-
+// ===== stock-modal.js =====
 const StockModal = {
+    modalInstance: null,
+    currentStockId: null,
     
-    init() {
-        // 모달 관련 초기화 작업
+    elementsMap: {
+        itemCode: 'detailItemCode',
+        itemName: 'detailItemName',
+        itemType: 'detailItemType',
+        unit: 'detailUnit',
+        warehouse: 'detailWarehouse',
+        qty: 'detailQty',
+        lotNumber: 'detailLotNumber',
+        stockStatus: 'detailStockStatus',
+        firstStocked: 'detailFirstStocked',
+        lastIn: 'detailLastIn',
+        lastStocked: 'detailLastStocked',
+        lastOut: 'detailLastOut'
     },
 
-    // 모달 열기
-    open(stock) {
-        // 모달이 없으면 fetch후 재호출
-        if (!document.getElementById('stockDetailModal')) {
-            this.loadModal(() => this.open(stock));
+    init() {
+        console.log('StockModal 초기화');
+        const modalElement = document.getElementById('stockDetailModal');
+        if (modalElement) {
+            this.modalInstance = new bootstrap.Modal(modalElement);
+        }
+    },
+
+    open(stockId) {
+        if (!this.modalInstance) {
+            console.error('상세보기 모달이 초기화되지 않았습니다.');
             return;
         }
 
-        // stockId가 있으면 API로 최신 데이터 조회
-        if (stock.stockId) {
-            this.fetchDetail(stock.stockId, stock);
+        if (stockId) {
+            this.currentStockId = stockId;
+            this.fetchStockDetail(stockId);
         } else {
-            this.fillData(stock);
-            this.show();
+            StockUtils.showError('상세 정보를 표시할 재고 ID가 없습니다.');
         }
     },
 
-    // 모달 동적 로딩
-    loadModal(callback) {
-        // 실제 동적 로딩이 필요한 경우
-        // fetch('/pages/stock/stock-detail-modal.html')
-        //     .then(res => res.text())
-        //     .then(html => {
-        //         document.getElementById('stockDetailModalWrapper').innerHTML = html;
-        //         setTimeout(callback, 50);
-        //     })
-        //     .catch(error => {
-        //         console.error('모달 로딩 실패:', error);
-        //     });
-        
-        // 임시: Thymeleaf 모달이 이미 있으므로 바로 콜백 실행
-        setTimeout(callback, 10);
-    },
-
-    // API로 상세 데이터 조회
-    fetchDetail(stockId, fallbackStock) {
+    fetchStockDetail(stockId) {
         fetch(`/api/stocks/${stockId}/detail`)
-            .then(response => response.json())
-            .then(latestStock => {
-                const stockData = {
-                    item_code: latestStock.itemCode,
-                    item_name: latestStock.itemName,
-                    warehouse: latestStock.warehouseName,
-                    qty: latestStock.quantity,
-                    unit: 'EA',
-                    last_in: StockUtils.formatDate(latestStock.firstAt),
-                    last_out: StockUtils.formatDate(latestStock.lastAt)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`서버 응답 오류 (${response.status})`);
+                }
+                return response.json();
+            })
+            .then(stockDetail => {
+                console.log("상세 데이터:", stockDetail); // 디버깅용
+                
+                const displayData = {
+                    itemCode: stockDetail.itemCode,
+                    itemName: stockDetail.itemName,
+                    itemType: stockDetail.itemType === 'raw' ? '자재' : '완제품',
+                    unit: stockDetail.itemUnit || stockDetail.unit || 'EA',
+                    warehouse: stockDetail.warehouseName,
+                    qty: StockUtils.formatNumber(stockDetail.quantity),
+                    lotNumber: stockDetail.lotNumber || '-',
+                    stockStatus: this.getDetailStatusBadge(stockDetail),
+                    firstStocked: StockUtils.formatDate(stockDetail.firstStockedDate),
+                    lastIn: StockUtils.formatDate(stockDetail.actualLastInAt || stockDetail.lastInDate),
+                    lastStocked: StockUtils.formatDate(stockDetail.lastStockedDate),
+                    lastOut: StockUtils.formatDate(stockDetail.actualLastOutAt || stockDetail.lastOutDate)
                 };
-                this.fillData(stockData);
-                this.show();
+                
+                this.fillModalData(displayData);
+                this.modalInstance.show();
             })
             .catch(error => {
-                console.error('재고 상세 조회 실패:', error);
-                // API 실패시 전달받은 데이터로 대체
-                this.fillData(fallbackStock);
-                this.show();
+                StockUtils.handleApiError(error, '재고 상세 정보를 가져오는데 실패했습니다.');
             });
     },
 
-    // 모달 데이터 채우기
-    fillData(stock) {
-        const elements = {
-            'detailItemCode': stock.item_code,
-            'detailItemName': stock.item_name,
-            'detailWarehouse': stock.warehouse,
-            'detailQty': stock.qty,
-            'detailUnit': stock.unit,
-            'detailLastIn': stock.last_in,
-            'detailLastOut': stock.last_out
-        };
-
-        Object.entries(elements).forEach(([id, value]) => {
-            const element = document.getElementById(id);
+    fillModalData(data) {
+        for (const key in this.elementsMap) {
+            const element = document.getElementById(this.elementsMap[key]);
             if (element) {
-                element.textContent = value || '-';
+                if (key === 'stockStatus') {
+                    element.innerHTML = data[key] || '-';
+                } else {
+                    element.textContent = data[key] || '-';
+                }
             }
-        });
-    },
-
-    // 모달 표시
-    show() {
-        const modalElement = document.getElementById('stockDetailModal');
-        if (modalElement) {
-            const modal = new bootstrap.Modal(modalElement);
-            modal.show();
         }
     },
-
-    // 모달 닫기
-    close() {
-        const modalElement = document.getElementById('stockDetailModal');
-        if (modalElement) {
-            const modal = bootstrap.Modal.getInstance(modalElement);
-            if (modal) {
-                modal.hide();
-            }
+    
+    getDetailStatusBadge(stock) {
+        if (stock.quantity === 0) {
+            return '<span class="badge bg-danger">재고없음</span>';
+        } else if (stock.isBelowSafety) {
+            return '<span class="badge bg-warning">안전재고미달</span>';
+        } else {
+            return '<span class="badge bg-success">정상</span>';
         }
     }
 };
