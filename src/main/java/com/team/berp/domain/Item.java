@@ -1,6 +1,5 @@
 package com.team.berp.domain;
 
-import com.team.berp.item.dto.AddItemRequestDTO;
 import com.team.berp.item.dto.UpdateItemRequestDTO;
 
 import jakarta.persistence.Column;
@@ -10,7 +9,6 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -29,6 +27,7 @@ public class Item {
 	
 	@Column(name="item_code", unique=true, updatable=false, length=20)
 	private String code; //코드
+	
 	@Column(name="item_name")
 	private String name; // 품목 이름
 	
