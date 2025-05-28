@@ -1,4 +1,3 @@
-
 function openplaceDetailModal(data) {
   document.getElementById('placeDetailDate').textContent = data.date;
   document.getElementById('placeDetailCustomer').textContent = data.customer;
@@ -55,3 +54,65 @@ function openplaceDetailModal(data) {
     modal.show();
   }
 
+  //발주 초기화
+  function placereset(){
+	if (confirm("입력한 정보를 초기화하시겠습니까?")) {
+	       document.querySelector('form[action="/place"]').reset();
+	       alert("입력한 정보가 초기화되었습니다.");
+	   } else {
+	       alert("초기화가 취소되었습니다.");
+	   }
+  }
+  
+  //발주 등록
+    function placesubmit() {
+      if (confirm("입력한 정보를 저장하시겠습니까?")) {
+        const form = document.querySelector('form[action="/place/add"]');
+        const inputs = form.querySelectorAll('input[required], select[required]');
+
+        for (let input of inputs) {
+          if (!input.value.trim()) {
+            alert("모든 필수 항목을 입력해주세요.");
+            return;
+          }
+        }
+
+        alert("저장이 완료되었습니다.");
+        form.submit();
+      } else {
+        alert("저장이 취소되었습니다.");
+      }
+    }
+	
+	function addItemRow() {
+	  const container = document.getElementById("itemListContainer");
+	  const newRow = document.createElement("div");
+	  newRow.className = "row align-items-end g-2 mb-2 item-row";
+	  newRow.innerHTML = `
+	    <div class="col-md-3">
+	      <select class="form-select" name="itemId" required>
+	        <option value="">-- 품목 선택 --</option>
+	        <option value="P001">완제품 A</option>
+	        <option value="P002">완제품 B</option>
+	      </select>
+	    </div>
+	    <div class="col-md-3">
+	      <input type="text" class="form-control" name="itemCode" placeholder="품목코드" required />
+	    </div>
+	    <div class="col-md-2">
+	      <input type="number" class="form-control" name="quantity" placeholder="수량" min="1" required />
+	    </div>
+	    <div class="col-md-2">
+	      <input type="text" class="form-control" name="unit" value="EA" required />
+	    </div>
+	    <div class="col-md-2">
+	      <button type="button" class="btn btn-danger btn-sm" onclick="removeItemRow(this)">삭제</button>
+	    </div>
+	  `;
+	  container.appendChild(newRow);
+	}
+
+	function removeItemRow(button) {
+	  const row = button.closest(".item-row");
+	  row.remove();
+	}

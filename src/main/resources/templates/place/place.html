@@ -31,13 +31,7 @@
         <input type="date" class="form-control w-auto" />
         <span class="align-self-center">~</span>
         <input type="date" class="form-control w-auto" />
-        <select class="form-select w-auto">
-          <option>전체 창고</option>
-          <option>자재창고 A</option>
-          <option>완제품창고</option>
-        </select>
         <button class="btn btn-outline-secondary">검색</button>
-
         <button class="btn btn-outline-success ms-auto">엑셀 다운로드</button>
         <button class="btn btn-danger">삭제</button>
         <button class="btn btn-primary" onclick="openplaceAddModal()" data-bs-toggle="modal" data-bs-target="#placeRegisterModal">
@@ -45,7 +39,7 @@
         </button>
       </div>
 
-      <!-- 📋 출고 테이블 -->
+      <!-- 📋 발주 테이블 -->
       <div class="table-responsive">
         <table class="table table-bordered text-center align-middle">
           <thead class="table-light">
@@ -64,50 +58,51 @@
               <th>입고등록</th>
             </tr>
           </thead>
+          
          <tbody>
-		<tr th:each="order, stat : ${orderList}">
-		  <td><input type="checkbox" th:value="${order.id}" /></td>
-		  <td th:text="${stat.count}">1</td> <!-- 순번 -->
-		  <td th:text="${#temporals.format(order.orderDate, 'yyyy-MM-dd')}">2024-01-01</td> <!-- 발주일자 -->
-		  <td th:text="${order.company.companyName}">거래처명</td>
-		
-		  <!-- 가장 첫 번째 품목 기준 출력 -->
-		  <td th:text="${order.lineItems[0].item.itemCode}">품목코드</td>
-		  <td th:text="${order.lineItems[0].item.itemName}">품목명</td>
-		  <td th:text="${order.lineItems[0].quantity}">수량</td>
-		  <td th:text="${order.lineItems[0].item.unit}">단위</td>
-		
-		  <td th:text="${order.employee.name}">담당자</td> <!-- employee 엔티티 연결된 경우 -->
-		
-		  <td>
-		    <button class="btn btn-info btn-sm"
-		            th:onclick="'openplaceDetailModal(' + ${order.id} + ')'"
-		            data-bs-toggle="modal"
-		            data-bs-target="#placeDetailModal">상세</button>
-		  </td>
-		  <td>
-		    <button class="btn btn-warning btn-sm"
-		            th:onclick="'openplaceEditModal(' + ${order.id} + ')'"
-		            data-bs-toggle="modal"
-		            data-bs-target="#placeEditModal">수정</button>
-		  </td>
-		  <td>
-		    <button type="submit" class="btn btn-warning btn-sm"
-		            th:onclick="'registerInbound(' + ${order.id} + ')'">입고 등록</button>
-		  </td>
-		</tr>
-		</tbody>
+			<tr th:each="order, stat : ${orderList}">
+			  <td><input type="checkbox" th:value="${order.orderId}" /></td>
+			  <td th:text="${stat.count}">1</td> <!-- 순번 -->
+			  <td th:text="${#temporals.format(order.orderDate, 'yyyy-MM-dd')}">2024-01-01</td> <!-- 발주일자 -->
+			  <td th:text="${order.company.companyName}">거래처명</td>
+			
+			  <!-- 가장 첫 번째 품목 기준 출력 -->
+			  <td th:text="${order.lineItems[0].item.code}">품목코드</td>
+			  <td th:text="${order.lineItems[0].item.name}">품목명</td>
+			  <td th:text="${order.lineItems[0].unitQty}">수량</td>
+			  <td th:text="${order.lineItems[0].item.unit}">단위</td>
+			
+			  <td th:text="${order.company.employee.empName}">담당자</td> <!-- employee 엔티티 연결된 경우 -->
+			
+			  <td>
+			    <button class="btn btn-info btn-sm"
+			            th:onclick="'openplaceDetailModal(' + ${order.orderId} + ')'"
+			            data-bs-toggle="modal"
+			            data-bs-target="#placeDetailModal">상세</button>
+			  </td>
+			  <td>
+			    <button class="btn btn-warning btn-sm"
+			            th:onclick="'openplaceEditModal(' + ${order.orderId} + ')'"
+			            data-bs-toggle="modal"
+			            data-bs-target="#placeEditModal">수정</button>
+			  </td>
+			  <td>
+			    <button type="submit" class="btn btn-warning btn-sm"
+			            th:onclick="'registerInbound(' + ${order.orderId} + ')'">입고 등록</button>
+			  </td>
+			</tr>
+			</tbody>
 
         </table>
       </div>
     </div>
   </div>
+   <!-- 공통 푸터 -->
+  <div th:replace="~{/layouts/footer :: footer}"></div>
 
   <!-- ✅ 모달 삽입용 div -->
  <div th:replace="~{place/place-detail-modal :: place-detail-modal}"></div>
  <div th:replace="~{place/place-register-modal :: place-register-modal}"></div>
-   <!-- 공통 푸터 -->
-  <div th:replace="~{/layouts/footer :: footer}"></div>
 </body>
 <script src="/js/place/place.js"></script>
 </html>
