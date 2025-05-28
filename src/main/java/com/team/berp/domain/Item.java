@@ -2,9 +2,6 @@ package com.team.berp.domain;
 
 import java.math.BigDecimal;
 
-import com.team.berp.item.dto.AddItemRequestDTO;
-import com.team.berp.item.dto.UpdateItemRequestDTO;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -31,15 +28,13 @@ public class Item {
 	
 	@Column(name="item_code", unique=true, updatable=false, length=20)
 	private String code; //코드
+	
 	@Column(name="item_name")
 	private String name; // 품목 이름
 	
 	@Enumerated(EnumType.STRING)
 	@Column(name="item_type")
 	private ItemType type;//자재인지 완제품인지
-	
-	@Column(name = "item_code", nullable = false)
-    private String itemCode;
 
 	@Column(name="unit") //단위
 	private String unit; 
@@ -61,14 +56,6 @@ public class Item {
 		this.unit = unit;
 		this.spec = spec;
 		this.use = use;
-	}
-	
-	public void update(UpdateItemRequestDTO dto) {
-	    this.name = dto.getName();
-	    this.type = ItemType.valueOf(dto.getType());
-	    this.spec = dto.getSpec();
-	    this.unit = dto.getUnit();
-	    this.use = dto.getUse();
 	}
 
 }

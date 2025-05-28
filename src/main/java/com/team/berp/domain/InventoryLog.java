@@ -33,9 +33,6 @@ public class InventoryLog {
     @JoinColumn(name = "warehouse_id", nullable = false)
     private Warehouse warehouse;
 
-    @Column(nullable = false)
-    private Integer quantity;
-
     @Column(name = "log_datetime")
     private LocalDateTime logDatetime;
 

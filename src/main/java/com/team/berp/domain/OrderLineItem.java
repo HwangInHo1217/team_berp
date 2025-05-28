@@ -1,15 +1,11 @@
 package com.team.berp.domain;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
 @Table(name = "order_line_item")
-@NoArgsConstructor
-@AllArgsConstructor
 @Getter
 @Setter
 public class OrderLineItem {

@@ -25,8 +25,11 @@
 				  <label class="form-label">주문 구분</label>
 				  <select class="form-select" name="orderType" required>
 				    <option value="" disabled selected>-- 선택 --</option>
-				    <option value="CUSTOMER">판매(고객)</option>
-				    <option value="SUPPLIER">구매(납품)</option>
+				    <option value="IT">IT</option>
+				    <option value="건설">건설</option>
+				    <option value="제조">제조</option>
+				    <option value="유통">유통</option>
+				    <option value="서비스업">서비스업</option>
 				  </select>
 				</div>
             
@@ -113,6 +116,7 @@
                           name="unitPrice[]"
                           class="form-control"
                           required
+                          readonly
                           oninput="calculateRowTotal(this)"
                         />
                       </td>

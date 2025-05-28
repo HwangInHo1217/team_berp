@@ -1,3 +1,5 @@
+// /team_berp/src/main/java/com/team/berp/domain/ItemType.java
+
 package com.team.berp.domain;
 
 public enum ItemType {

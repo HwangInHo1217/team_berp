@@ -7,8 +7,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
-
 
 @NoArgsConstructor
 @Data
@@ -24,7 +22,7 @@ public class CompanyOrder {
     @JoinColumn(name = "company_id", nullable = false)
     private Company company;
 
-    public enum OrderType { CUSTOMER, SUPPLIER }
+    public enum OrderType { IT, 건설, 제조, 유통, 서비스업 }
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
