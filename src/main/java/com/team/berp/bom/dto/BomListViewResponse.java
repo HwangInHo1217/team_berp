@@ -18,5 +18,12 @@ public class BomListViewResponse { //특정 완제품의 BOM 구성 목록을 �
         private String childCode;
         private String childName;
         private int qty;
+        private String spec;  // 규격
+        private String unit;  // 단위
+
+        private Integer seqNo;       // 순번
+        private String lossRate;     // 예: "5%"
+        private String unitPrice;    // 문자열로 포맷된 금액 또는 단위
+        private String remark;
     }
 }

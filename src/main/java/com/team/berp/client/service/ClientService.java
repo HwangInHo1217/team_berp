@@ -16,12 +16,15 @@ public interface ClientService {
     // 상세조회
     ClientViewDto getById(Long companyId);
 
-    // 리스트조회(검색, 페이징)
+    // 리스트조회(검색, 페이징, 정렬, 논리삭제 제외)
     Page<ClientViewDto> getList(CompanyType type, String keyword, String searchType, Pageable pageable);
 
-    // 삭제
+    // 논리삭제 (useYn = N)
     void delete(Long companyId);
 
     // 상태 변경
     void changeUseYn(Long companyId, String useYn);
+
+    // 회사명+사업자번호로 중복 여부 (등록/수정 둘 다 사용)
+    boolean existsDuplicate(String companyName, String companyNo, Long excludeId);
 }

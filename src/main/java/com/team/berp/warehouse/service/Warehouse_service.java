@@ -18,7 +18,7 @@ import org.springframework.ui.Model;
 import org.springframework.util.StringUtils;
 
 import com.team.berp.domain.Warehouse;
-import com.team.berp.domain.Warehouse.WarehouseType;
+import com.team.berp.domain.WarehouseType;
 import com.team.berp.warehouse.dto.WarehouseCreateRequestDTO;
 import com.team.berp.warehouse.dto.WarehouseResponseDTO;
 import com.team.berp.warehouse.repository.Warehouse_repository;
@@ -39,6 +39,7 @@ public class Warehouse_service {
 
     /**
      * 창고 유형에 따라 자동 코드 생성 (RWWH0001 / PDWH0001 등)
+     * 컨트롤러에서 generateWhsCode 호출됨
      */
     @Transactional(readOnly = true)
     public String generateWhsCode(WarehouseType type) {
@@ -55,14 +56,13 @@ public class Warehouse_service {
     
     /**
      * 창고 코드 중복 확인
-     * - 등록 시: 동일 코드 존재 여부 확인
-     * - 수정 시: 본인의 ID 제외하고 중복 확인 가능
+     * 컨트롤러에서 checkWhsCodeDuplicate 호출됨
      */
     @Transactional(readOnly = true)
-    public Map<String, String> checkWhsCodeDuplicate(String code, Integer excludeId) {
+    public Map<String, String> checkWhsCodeDuplicate(String code, Long excludeId) {
         Optional<Warehouse> existing = repo.findByWarehouseCode(code);
         
-        if (existing.isPresent() && (excludeId == null || !existing.get().getWarehouseId().equals(excludeId))) {
+        if (existing.isPresent() && (excludeId == null || !existing.get().getId().equals(excludeId))) {
             return Map.of("status", "duplicate", "message", "이미 사용 중인 창고 코드입니다.");
         }
         return Map.of("status", "ok", "message", "사용 가능한 창고 코드입니다.");
@@ -71,10 +71,8 @@ public class Warehouse_service {
     // ========== ✅ CRUD 기능 ==========
 
     /**
-     * 창고 등록
-     * - 코드 중복 검사
-     * - 코드가 없으면 자동 생성
-     */ 
+     * 창고 등록 - 컨트롤러에서 createWhs 호출됨
+     */
     @Transactional
     public WarehouseResponseDTO createWhs(WarehouseCreateRequestDTO dto) {
         log.debug("창고 등록 시작: {}", dto.getWarehouseName());
@@ -93,39 +91,36 @@ public class Warehouse_service {
     }
     
     /**
-     * 창고 수정
-     * - 코드 변경 시 중복 및 형식 검증 포함
+     * 창고 수정 - 컨트롤러에서 updateWhs 호출됨
      */    
     @Transactional
-    public WarehouseResponseDTO updateWhs(Integer id, WarehouseCreateRequestDTO dto) {
+    public WarehouseResponseDTO updateWhs(Long id, WarehouseCreateRequestDTO dto) {
         log.debug("창고 수정 시작, ID: {}", id);
         
         Warehouse whs = repo.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("수정할 창고를 찾을 수 없습니다. ID: " + id));
 
-        
         updateWhsFields(whs, dto, id);
         Warehouse updated = repo.save(whs);
         log.info("창고 수정 완료: {}", updated.getWarehouseCode());
         return WarehouseResponseDTO.from(updated);
     }
 
-    
     /**
-     * 단건 조회
+     * 단건 조회 - 컨트롤러에서 getWhsById 호출됨
      */
     @Transactional(readOnly = true)
-    public WarehouseResponseDTO getWhsById(Integer id) {
+    public WarehouseResponseDTO getWhsById(Long id) {
         return repo.findById(id)
             .map(WarehouseResponseDTO::from)
             .orElseThrow(() -> new RuntimeException("창고를 찾을 수 없습니다. ID: " + id));
     }
     
     /**
-     * 단건 삭제
+     * 단건 삭제 - 컨트롤러에서 deleteWhs 호출됨
      */
     @Transactional
-    public void deleteWhs(Integer id) {
+    public void deleteWhs(Long id) {
         if (!repo.existsById(id)) {
             throw new RuntimeException("창고를 찾을 수 없습니다. ID: " + id);
         }
@@ -136,6 +131,7 @@ public class Warehouse_service {
 
     /**
      * 사용 여부 필터 기반 페이징 조회
+     * 컨트롤러에서 getWhsByFilterWithPaging 호출됨
      */
     @Transactional(readOnly = true)
     public Map<String, Object> getWhsByFilterWithPaging(String useYnFilter, int page) {
@@ -143,14 +139,15 @@ public class Warehouse_service {
         
         Pageable pageable = PageRequest.of(page - 1, PAGE_SIZE);
         Page<Warehouse> whsPage = isAllFilter(useYnFilter) 
-            ? repo.findAllByOrderByWarehouseIdDesc(pageable)
-            : repo.findByUseYnOrderByWarehouseIdDesc(useYnFilter, pageable);
+            ? repo.findAllByOrderByIdDesc(pageable)
+            : repo.findByUseYnOrderByIdDesc(useYnFilter, pageable);
             
         return wrapPagedResult(whsPage, page);
     }
     
     /**
      * 키워드 검색 기반 페이징 조회
+     * 컨트롤러에서 searchWhsFromAllWithPaging 호출됨
      */
     @Transactional(readOnly = true)
     public Map<String, Object> searchWhsFromAllWithPaging(String keyword, String searchType, int page) {
@@ -158,41 +155,64 @@ public class Warehouse_service {
         
         Pageable pageable = PageRequest.of(page - 1, PAGE_SIZE);
         Page<Warehouse> whsPage = switch (searchType) {
-            case "code" -> repo.findByWarehouseCodeContainingOrderByWarehouseIdDesc(keyword, pageable);
-            case "name" -> repo.findByWarehouseNameContainingOrderByWarehouseIdDesc(keyword, pageable);
-            default -> repo.findByWarehouseNameContainingOrderByWarehouseIdDesc(keyword, pageable);
+            case "code" -> repo.findByWarehouseCodeContainingOrderByIdDesc(keyword, pageable);
+            case "name" -> repo.findByWarehouseNameContainingOrderByIdDesc(keyword, pageable);
+            default -> repo.findByWarehouseNameContainingOrderByIdDesc(keyword, pageable);
         };
         
         return wrapPagedResult(whsPage, page);
     }
     
+    /**
+     * 사용 중인("Y") 모든 창고 목록을 DTO 리스트로 반환
+     * 다른 서비스에서 활용하기 위한 메서드 (예: 재고 관리에서 창고 드롭다운 용도)
+     */
+    @Transactional(readOnly = true)
+    public List<WarehouseResponseDTO> getActiveWarehouses() {
+        log.debug("사용 중인 활성 창고 목록 조회 요청");
+        List<Warehouse> activeWarehouses = repo.findByUseYnOrderByIdDesc("Y");
+        return activeWarehouses.stream()
+                               .map(WarehouseResponseDTO::from)
+                               .collect(Collectors.toList());
+    }
+    
     // ========== ✅ 비페이징 조회 (JS 호환 유지용) ==========
     
+    /**
+     * 필터 기반 비페이징 조회
+     * 컨트롤러에서 getWhsByFilter 호출됨 (/all 엔드포인트)
+     */
     @Transactional(readOnly = true)
     public List<WarehouseResponseDTO> getWhsByFilter(String useYnFilter) {
         log.debug("필터로 창고 목록 조회: useYnFilter=[{}]", useYnFilter);
         
         List<Warehouse> whsList = isAllFilter(useYnFilter)
-            ? repo.findAllByOrderByWarehouseIdDesc()
-            : repo.findByUseYnOrderByWarehouseIdDesc(useYnFilter);
+            ? repo.findAllByOrderByIdDesc()
+            : repo.findByUseYnOrderByIdDesc(useYnFilter);
             
         return whsList.stream().map(WarehouseResponseDTO::from).collect(Collectors.toList());
     }
     
+    /**
+     * 키워드 검색 비페이징 조회
+     * 컨트롤러에서 searchWhsFromAll 호출됨 (/all 엔드포인트)
+     */
     @Transactional(readOnly = true)
     public List<WarehouseResponseDTO> searchWhsFromAll(String keyword, String searchType) {
         log.debug("전체 데이터 대상 검색: keyword={}, searchType={}", keyword, searchType);
         
         List<Warehouse> whsList = switch (searchType) {
-            case "code" -> repo.findByWarehouseCodeContainingOrderByWarehouseIdDesc(keyword);
-            case "name" -> repo.findByWarehouseNameContainingOrderByWarehouseIdDesc(keyword);
-            default -> repo.findByWarehouseNameContainingOrderByWarehouseIdDesc(keyword);
+            case "code" -> repo.findByWarehouseCodeContainingOrderByIdDesc(keyword);
+            case "name" -> repo.findByWarehouseNameContainingOrderByIdDesc(keyword);
+            default -> repo.findByWarehouseNameContainingOrderByIdDesc(keyword);
         };
         
         return whsList.stream().map(WarehouseResponseDTO::from).collect(Collectors.toList());
     }
     
-    
+    /**
+     * 검색 + 필터 조합 (기존 호환용)
+     */
     @Transactional(readOnly = true)
     public List<WarehouseResponseDTO> searchWhs(String keyword, String searchType, String useYnFilter) {
         log.debug("검색 실행: keyword={}, searchType={}, useYnFilter={}", keyword, searchType, useYnFilter);
@@ -241,7 +261,9 @@ public class Warehouse_service {
         return result;
     }
 
-
+    /**
+     * 비페이징 뷰 렌더링용 데이터 반환 (오버로드)
+     */
     @Transactional(readOnly = true)
     public Map<String, Object> getWhsPageData(String useYn, String keyword, String searchType) {
     	String filter;
@@ -262,7 +284,6 @@ public class Warehouse_service {
         );
     }
 
-
     /**
      * 에러 발생 시 기본 값 세팅
      */
@@ -278,6 +299,9 @@ public class Warehouse_service {
     
     // ========== ✅ 내부 유틸리티 ==========
     
+    /**
+     * Spring Data JPA Page 객체를 프론트엔드용 Map으로 변환
+     */
     private Map<String, Object> wrapPagedResult(Page<Warehouse> page, int pageNum) {
         List<WarehouseResponseDTO> whsList = page.getContent().stream()
                 .map(WarehouseResponseDTO::from).collect(Collectors.toList());
@@ -292,10 +316,16 @@ public class Warehouse_service {
         );
     }
     
+    /**
+     * 사용여부 필터가 "전체"인지 판단
+     */
     private boolean isAllFilter(String useYnFilter) {
         return useYnFilter == null || useYnFilter.isEmpty() || "ALL".equals(useYnFilter);
     }
     
+    /**
+     * 첫 번째 사용 가능한 번호 찾기 (코드 생성용)
+     */
     private int findFirstAvailableNumber(List<Integer> existingNumbers) {
         if (existingNumbers == null || existingNumbers.isEmpty()) return 1;
         
@@ -307,6 +337,9 @@ public class Warehouse_service {
         return expectedNumber;
     }
     
+    /**
+     * DTO에서 Warehouse 엔티티 생성
+     */
     private Warehouse buildWhs(WarehouseCreateRequestDTO dto) {
         Warehouse whs = new Warehouse();
         whs.setWarehouseName(dto.getWarehouseName());
@@ -316,6 +349,9 @@ public class Warehouse_service {
         return whs;
     }
     
+    /**
+     * 문자열을 WarehouseType enum으로 변환
+     */
     private WarehouseType parseWhsType(String typeStr) {
         if (!StringUtils.hasText(typeStr)) {
             throw new IllegalArgumentException("창고 유형은 필수입니다.");
@@ -327,18 +363,20 @@ public class Warehouse_service {
         }
     }
     
-    private void validateWhsCodeNotDuplicate(String code, Integer excludeId) {
+    /**
+     * 창고 코드 중복 검증
+     */
+    private void validateWhsCodeNotDuplicate(String code, Long excludeId) {
         Map<String, String> result = checkWhsCodeDuplicate(code, excludeId);
         if ("duplicate".equals(result.get("status"))) {
             throw new IllegalArgumentException(result.get("message"));
         }
     }
     
-    
     /**
      * 창고 수정 시 필드 매핑 및 유효성 검증
      */
-    private void updateWhsFields(Warehouse whs, WarehouseCreateRequestDTO dto, Integer id) {
+    private void updateWhsFields(Warehouse whs, WarehouseCreateRequestDTO dto, Long id) {
         if (StringUtils.hasText(dto.getWarehouseCode()) && 
             !dto.getWarehouseCode().equals(whs.getWarehouseCode())) {
             validateWhsCodeNotDuplicate(dto.getWarehouseCode(), id);
@@ -393,18 +431,18 @@ public class Warehouse_service {
     private List<Warehouse> findWhsList(String keyword, String searchType, String useYnFilter) {
         if (StringUtils.hasText(keyword)) {
             return switch (searchType) {
-                case "code" -> repo.findByWarehouseCodeContainingOrderByWarehouseIdDesc(keyword);
-                case "name" -> repo.findByWarehouseNameContainingOrderByWarehouseIdDesc(keyword);
-                default -> repo.findByWarehouseNameContainingOrderByWarehouseIdDesc(keyword);
+                case "code" -> repo.findByWarehouseCodeContainingOrderByIdDesc(keyword);
+                case "name" -> repo.findByWarehouseNameContainingOrderByIdDesc(keyword);
+                default -> repo.findByWarehouseNameContainingOrderByIdDesc(keyword);
             };
         }
         
         if (StringUtils.hasText(useYnFilter)) {
             return "ALL".equals(useYnFilter) 
-                ? repo.findAllByOrderByWarehouseIdDesc()
-                : repo.findByUseYnOrderByWarehouseIdDesc(useYnFilter);
+                ? repo.findAllByOrderByIdDesc()
+                : repo.findByUseYnOrderByIdDesc(useYnFilter);
         }
         
-        return repo.findByUseYnOrderByWarehouseIdDesc("Y");
+        return repo.findByUseYnOrderByIdDesc("Y");
     }
 }

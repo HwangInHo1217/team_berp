@@ -39,7 +39,4 @@ public class WarehouseCreateRequestDTO {
 
     /** 창고에 대한 설명 (선택 입력) */
     private String description;
-
-    // ⚠️ 주의: @Data 어노테이션은 포함되어 있지 않지만, @Getter/@Setter/@NoArgsConstructor/@AllArgsConstructor 조합으로 대부분 커버됨
-    // 만약 toString(), equals(), hashCode()가 필요하다면 @Data 추가 고려
 }

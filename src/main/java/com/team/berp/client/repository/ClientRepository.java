@@ -6,22 +6,27 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import java.util.List;
-
 public interface ClientRepository extends JpaRepository<Company, Long> {
 
-    // 거래처 유형별 페이징 조회 (고객사/매입처/겸용)
-    Page<Company> findByCompanyType(CompanyType companyType, Pageable pageable);
+    // 회사명+사업자번호 중복(등록/수정 시 사용)
+    boolean existsByCompanyNameAndCompanyNoAndUseYn(String companyName, String companyNo, String useYn);
+    boolean existsByCompanyNameAndCompanyNoAndCompanyIdNotAndUseYn(String companyName, String companyNo, Long companyId, String useYn);
 
-    // 거래처명(포함검색) + 유형 필터
-    Page<Company> findByCompanyTypeAndCompanyNameContaining(CompanyType companyType, String companyName, Pageable pageable);
+    // 논리삭제 제외(전체)
+    Page<Company> findByUseYn(String useYn, Pageable pageable);
 
-    // 대표자명(포함검색) + 유형 필터
-    Page<Company> findByCompanyTypeAndPresidentNmContaining(CompanyType companyType, String presidentNm, Pageable pageable);
+    // 회사명 포함(논리삭제 제외)
+    Page<Company> findByCompanyNameContainingAndUseYn(String name, String useYn, Pageable pageable);
 
-    // 전체검색 (회사명, 대표자명 둘 다)
-    List<Company> findByCompanyNameContainingOrPresidentNmContaining(String name, String ceo);
+    // 대표자명 포함(논리삭제 제외)
+    Page<Company> findByPresidentNmContainingAndUseYn(String ceo, String useYn, Pageable pageable);
 
-    Page<Company> findByCompanyNameContaining(String name, Pageable pageable);
-    Page<Company> findByPresidentNmContaining(String ceo, Pageable pageable);
+    // 유형별(논리삭제 제외)
+    Page<Company> findByCompanyTypeAndUseYn(CompanyType companyType, String useYn, Pageable pageable);
+
+    // 유형+회사명(논리삭제 제외)
+    Page<Company> findByCompanyTypeAndCompanyNameContainingAndUseYn(CompanyType companyType, String name, String useYn, Pageable pageable);
+
+    // 유형+대표자명(논리삭제 제외)
+    Page<Company> findByCompanyTypeAndPresidentNmContainingAndUseYn(CompanyType companyType, String ceo, String useYn, Pageable pageable);
 }

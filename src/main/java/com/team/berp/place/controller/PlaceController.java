@@ -1,5 +1,6 @@
 package com.team.berp.place.controller;
 
+
 import com.team.berp.domain.CompanyOrder;
 import com.team.berp.place.dto.PlaceDTO;
 //import com.team.berp.place.service.PlaceService;
@@ -15,6 +16,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 @Controller //@RestController는 문자열을 그대로 반환
+
 @RequestMapping("/place")
 @RequiredArgsConstructor
 public class PlaceController {
