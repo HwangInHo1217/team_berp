@@ -25,5 +25,11 @@ public class BomListViewResponse { //특정 완제품의 BOM 구성 목록을 �
         private String lossRate;     // 예: "5%"
         private String unitPrice;    // 문자열로 포맷된 금액 또는 단위
         private String remark;
+        public Component(String childCode, String childName, Integer qty) {
+            this.childCode = childCode;
+            this.childName = childName;
+            this.qty = qty;
+        }
     }
+    
 }
