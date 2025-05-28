@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko"
-      xmlns:th="http://www.thymeleaf.org">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -10,87 +9,98 @@
   <script th:src="@{https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js}"></script>
 </head>
 <body class="d-flex flex-column" style="min-height: 100vh;">
+  <!-- 헤더 fragment -->
   <div th:replace="~{layouts/header :: header}"></div>
   <div class="d-flex flex-grow-1">
+    <!-- 사이드바 fragment -->
     <div th:replace="~{layouts/sidebar :: sidebar}"></div>
-    <script src="/js/layouts/sidebar.js"></script>
     <main class="p-4 flex-fill">
       <div class="container">
-        <h2 class="mb-4">MRP(자재소요계획) 관리</h2>
-        <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
-          <input type="date" class="form-control w-auto" />
-          <span>~</span>
-          <input type="date" class="form-control w-auto" />
-          <input type="text" class="form-control w-auto" placeholder="품목명/코드" />
-          <button class="btn btn-outline-secondary">MRP 계산</button>
-          <button class="btn btn-outline-success ms-auto">엑셀 다운로드</button>
+        <!-- 검색 조건 및 버튼 -->
+        <div class="mb-4">
+          <h2 class="mb-3">MRP(자재소요계획) 계산</h2>
+          <div class="row g-2 align-items-end">
+            <div class="col-md-2">
+              <label class="form-label mb-1">기간(From)</label>
+              <input type="date" class="form-control" id="startDate" />
+            </div>
+            <div class="col-md-2">
+              <label class="form-label mb-1">기간(To)</label>
+              <input type="date" class="form-control" id="endDate" />
+            </div>
+            <div class="col-md-2">
+              <label class="form-label mb-1">품목명/코드</label>
+              <input type="text" class="form-control" id="itemSearch" placeholder="품목명/코드" />
+            </div>
+            <div class="col-md-2">
+              <label class="form-label mb-1">거래처</label>
+              <input type="text" class="form-control" id="custSearch" placeholder="거래처" />
+            </div>
+            <div class="col-md-4 d-flex gap-2">
+              <button class="btn btn-primary" onclick="calculateMrp()">MRP 계산</button>
+              <button class="btn btn-success" onclick="downloadExcel()">엑셀 다운로드</button>
+              <button class="btn btn-outline-secondary" onclick="resetMrpForm()">취소</button>
+            </div>
+          </div>
         </div>
-        <div class="table-responsive">
-          <table class="table table-bordered text-center align-middle">
-            <thead class="table-light">
+
+        <!-- 주문/생산 품목 리스트 -->
+		<div class="table-section-title">주문/생산 품목 리스트</div>
+		<div class="table-responsive mb-3">
+		  <table class="table table-bordered text-center align-middle">
+		    <thead class="table-light">
               <tr>
+                <th class="col-no">No</th>
                 <th>품목코드</th>
-                <th style="cursor:pointer" onclick="sortMrp('itemName')">품목명 ▲▼</th>
-                <th>품목유형</th>
+                <th>품목명</th>
+                <th>거래처</th>
+                <th>규격</th>
                 <th>단위</th>
-                <th>기준일자</th>
-                <th style="cursor:pointer" onclick="sortMrp('requiredQty')">필요수량 ▲▼</th>
-                <th style="cursor:pointer" onclick="sortMrp('stockQty')">현재고 ▲▼</th>
-                <th>확정수량</th>
-                <th style="cursor:pointer" onclick="sortMrp('shortageQty')">부족수량 ▲▼</th>
-                <th>소요처</th>
-                <th style="cursor:pointer" onclick="sortMrp('leadTime')">리드타임(일) ▲▼</th>
-                <th>비고</th>
+                <th>생산수량</th>
+                <th>주문수량</th>
                 <th>상세</th>
               </tr>
             </thead>
-            <tbody id="mrpTableBody"></tbody>
-          </table>
-        </div>
-      </div>
-      <nav>
-        <ul class="pagination justify-content-center" id="pagination"></ul>
-      </nav>
-      <!-- 상세 모달 -->
-      <div class="modal fade" id="mrpDetailModal" tabindex="-1" aria-labelledby="mrpDetailModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title" id="mrpDetailModalLabel">MRP 상세 정보</h5>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
-            </div>
-            <div class="modal-body">
-			  <style>
-			    .mrp-detail-table th { text-align: right; width: 30%; white-space: nowrap; }
-			    .mrp-detail-table td { text-align: left; width: 70%; }
-			  </style>
-			  <table class="table table-bordered mrp-detail-table">
-			    <tbody>
-			      <tr><th>품목코드</th><td id="modalItemCode"></td></tr>
-			      <tr><th>품목명</th><td id="modalItemName"></td></tr>
-			      <tr><th>품목유형</th><td id="modalItemType"></td></tr>
-			      <tr><th>단위</th><td id="modalUnit"></td></tr>
-			      <tr><th>기준일자</th><td id="modalBaseDate"></td></tr>
-			      <tr><th>필요수량</th><td id="modalRequiredQty"></td></tr>
-			      <tr><th>현재고</th><td id="modalStockQty"></td></tr>
-			      <tr><th>확정수량</th><td id="modalConfirmedQty"></td></tr>
-			      <tr><th>부족수량</th><td id="modalShortageQty"></td></tr>
-			      <tr><th>소요처</th><td id="modalSource"></td></tr>
-			      <tr><th>리드타임</th><td id="modalLeadTime"></td></tr>
-			      <tr><th>비고</th><td id="modalComment"></td></tr>
-			    </tbody>
-			  </table>
-			</div>
-            <div class="modal-footer">
-			  <button type="button" class="btn btn-secondary" id="modalPrevBtn" onclick="moveModal(-1)">이전 자재</button>
-			  <button type="button" class="btn btn-secondary" id="modalNextBtn" onclick="moveModal(1)">다음 자재</button>
-			  <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">닫기</button>
-			</div>
-          </div>
+		    <tbody id="mrpTableBody" class="table-fixed-min"></tbody>
+		  </table>
+		  <nav>
+		    <ul class="pagination" id="pagination"></ul>
+		  </nav>
+		</div>
+
+        <!-- 하단: 투입자재 소요 리스트 (BOM 분해 결과) -->
+        <!-- 투입 자재 소요 리스트 -->
+		<div class="table-section-title">투입 자재 소요 리스트</div>
+		<div class="table-responsive">
+		  <!-- scroll-table 클래스 추가하면 BOM이 많을 때 세로 스크롤 -->
+		  <div class="scroll-table">
+		    <table class="table table-bordered text-center align-middle">
+		      <thead class="table-light">
+		      <tr>
+                <th class="col-no">No</th>
+                <th>자재코드</th>
+                <th>자재명</th>
+                <th>규격</th>
+                <th>소요량</th>
+                <th>단위</th>
+                <th>투입예상량</th>
+              </tr>
+            </thead>
+		    <tbody id="bomListTableBody" class="table-fixed-min"></tbody>
+		   </table>
+		  </div>
+		</div>
+
+        <div class="alert alert-secondary mt-3 small">
+          <b>품목리스트</b> - 일자 기간 내 주문받은 품목 리스트<br>
+          <b>자재리스트</b> - 품목리스트에 조회된 데이터들의 BOM 정보에 의해 계산된 투입 자재 리스트
         </div>
       </div>
     </main>
   </div>
+  <!-- 모달 fragment 삽입 -->
+  <div th:replace="~{mrp/mrp-detail-modal :: mrp-detail-modal}"></div>
+  <!-- 푸터 fragment -->
   <div th:replace="~{layouts/footer :: footer}"></div>
   <script src="/js/mrp/mrp.js"></script>
 </body>
