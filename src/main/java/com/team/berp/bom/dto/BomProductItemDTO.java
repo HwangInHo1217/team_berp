@@ -6,8 +6,11 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Data
 
+//bom.html에 테이블 형식으로 list를 뿌리기 위한 dto
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class BomProductItemDTO {
     private Long id;
     private String code;
@@ -16,18 +19,5 @@ public class BomProductItemDTO {
     private String unit;
     private String use;
     private ItemType type;
-    
-    
-    public BomProductItemDTO() {
-    }
 
-    public BomProductItemDTO(Long id, String code, String name, String spec, String unit, String use, ItemType type) {
-        this.id = id;
-        this.code = code;
-        this.name = name;
-        this.spec = spec;
-        this.unit = unit;
-        this.use = use;
-        this.type = type;
-    }
 }

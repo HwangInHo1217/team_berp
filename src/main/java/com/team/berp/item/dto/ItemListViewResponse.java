@@ -2,9 +2,11 @@ package com.team.berp.item.dto;
 
 import com.team.berp.domain.Item;
 
-import lombok.Getter;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
-@Getter
+@Data
+@AllArgsConstructor
 public class ItemListViewResponse {
 	private final Long id;
 	private final String code;

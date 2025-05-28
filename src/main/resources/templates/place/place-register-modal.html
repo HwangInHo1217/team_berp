@@ -1,61 +1,88 @@
-<!-- 출고 등록/수정 모달 -->
+<!-- 발주 등록/수정 모달 -->
 <div class="modal fade" id="placeRegisterModal" tabindex="-1" aria-hidden="true" th:fragment="place-register-modal">
-  <div class="modal-dialog">
+  <div class="modal-dialog custom-modal-dialog">
     <div class="modal-content">
       <form id="placeForm" method="post" action="/place/add">
         <div class="modal-header">
-          <h5 class="modal-title">출고 등록</h5>
+          <h5 class="modal-title">발주 등록</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
         </div>
         <div class="modal-body">
           <div class="mb-2">
-            <label class="form-label">출고일자</label>
-            <input type="date" class="form-control" name="place_date" id="placeDate" required />
+            <label class="form-label">발주일자</label>
+            <input type="date" class="form-control" name="orderDate" id="orderDate" required />
+             <!-- 
+            <label class="form-label">발주번호</label>
+            <input type="text" class="form-control" name="placeNum" id="placeNum" required />
+              -->
           </div>
           <div class="mb-2">
-            <label class="form-label">고객사</label>
-            <select class="form-select" name="customer_id" id="customerId" required>
-              <option value="">-- 고객사 선택 --</option>
-              <option value="1">삼성전자</option>
-              <option value="2">LG전자</option>
+            <label class="form-label">사업장 유형</label>
+            <select class="form-select" name="orderType" id="orderType" required>
+              <option value="">-- 선택 --</option>
+              <option value="CUSTOMER">고객사</option>
+              <option value="SUPPLIER">거래처</option>
             </select>
+            <select class="form-select" name="companyId" id="companyId" required>
+			  <option value="1">삼성전자</option>
+			  <option value="2">현대자동차</option>
+			</select>
+            
           </div>
-          <div class="mb-2">
-            <label class="form-label">품목</label>
-            <select class="form-select" name="item_id" id="itemId" required>
-              <option value="">-- 품목 선택 --</option>
-              <option value="P001">P001 - 완제품 A</option>
-              <option value="P002">P002 - 완제품 B</option>
-            </select>
-          </div>
-          <div class="mb-2">
-            <label class="form-label">수량</label>
-            <input type="number" class="form-control" name="quantity" id="quantity" required min="1" />
-          </div>
-          <div class="mb-2">
-            <label class="form-label">단위</label>
-            <input type="text" class="form-control" name="unit" id="unit" value="EA" required />
-          </div>
-          <div class="mb-2">
-            <label class="form-label">출고 창고</label>
-            <select class="form-select" name="warehouse_id" id="warehouseId" required>
-              <option value="">-- 창고 선택 --</option>
-              <option value="1">완제품창고</option>
-              <option value="2">자재창고</option>
-            </select>
-          </div>
-          <div class="mb-2">
+          
+          <div class="row mb-3">
+           <div class="col-md-4">
             <label class="form-label">담당자</label>
-            <input type="text" class="form-control" name="manager" id="manager" required />
+            <input type="text" class="form-control" name="employeeName" id="employeeName" required />
           </div>
+         <div class="col-md-4">
+            <label class="form-label">담당자 이메일</label>
+            <input type="text" class="form-control" name="employeeEmail" id="employeeEmail" required />
+          </div>            
+          <div class="col-md-4">
+            <label class="form-label">담당자 번호</label>
+            <input type="text" class="form-control" name="employeeTel" id="employeeTel" required />
+          </div>          
+        </div>
+        
+	 <!-- 품목 입력 영역 -->
+	<div class="mb-3">
+	  <label class="form-label">품목 리스트</label>
+	  <div id="itemListContainer">
+	    <div class="row align-items-end g-2 mb-2 item-row">
+	      
+	      <div class="col-md-3">
+	        <select class="form-select" name="itemId" required>
+	          <option value="">-- 품목 선택 --</option>
+	          <option value="P001">완제품 A</option>
+	          <option value="P002">완제품 B</option>
+	        </select>
+	      </div>
+	      <div class="col-md-3">
+	        <input type="text" class="form-control" name="itemCode" placeholder="품목코드" required />
+	      </div>
+	      <div class="col-md-2">
+	        <input type="number" class="form-control" name="quantity" placeholder="수량" min="1" required />
+	      </div>
+	      <div class="col-md-2">
+	        <input type="text" class="form-control" name="unit" value="EA" required />
+	      </div>
+	      <div class="col-md-2">
+	        <button type="button" class="btn btn-danger btn-sm" onclick="removeItemRow(this)">삭제</button>
+	      </div>
+	    </div>
+	  </div>
+	  <button type="button" class="btn btn-outline-primary btn-sm" onclick="addItemRow()">+ 품목 추가</button>
+	</div>
+
+          
           <div class="mb-2">
             <label class="form-label">비고</label>
             <textarea class="form-control" name="note" id="note" rows="2"></textarea>
           </div>
-        </div>
         <div class="modal-footer">
-          <button type="reset" class="btn btn-secondary">초기화</button>
-          <button type="submit" class="btn btn-primary" id="submitBtn">등록</button>
+          <button type="button" class="btn btn-secondary" onclick="placereset()">초기화</button>
+          <button type="button" class="btn btn-primary" onclick="placesubmit()">등록</button>
         </div>
       </form>
     </div>

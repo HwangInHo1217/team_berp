@@ -36,8 +36,16 @@ public class Company {
     @Column(length = 20)
     private String companyItem;
 
-    @Column(length = 100)
-    private String companyAddr;
+    // ========== 주소 관련 필드 추가 ==========
+    @Column(length = 10)
+    private String postcode;
+
+    @Column(name = "main_address", length = 100)
+    private String mainAddress;
+
+    @Column(name = "detail_address", length = 100)
+    private String detailAddress;
+    // =======================================
 
     @Column(length = 20)
     private String companyTel;
@@ -51,6 +59,4 @@ public class Company {
 
     @Column(nullable = false, length = 1)
     private String useYn = "Y";
-
-
 }

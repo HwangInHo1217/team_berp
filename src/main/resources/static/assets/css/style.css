@@ -11,3 +11,43 @@ input::placeholder {
   font-size: 0.9rem;
   color: #aaa;
 }
+
+/* 섹션 타이틀 간격 */
+.table-section-title {
+  margin-top: 32px;
+  margin-bottom: 8px;
+  font-weight: bold;
+  font-size: 1.13rem;
+}
+
+/* 테이블 최소 높이: 데이터 적을 때 레이아웃 안정 */
+.table-fixed-min {
+  min-height: 180px;
+}
+
+/* 하위 테이블 스크롤 영역 */
+.scroll-table {
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+/* 페이징 바 위치 조정 */
+.pagination {
+  margin-top: 8px;
+  margin-bottom: 0;
+  justify-content: center;
+}
+
+/* "데이터 없음" 안내 텍스트 */
+.empty-row {
+  color: #888;
+  background: #f8f9fa;
+  font-style: italic;
+}
+
+.table th.col-no, .table td.col-no {
+  width: 60px;
+  min-width: 60px;
+  max-width: 60px;
+  text-align: center !important;
+}
