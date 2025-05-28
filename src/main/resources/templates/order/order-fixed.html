@@ -1,2 +1,36 @@
-<!-- 여기에 정리된 order.html의 전체 소스코드가 들어갑니다. -->
-(※ 실제 완성된 HTML 코드는 여기에 삽입되어야 하며, 문자열 길이 제한으로 생략됩니다.)
+<!-- 주문 수정 모달 -->
+<div th:fragment="updateModal" id="order-fixed-modal" class="modal">
+  <form id="form-update-order" onsubmit="updateOrder(event)">
+    <h2>주문 수정</h2>
+
+    <!-- 등록 모달과 동일한 필드 구조 -->
+    <label>고객사
+      <select name="companyName" id="upd-company" onchange="onCompanyChange(this)">
+        <option value="" th:text="'선택하세요'" />
+        <option th:each="company : ${companies}"
+                th:value="${company.companyName}"
+                th:text="${company.companyName}" />
+      </select>
+    </label>
+    <label>담당자<input type="text" name="empName" id="upd-emp" readonly /></label>
+    <label>거래처담당자<input type="text" name="companyEmpName" id="upd-comp-emp" readonly /></label>
+    <label>주문일자<input type="date" name="orderDate" id="upd-date" required /></label>
+    <label>비고<textarea name="remark" id="upd-remark"></textarea></label>
+
+    <!-- 수정용 품목 테이블 -->
+    <div id="upd-items">
+      <table>
+        <thead>
+          <tr>
+            <th>품목</th><th>단위</th><th>단가</th><th>수량</th><th>합계</th><th>삭제</th>
+          </tr>
+        </thead>
+        <tbody id="upd-items-body"></tbody>
+      </table>
+      <button type="button" onclick="addItemRow('upd-items-body')">추가</button>
+    </div>
+
+    <button type="submit">수정</button>
+    <button type="button" class="btn-close" onclick="closeModal()">닫기</button>
+  </form>
+</div>
