@@ -39,9 +39,6 @@ public class Item {
 	@Column(name="unit") //단위
 	private String unit; 
 	
-	@Column(name = "unit_price", nullable = false)
-    private BigDecimal unitPrice;
-	
 	@Column(name="spec") //규격
 	private String spec;
 	

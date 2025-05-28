@@ -19,31 +19,28 @@ public class CompanyOrder {
     private Long orderId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "company_id", nullable = false)
+    @JoinColumn(name = "company_id")
     private Company company;
 
-    public enum OrderType { IT, 건설, 제조, 유통, 서비스업 }
+    public enum OrderType { customer, supllier }
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column
     private OrderType orderType;
 
     @Column
     private LocalDate orderDate;
     
-    @Column(name = "order_qty", nullable = false)
+    @Column(name = "order_qty")
     private Long orderQty;
-
-    @Column(name = "unit_qty")
-    private Long unitQty;
     
     @Column(name = "amount")
     private Long amount;
     
-    @Column(name = "due_date", nullable = false)
-    private LocalDate dueDate;
-    
     @Column(name = "note")
     private String note;
+    
+    @Column
+    private LocalDate receiveDate;
 
 }

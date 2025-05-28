@@ -15,6 +15,10 @@ import lombok.Data;
  */
 @Data
 public class OrderRegisterFormDto {
+	
+	private Long orderLineItemId;
+	
+	private Long orderId;
 
     /** 고객사 ID */
     // @NotNull(message = "고객사를 선택하세요.")
@@ -38,7 +42,7 @@ public class OrderRegisterFormDto {
 
     /** 테이블에 렌더링된 품목 행 개수 (unit_qty) */
     @NotNull
-    private Integer unitQty;
+    private Long unitQty;
 
     /** 선택된 품목 ID 리스트 */
     @NotNull(message = "최소 한 개 이상의 품목을 선택하세요.")
@@ -50,7 +54,7 @@ public class OrderRegisterFormDto {
 
     /** 각 품목별 단가 리스트 */
     @NotNull
-    private List<Long> unitPrice;
+    private List<Long> price;
 
     /** 각 품목별 단위 리스트 (readonly) */
     private List<String> unit;

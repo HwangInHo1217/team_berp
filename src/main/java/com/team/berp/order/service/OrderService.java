@@ -51,17 +51,15 @@ public class OrderService {
      */
     public void registerOrder(OrderRegisterFormDto form) {
         // 1) 주문 헤더 생성 및 저장
-        CompanyOrder order = new CompanyOrder();
+    	CompanyOrder order = new CompanyOrder();
         Company company = companyRepo.findById(form.getCompanyId())
             .orElseThrow(() -> new NoSuchElementException("Company not found: " + form.getCompanyId()));
+        
         order.setCompany(company);
         order.setOrderDate(form.getOrderDate());
-        order.setDueDate(form.getDueDate());
         order.setNote(form.getNote());
         order.setOrderType(form.getOrderType());
-
-        // 테이블에 렌더링된 행 개수
-        order.setUnitQty(form.getUnitQty().longValue());
+        
         // 발주 수량은 각 행의 수량 합
         long totalQty = form.getOrderQty().stream()
             .mapToLong(Integer::longValue)
@@ -83,11 +81,11 @@ public class OrderService {
         for (int i = 0; i < form.getItemId().size(); i++) {
             OrderLineItem li = new OrderLineItem();
             li.setOrder(order);
+            li.setUnitQty(form.getUnitQty());
             Item item = itemRepo.findById(form.getItemId().get(i)).orElseThrow();
             li.setItem(item);
             oliRepo.save(li);
         }
-        
     }
 
     /**
@@ -102,9 +100,8 @@ public class OrderService {
             	dto.setOrderType(allOrderList.getOrder().getOrderType());
             	dto.setOrderQty(allOrderList.getOrder().getOrderQty());
             	dto.setOrderDate(allOrderList.getOrder().getOrderDate());
-            	dto.setUnitQty(allOrderList.getOrder().getUnitQty());
+            	dto.setUnitQty(allOrderList.getUnitQty());
             	dto.setAmount(allOrderList.getOrder().getAmount());
-            	dto.setDueDate(allOrderList.getOrder().getDueDate());
             	dto.setNote(allOrderList.getOrder().getNote());
             	dto.setCompanyId(allOrderList.getOrder().getCompany().getCompanyId());
             	dto.setCompanyName(allOrderList.getOrder().getCompany().getCompanyName());
@@ -114,7 +111,7 @@ public class OrderService {
             	dto.setItemId(allOrderList.getItem().getId());
             	dto.setItemName(allOrderList.getItem().getName());
             	dto.setItemCode(allOrderList.getItem().getCode());
-            	dto.setUnitPrice(allOrderList.getItem().getUnitPrice());
+            	dto.setUnitPrice(allOrderList.getUnitPrice());
             	dto.setUnit(allOrderList.getItem().getUnit());
             	
             	return dto;
@@ -134,9 +131,8 @@ public class OrderService {
         	dto.setOrderType(orderOne.getOrder().getOrderType());
         	dto.setOrderQty(orderOne.getOrder().getOrderQty());
         	dto.setOrderDate(orderOne.getOrder().getOrderDate());
-        	dto.setUnitQty(orderOne.getOrder().getUnitQty());
+        	dto.setUnitQty(orderOne.getUnitQty());
         	dto.setAmount(orderOne.getOrder().getAmount());
-        	dto.setDueDate(orderOne.getOrder().getDueDate());
         	dto.setNote(orderOne.getOrder().getNote());
         	dto.setCompanyId(orderOne.getOrder().getCompany().getCompanyId());
         	dto.setCompanyName(orderOne.getOrder().getCompany().getCompanyName());
@@ -146,7 +142,7 @@ public class OrderService {
         	dto.setItemId(orderOne.getItem().getId());
         	dto.setItemName(orderOne.getItem().getName());
         	dto.setItemCode(orderOne.getItem().getCode());
-        	dto.setUnitPrice(orderOne.getItem().getUnitPrice());
+        	dto.setUnitPrice(orderOne.getUnitPrice());
         	dto.setUnit(orderOne.getItem().getUnit());
         	
         	return dto;
@@ -154,14 +150,13 @@ public class OrderService {
     }
 
     /**
-     * 단위 및 단가 정보 조회
+     * 단위 정보 조회
      */
     public Map<String, Object> getUnitInfo(Long itemId) {
         Item item = itemRepo.findById(itemId)
             .orElseThrow(() -> new NoSuchElementException("Item not found: " + itemId));
         Map<String, Object> map = new HashMap<>();
         map.put("unit", item.getUnit());
-        map.put("unitPrice", item.getUnitPrice());
         return map;
     }
     

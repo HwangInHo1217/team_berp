@@ -60,7 +60,7 @@ public interface Order_OrderLineItemRepository extends JpaRepository<OrderLineIt
                i.name,
                co.orderQty,
                i.unit,
-               i.unitPrice,
+               i.price,
                co.orderDate,
                co.dueDate,
                co.unitQty,
@@ -73,4 +73,13 @@ public interface Order_OrderLineItemRepository extends JpaRepository<OrderLineIt
             JOIN oli.item i
             """)
         Page<OrderPageDto> findAllDtos(Pageable pageable);
+    
+    
+    /**
+     * 특정 품목코드에 대한 단가를 조회합니다.
+     * @param itemCode 품목코드
+     * @return 단가
+     */
+    @Query("SELECT i.price FROM OrderLineItem oli WHERE oli.orderLineItemId = :id")
+    Long findPriceByOrderLineItemId(@Param("id") Long id);
 }

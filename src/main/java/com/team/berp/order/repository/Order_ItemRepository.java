@@ -21,11 +21,7 @@ public interface Order_ItemRepository extends JpaRepository<Item, Long> {
     @Query("SELECT i.unit FROM Item i WHERE i.name = :name")
     String findUnitByItemName(@Param("name") String name);
 
-    /**
-     * 특정 품목코드에 대한 단가를 조회합니다.
-     * @param itemCode 품목코드
-     * @return 단가
-     */
-    @Query("SELECT i.unitPrice FROM Item i WHERE i.code = :code")
-    Long findUnitPriceByItemCode(@Param("code") String code);
+    // 엔티티의 새 필드명(price)을 사용
+    @Query("SELECT i.price FROM Item i WHERE i.code = :code")
+    Long findPriceByItemCode(@Param("code") String code);
 }

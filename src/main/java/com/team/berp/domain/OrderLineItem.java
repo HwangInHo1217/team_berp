@@ -1,5 +1,7 @@
 package com.team.berp.domain;
 
+import java.math.BigDecimal;
+
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,10 +18,21 @@ public class OrderLineItem {
     private Long orderLineItemId;
 
     @ManyToOne
-    @JoinColumn(name = "order_id", nullable = false)
+    @JoinColumn(name = "order_id")
     private CompanyOrder order;
 
     @ManyToOne
-    @JoinColumn(name = "item_id", nullable = false)
+    @JoinColumn(name = "item_id")
     private Item item;
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "warehouse_id")
+    private Warehouse warehouse;
+    
+	@Column(name = "unit_price")
+    private BigDecimal unitPrice;
+	
+
+    @Column(name = "unit_qty")
+    private Long unitQty;
 }

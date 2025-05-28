@@ -42,7 +42,8 @@
                     <th>고객사</th>
                     <th>품목수</th>
                     <th>총금액</th>
-                    <th>담당자</th>
+                    <th>BERP담당자</th>
+                    <th>거래처담당자</th>
                     <th>상세</th>
                     <th>수정</th>
                     <th>출고등록</th>
@@ -53,11 +54,12 @@
                     <td><input type="checkbox" /></td>
                     <td th:text="${stat.index + 1}"></td>
                     <td th:text="${order.orderDate}"></td>
-                    <td th:text="${order.orderLineItemId}"></td>
+                    <td th:text="${order.companyId}"></td>
                     <td th:text="${order.companyName}"></td>
-                    <td th:text="${order.unitQty}"></td>
+                    <td th:text="${order.orderQty}"></td>
                     <td th:text="${order.amount}"></td>
                     <td th:text="${order.empName}"></td>
+                    <td th:text="${order.companyEmpName}"></td>
                     <td>
                         <button
       type="button"
