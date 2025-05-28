@@ -646,13 +646,14 @@ const codeManager = {
 	 * 수정 시에는 자기 자신의 코드 제외
 	 */
     async checkDuplicate() { // 중복 확인 API 호출
-        const whsCode = utils.$(selectors.inputs.warehouseCode).value.trim(); // 입력된 창고 코드
+        const whsCode = utils.$(selectors.inputs.warehouseCode).value; // 입력된 창고 코드
         const editingId = utils.$(selectors.form).getAttribute('data-editing-id'); // 수정 중인 ID
 
         if (!whsCode) {
 			// 공란 방지
             utils.showMessage('창고 코드를 입력해주세요.', 'danger');
             utils.$(selectors.inputs.isCodeChecked).value = 'false';
+			
             return;
         }
 

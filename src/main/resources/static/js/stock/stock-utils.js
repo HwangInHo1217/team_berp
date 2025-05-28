@@ -1,14 +1,11 @@
-// stock-utils.js - 재고 관리 유틸리티
-
+// ===== stock-utils.js =====
 const StockUtils = {
     
-    // 숫자 포맷팅 (천단위 콤마)
     formatNumber(num) {
         if (num == null) return '0';
         return new Intl.NumberFormat('ko-KR').format(num);
     },
     
-    // 날짜 포맷팅
     formatDate(dateStr) {
         if (!dateStr) return '-';
         try {
@@ -18,7 +15,6 @@ const StockUtils = {
         }
     },
     
-    // 날짜+시간 포맷팅
     formatDateTime(dateStr) {
         if (!dateStr) return '-';
         try {
@@ -34,7 +30,6 @@ const StockUtils = {
         }
     },
     
-    // HTML 이스케이프
     escapeHtml(text) {
         if (!text) return '';
         const div = document.createElement('div');
@@ -42,27 +37,22 @@ const StockUtils = {
         return div.innerHTML;
     },
     
-    // 성공 메시지 표시
     showSuccess(message) {
         this.showToast(message, 'success');
     },
     
-    // 에러 메시지 표시
     showError(message) {
         this.showToast(message, 'danger');
     },
     
-    // 정보 메시지 표시
     showInfo(message) {
         this.showToast(message, 'info');
     },
     
-    // 경고 메시지 표시
     showWarning(message) {
         this.showToast(message, 'warning');
     },
     
-    // 토스트 알림 표시
     showToast(message, type = 'info') {
         const toastHtml = `
             <div class="toast align-items-center text-white bg-${type} border-0" role="alert">
@@ -88,7 +78,6 @@ const StockUtils = {
         });
     },
     
-    // 토스트 컨테이너 가져오기/생성
     getToastContainer() {
         let container = document.getElementById('toastContainer');
         if (!container) {
@@ -100,7 +89,6 @@ const StockUtils = {
         return container;
     },
     
-    // 확인 다이얼로그
     confirm(message, onConfirm, onCancel) {
         if (window.confirm(message)) {
             if (onConfirm) onConfirm();
@@ -109,7 +97,6 @@ const StockUtils = {
         }
     },
     
-    // 커스텀 모달 표시
     showModal(title, body, footer = '') {
         const modalId = 'customModal_' + Date.now();
         const modalHtml = `
@@ -139,7 +126,6 @@ const StockUtils = {
         return modal;
     },
     
-    // 로딩 표시
     showLoading(targetElement) {
         if (targetElement) {
             targetElement.innerHTML = `
@@ -152,7 +138,6 @@ const StockUtils = {
         }
     },
     
-    // API 에러 처리
     handleApiError(error, defaultMessage = '요청 처리에 실패했습니다.') {
         console.error('API Error:', error);
         
@@ -166,7 +151,6 @@ const StockUtils = {
         this.showError(message);
     },
     
-    // 폼 데이터를 객체로 변환
     formToObject(formElement) {
         const formData = new FormData(formElement);
         const object = {};
@@ -176,7 +160,6 @@ const StockUtils = {
         return object;
     },
     
-    // 디바운스 함수
     debounce(func, wait) {
         let timeout;
         return function executedFunction(...args) {
@@ -189,7 +172,6 @@ const StockUtils = {
         };
     },
     
-    // 로컬 스토리지 헬퍼
     storage: {
         set(key, value) {
             try {

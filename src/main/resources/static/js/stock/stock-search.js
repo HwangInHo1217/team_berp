@@ -1,17 +1,24 @@
+// ===== stock-search.js =====
 const StockSearch = {
     searchInput: null,
     warehouseSelect: null,
 
     init() {
-        this.searchInput = document.getElementById('searchInput'); // input에 id 추가
-        this.warehouseSelect = document.getElementById('warehouseSelect'); // select에 id 추가
+        console.log('StockSearch 초기화');
+        this.searchInput = document.getElementById('searchInput'); 
+        this.warehouseSelect = document.getElementById('warehouseSelect');
         this.setupEvents();
     },
 
     setupEvents() {
-        const searchBtn = document.getElementById('searchBtn'); // button에 id 추가
+        const searchBtn = document.getElementById('searchBtn');
         if (searchBtn) {
             searchBtn.addEventListener('click', () => this.performSearch());
+        }
+
+        const resetBtn = document.getElementById('resetBtn');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', () => this.reset());
         }
 
         if (this.searchInput) {
@@ -23,24 +30,54 @@ const StockSearch = {
         }
 
         if (this.warehouseSelect) {
-            // 초기 로딩 시 창고 목록이 동적으로 채워진 후 검색이 필요하면,
-            // 창고 목록 로딩 완료 이벤트에 맞춰서 초기 검색을 하거나,
-            // 사용자가 직접 검색 버튼을 누르도록 유도할 수 있음.
-            // 여기서는 변경 시 바로 검색하도록 설정.
             this.warehouseSelect.addEventListener('change', () => this.performSearch());
         }
+
+        ['itemTypeFilter', 'stockStatusFilter'].forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.addEventListener('change', () => this.performSearch());
+            }
+        });
     },
 
     performSearch() {
-        StockList.refresh(); // 검색 시 첫 페이지부터 다시 로드
+        StockState.filters.keyword = this.getKeyword();
+        StockState.filters.warehouse = this.getWarehouseCode();
+        StockState.filters.itemType = document.getElementById('itemTypeFilter')?.value || '';
+        StockState.filters.stockStatus = document.getElementById('stockStatusFilter')?.value || '';
+        StockState.currentPage = 0;
+        
+        console.log('검색 필터:', StockState.filters);
+        StockList.refresh();
+    },
+
+    reset() {
+        if (this.searchInput) this.searchInput.value = '';
+        if (this.warehouseSelect) this.warehouseSelect.value = '';
+        
+        const itemTypeFilter = document.getElementById('itemTypeFilter');
+        if (itemTypeFilter) itemTypeFilter.value = '';
+        
+        const stockStatusFilter = document.getElementById('stockStatusFilter');
+        if (stockStatusFilter) stockStatusFilter.value = '';
+        
+        StockState.filters = {
+            keyword: '',
+            warehouse: '',
+            itemType: '',
+            stockStatus: ''
+        };
+        StockState.currentPage = 0;
+        
+        StockList.refresh();
     },
 
     getKeyword() {
         return this.searchInput ? this.searchInput.value.trim() : '';
     },
 
-    getWarehouseCode() { // 메소드명 변경 및 반환값 일관성
-        return this.warehouseSelect ? this.warehouseSelect.value : ''; // 선택된 value (창고 코드) 반환
+    getWarehouseCode() {
+        return this.warehouseSelect ? this.warehouseSelect.value : '';
     }
-    // reset() 메소드는 필요시 추가
 };
