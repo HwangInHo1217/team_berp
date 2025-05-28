@@ -25,7 +25,7 @@ public class OrderPageDto {
 	private Long itemId;
 	private String itemName;
 	private String itemCode;
-	private BigDecimal price;
+	private BigDecimal unitPrice;
 	private String unit;
 	
 	
@@ -51,7 +51,7 @@ public class OrderPageDto {
         this.itemName        = itemName;
         this.orderQty        = orderQty;
         this.unit            = unit;
-        this.price       = unitPrice;
+        this.unitPrice       = unitPrice;
         this.orderDate       = orderDate;
         this.dueDate         = dueDate;
         this.unitQty         = unitQty;

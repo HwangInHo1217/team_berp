@@ -30,6 +30,6 @@ public class OrderDto {
 	private Long itemId;
 	private String itemName;
 	private String itemCode;
-	private BigDecimal price;
+	private BigDecimal unitPrice;
 	private String unit;
 }

@@ -54,7 +54,7 @@ public class OrderRegisterFormDto {
 
     /** 각 품목별 단가 리스트 */
     @NotNull
-    private List<Long> price;
+    private List<Long> unitPrice;
 
     /** 각 품목별 단위 리스트 (readonly) */
     private List<String> unit;

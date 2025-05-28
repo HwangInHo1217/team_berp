@@ -60,7 +60,7 @@ public interface Order_OrderLineItemRepository extends JpaRepository<OrderLineIt
                i.name,
                co.orderQty,
                i.unit,
-               i.price,
+               i.unitPrice,
                co.orderDate,
                co.dueDate,
                co.unitQty,
