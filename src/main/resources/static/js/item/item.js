@@ -1,3 +1,9 @@
+// ✅ 사용여부 셀렉트 박스 변경 시 자동 조회
+document.getElementById('searchUseYn').addEventListener('change', () => {
+  loadItemList(0); // 첫 페이지부터 다시 조회
+});
+
+
 // ✅ 공통 상태 관리
 let currentTab = sessionStorage.getItem("tab") || "all";
 

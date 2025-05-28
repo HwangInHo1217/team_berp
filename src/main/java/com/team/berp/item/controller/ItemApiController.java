@@ -77,7 +77,7 @@ public class ItemApiController {
         boolean hasKeyword = keyword != null && !keyword.isBlank();
         boolean hasUseYn = useYn != null && !useYn.isBlank();
         boolean isFiltered = !"all".equalsIgnoreCase(tab);
-
+        System.out.println("useYn"+useYn);
         // 🔍 enum 타입으로 변환
         ItemType itemType = null;
         if (isFiltered) {
@@ -110,8 +110,13 @@ public class ItemApiController {
                 resultPage = itemRepository.findByType(itemType, pageable);
             else
                 resultPage = itemRepository.findAll(pageable);
-        }
-
+            if (hasUseYn) {
+                resultPage = itemRepository.findByUse(useYn, pageable); // ✅ 전체 + 사용여부만 필터
+            } else {
+                resultPage = itemRepository.findAll(pageable);
+            }
+        } 
+        	
         Page<ItemListViewResponse> response = resultPage.map(ItemListViewResponse::new);
         return ResponseEntity.ok(response);
     }

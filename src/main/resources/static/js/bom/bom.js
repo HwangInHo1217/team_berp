@@ -1,3 +1,10 @@
+
+// 🔍 사용여부 필터 선택 시 목록 새로 로드
+document.getElementById("searchUseYn").addEventListener("change", function () {
+  loadBomList(0); // 첫 페이지부터 다시 불러오기
+});
+
+
 // ✅ BOM 목록 불러오기
 function loadBomList(page = 0) {
   const searchField = document.getElementById('searchType').value;
@@ -5,7 +12,22 @@ function loadBomList(page = 0) {
   const useYn = document.getElementById('searchUseYn').value;
 
   const params = new URLSearchParams({ searchField, keyword, useYn, page });
-
+  fetch(`/api/bom/list?${params}`)
+    .then(res => res.json())
+    .then(data => {
+      renderBomTable(data.content); // 서버 응답 구조에 따라 맞춤
+      renderPagination(data.totalPages, data.number, searchField, keyword, useYn);
+      window.allRawItemOptions = data.selectMaterialList.map(item => ({
+        value: item.id,
+        code: item.code,
+        label: `${item.code} - ${item.name}`
+      }));
+    })
+    .catch(err => {
+      console.error("❌ BOM 불러오기 실패:", err);
+      alert("BOM 목록 조회 실패");
+    });
+/*
   fetch(`/api/bom/list?${params.toString()}`)
     .then(res => res.json())
     .then(data => {
@@ -33,7 +55,7 @@ function loadBomList(page = 0) {
     .catch(err => {
       console.error("❌ BOM 리스트 불러오기 실패", err);
       alert("BOM 목록 조회에 실패했습니다.");
-    });
+    });*/
 }
 
 // ✅ 테이블 렌더링
@@ -226,4 +248,5 @@ function deleteSelectedBoms() {
     alert("에러가 발생했습니다.");
   });
 }
+
 

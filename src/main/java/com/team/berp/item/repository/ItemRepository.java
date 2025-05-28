@@ -63,5 +63,8 @@ public interface ItemRepository extends JpaRepository<Item, Long>{
     Page<Item> findByTypeAndUse(ItemType type, String use, Pageable pageable);
  // JpaRepository<Item, Long> 에서 자동 제공됨
     Page<Item> findAll(Pageable pageable);
+    
+    Page<Item> findByUse(String use, Pageable pageable);
+
 
 }
