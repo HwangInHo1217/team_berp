@@ -1,4 +1,4 @@
-<!-- 재고 상세 모달 -->
+<!-- ===== stock_detail_modal.html ===== -->
 <div class="modal fade" id="stockDetailModal" tabindex="-1" aria-hidden="true" th:fragment="stock_modal">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -7,13 +7,59 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
             </div>
             <div class="modal-body">
-                <!-- 동적으로 내용이 채워짐 -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-muted">품목 정보</h6>
+                        <dl class="row mb-0">
+                            <dt class="col-sm-4">품목코드</dt>
+                            <dd class="col-sm-8" id="detailItemCode">-</dd>
+                            <dt class="col-sm-4">품목명</dt>
+                            <dd class="col-sm-8" id="detailItemName">-</dd>
+                            <dt class="col-sm-4">품목유형</dt> 
+                            <dd class="col-sm-8" id="detailItemType">-</dd>
+                            <dt class="col-sm-4">단위</dt>
+                            <dd class="col-sm-8" id="detailUnit">-</dd>
+                        </dl>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted">재고 정보</h6>
+                        <dl class="row mb-0">
+                            <dt class="col-sm-4">창고</dt>
+                            <dd class="col-sm-8" id="detailWarehouse">-</dd>
+                            <dt class="col-sm-4">현재고</dt>
+                            <dd class="col-sm-8"><strong class="text-primary" id="detailQty">-</strong></dd>
+                            <dt class="col-sm-4">LOT번호</dt> 
+                            <dd class="col-sm-8" id="detailLotNumber">-</dd>
+                            <dt class="col-sm-4">재고상태</dt> 
+                            <dd class="col-sm-8" id="detailStockStatus">-</dd>
+                        </dl>
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-md-6">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-4">최초입고일</dt> 
+                            <dd class="col-sm-8" id="detailFirstStocked">-</dd>
+                            <dt class="col-sm-4">최종입고일</dt>
+                            <dd class="col-sm-8" id="detailLastIn">-</dd>
+                        </dl>
+                    </div>
+                    <div class="col-md-6">
+                        <dl class="row mb-0">
+                            <dt class="col-sm-4">최종변경일</dt> 
+                            <dd class="col-sm-8" id="detailLastStocked">-</dd>
+                            <dt class="col-sm-4">최종출고일</dt>
+                            <dd class="col-sm-8" id="detailLastOut">-</dd>
+                        </dl>
+                    </div>
+                </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-info" onclick="StockActions.showHistoryFromDetail()">
+                <button type="button" class="btn btn-info" onclick="StockActions.showHistory(StockModal.currentStockId)">
                     <i class="fas fa-history"></i> 이력조회
                 </button>
-                <button type="button" class="btn btn-warning" onclick="StockActions.quickOutFromDetail()">
+                <button type="button" class="btn btn-warning" onclick="StockActions.quickOut(StockModal.currentStockId, parseInt(document.getElementById('detailQty')?.textContent.replace(/,/g, '') || 0))">
                     <i class="fas fa-minus-circle"></i> 출고
                 </button>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>

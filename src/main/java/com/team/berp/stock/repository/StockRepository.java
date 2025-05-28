@@ -49,16 +49,16 @@ public interface StockRepository extends JpaRepository<Stock, Long> {
     @Query("SELECT s FROM Stock s WHERE s.warehouse.warehouseCode = :whsCode")
     Page<Stock> findByWarehouseCode(@Param("whsCode") String whsCode, Pageable pageable);
     
-    // 🔧 창고 ID로 검색 (가장 효율적)
-    Page<Stock> findByWarehouse_Id(Integer warehouseId, Pageable pageable);
+    // 🔧 창고 ID로 검색 - Long으로 수정
+    Page<Stock> findByWarehouse_Id(Long warehouseId, Pageable pageable);
     
-    // 🔧 품목 유형별 조회
+    // 🔧 품목 유형별 조회 - ItemType enum 사용
     @Query("SELECT s FROM Stock s WHERE s.item.type = :itemType")
-    Page<Stock> findByItemType(@Param("itemType") String itemType, Pageable pageable);
+    Page<Stock> findByItemType(@Param("itemType") com.team.berp.domain.ItemType itemType, Pageable pageable);
     
-    // 🔧 품목 유형 + 창고별 조회
+    // 🔧 품목 유형 + 창고별 조회 - ItemType enum 사용  
     @Query("SELECT s FROM Stock s WHERE s.item.type = :itemType AND s.warehouse.warehouseCode = :whsCode")
-    Page<Stock> findByItemTypeAndWarehouseCode(@Param("itemType") String itemType, @Param("whsCode") String whsCode, Pageable pageable);
+    Page<Stock> findByItemTypeAndWarehouseCode(@Param("itemType") com.team.berp.domain.ItemType itemType, @Param("whsCode") String whsCode, Pageable pageable);
     
     // 🔧 재고 상태별 조회
     @Query("SELECT s FROM Stock s WHERE s.quantity = 0")

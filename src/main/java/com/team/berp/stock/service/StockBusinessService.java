@@ -1,3 +1,4 @@
+// ===== StockBusinessService.java =====
 package com.team.berp.stock.service;
 
 import com.team.berp.domain.*;
@@ -30,16 +31,18 @@ public class StockBusinessService {
     private final InventoryLogService logSvc;
     private final InventoryLogRepository logRepo;
     
-    // 재고 검색 로직 (개선됨)
+    // 재고 검색 로직 (수정됨)
     public Page<StockResponseDTO> searchStocks(String keyword, String whsCode, String itemType, 
                                               String stockStatus, Pageable page) {
         Page<Stock> stocks;
         
         // 복합 검색 조건 처리
         if (!isEmpty(itemType) && !isEmpty(whsCode)) {
-            stocks = stockRepo.findByItemTypeAndWarehouseCode(itemType, whsCode, page);
+            ItemType itemTypeEnum = parseItemType(itemType);
+            stocks = stockRepo.findByItemTypeAndWarehouseCode(itemTypeEnum, whsCode, page);
         } else if (!isEmpty(itemType)) {
-            stocks = stockRepo.findByItemType(itemType, page);
+            ItemType itemTypeEnum = parseItemType(itemType);
+            stocks = stockRepo.findByItemType(itemTypeEnum, page);
         } else if (!isEmpty(stockStatus)) {
             stocks = switch (stockStatus) {
                 case "inStock" -> stockRepo.findInStock(page);
@@ -56,32 +59,47 @@ public class StockBusinessService {
             stocks = stockRepo.searchByKeyword(keyword.trim(), page);
         }
         
-        // DTO 변환 시 추가 정보 포함
+        // DTO 변환 시 추가 정보 포함 (✅ 수정된 부분)
         return stocks.map(stock -> {
             StockResponseDTO dto = StockResponseDTO.fromEntity(stock);
             
-            // 최종 입/출고일 조회
+            // 최종 입고일 조회 및 설정
             logRepo.findLastInDate(stock.getItem().getId(), stock.getWarehouse().getId())
-                   .ifPresent(dto::setLastInDate);
+                   .ifPresent(date -> {
+                       dto.setLastInDate(date);
+                       dto.setActualLastInAt(date); // ✅ 추가
+                   });
+            
+            // 최종 출고일 조회 및 설정        
             logRepo.findLastOutDate(stock.getItem().getId(), stock.getWarehouse().getId())
-                   .ifPresent(dto::setLastOutDate);
+                   .ifPresent(date -> {
+                       dto.setLastOutDate(date);
+                       dto.setActualLastOutAt(date); // ✅ 추가
+                   });
             
             return dto;
         });
     }
     
-    // 재고 상세 조회 로직
+    // 재고 상세 조회 로직 (수정됨)
     public StockResponseDTO getStockDetail(Long stockId) {
         Stock stock = stockRepo.findById(stockId)
                 .orElseThrow(() -> new RuntimeException("재고 정보를 찾을 수 없습니다."));
         
         StockResponseDTO dto = StockResponseDTO.fromEntity(stock);
         
-        // 추가 정보 조회
+        // 추가 정보 조회 (✅ 수정된 부분)
         logRepo.findLastInDate(stock.getItem().getId(), stock.getWarehouse().getId())
-               .ifPresent(dto::setLastInDate);
+               .ifPresent(date -> {
+                   dto.setLastInDate(date);
+                   dto.setActualLastInAt(date); // ✅ 추가
+               });
+        
         logRepo.findLastOutDate(stock.getItem().getId(), stock.getWarehouse().getId())
-               .ifPresent(dto::setLastOutDate);
+               .ifPresent(date -> {
+                   dto.setLastOutDate(date);
+                   dto.setActualLastOutAt(date); // ✅ 추가
+               });
         
         return dto;
     }
@@ -181,6 +199,16 @@ public class StockBusinessService {
     // 유틸리티 메소드들
     private boolean isEmpty(String str) {
         return str == null || str.trim().isEmpty();
+    }
+    
+    private ItemType parseItemType(String itemTypeStr) {
+        if (isEmpty(itemTypeStr)) return null;
+        
+        try {
+            return ItemType.valueOf(itemTypeStr.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("유효하지 않은 품목 유형: " + itemTypeStr);
+        }
     }
     
     private Item getItem(Long itemId) {

@@ -15,7 +15,7 @@ public class Warehouse {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "warehouse_id")
-    private Long Id;
+    private Long id;  // 다른 엔티티들과 통일
     
     @Column(name = "warehouse_code", unique = true, length = 20)
     private String warehouseCode;

@@ -171,6 +171,9 @@ public class ItemService {
 	public void deleteItems(List<Long> ids) {
 	    itemRepository.deleteAllByIdInBatch(ids);
 	}
+	
+	
+	
 
 
 }

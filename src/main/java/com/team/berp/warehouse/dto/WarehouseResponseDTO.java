@@ -1,7 +1,8 @@
 package com.team.berp.warehouse.dto;
 
 import com.team.berp.domain.Warehouse;
-//import com.team.berp.domain.Warehouse.WarehouseType;
+import com.team.berp.domain.WarehouseType;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,13 +15,13 @@ import lombok.NoArgsConstructor;
  * 
  * - Entity(Warehouse) → DTO 로의 변환 책임을 가짐
  */
-@Getter                      // 모든 필드에 대한 Getter 메서드 자동 생성
-@NoArgsConstructor          // 기본 생성자 자동 생성
-@AllArgsConstructor         // 모든 필드를 매개변수로 받는 생성자 자동 생성
+@Getter                      
+@NoArgsConstructor          
+@AllArgsConstructor         
 public class WarehouseResponseDTO {
 
     /** 창고 ID (기본 키) */
-	private Integer warehouseId;
+	private Long warehouseId;
 
     /** 창고 코드 (예: RWWH0001, PDWH0001 등) */
 	private String warehouseCode;
@@ -29,7 +30,7 @@ public class WarehouseResponseDTO {
 	private String warehouseName;
 
     /** 창고 유형 (RAW, PRODUCT 등) */
-//	private WarehouseType warehouseType;
+	private WarehouseType warehouseType;
 
     /** 사용 여부 ("Y" or "N") */
 	private String useYn;
@@ -43,10 +44,10 @@ public class WarehouseResponseDTO {
      * @param warehouse Entity 객체 (DB로부터 조회된 창고 데이터)
      */
 	public WarehouseResponseDTO(Warehouse warehouse) {
-	//	this.warehouseId = warehouse.getWarehouseId();
+		this.warehouseId = warehouse.getId();  // getId()로 통일
 		this.warehouseCode = warehouse.getWarehouseCode();
 		this.warehouseName = warehouse.getWarehouseName();
-  //      this.warehouseType = warehouse.getWarehouseType();
+        this.warehouseType = warehouse.getWarehouseType();
         this.useYn = warehouse.getUseYn();
         this.description = warehouse.getDescription();
 	}
