@@ -113,6 +113,7 @@ public class MrpServiceImpl implements MrpService {
                 bom.getChildItem().getName(),
                 bom.getQty() // 실제 수량 필드명에 맞춰서! (예: getQuantity → getQty)
             ))
+            
             .collect(Collectors.toList());
 
         // 4) 최종 응답 DTO(부모 코드/이름 + 부품 리스트)로 감싸기
