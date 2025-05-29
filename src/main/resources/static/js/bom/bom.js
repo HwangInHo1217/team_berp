@@ -10,6 +10,7 @@ function loadBomList(page = 0) {
   const searchField = document.getElementById('searchType').value;
   const keyword = document.getElementById('searchKeyword').value;
   const useYn = document.getElementById('searchUseYn').value;
+  
 
   const params = new URLSearchParams({ searchField, keyword, useYn, page });
   fetch(`/api/bom/list?${params}`)
@@ -22,11 +23,20 @@ function loadBomList(page = 0) {
         code: item.code,
         label: `${item.code} - ${item.name}`
       }));
+	  const parentSelect = document.getElementById("parentItemSelect");
+	  if (parentSelect) {
+	    parentSelect.innerHTML = `<option value="">-- 선택하세요 --</option>` +
+	      data.selectProductList.map(item =>
+	        `<option value="${item.id}">${item.code} - ${item.name}</option>`
+	      ).join('');
+	  }
     })
     .catch(err => {
       console.error("❌ BOM 불러오기 실패:", err);
       alert("BOM 목록 조회 실패");
     });
+	
+
 /*
   fetch(`/api/bom/list?${params.toString()}`)
     .then(res => res.json())
@@ -78,7 +88,9 @@ function renderBomTable(items) {
       <td>${item.spec}</td>
       <td>${item.unit}</td>
       <td>${item.use}</td>
-      <td><button class="btn btn-sm btn-info" onclick="openBomViewModal(${item.id})">보기</button></td>
+	  <td>
+	    <button class="btn btn-sm btn-info" onclick="openBomVersionSelectModal(${item.id})">보기</button>
+	  </td>
       <td><button class="btn btn-sm btn-outline-info" onclick="openItemDetailModal('${item.code}')">보기</button></td>
       <td><button class="btn btn-sm btn-outline-secondary" onclick="openBomEditModal(this)" data-id="${item.id}">수정</button></td>
     `;
@@ -184,22 +196,27 @@ if (bomForm) {
     const lossRates    = [...form.querySelectorAll('input[name="loss_rt[]"]')].map(el => el.value);
     const itemPrices   = [...form.querySelectorAll('input[name="item_price[]"]')].map(el => el.value);
     const remarks      = [...form.querySelectorAll('input[name="remark[]"]')].map(el => el.value);
-
+	const versionCode = form.querySelector('input[name="version_code"]').value;
+	const description = form.querySelector('input[name="description"]').value;
+	const useYn = form.querySelector('select[name="use_yn"]').value;
     if (!parentItemId || childItemIds.includes("") || quantities.includes("")) {
       alert("모든 필수 항목을 입력해주세요.");
       return;
     }
-
-    const payload = {
-      parentItemId: parseInt(parentItemId),
-      components: childItemIds.map((id, i) => ({
-        childItemId: parseInt(id),
-        seqNo: seqNos[i] ? parseInt(seqNos[i]) : null,
-        qty: parseInt(quantities[i]),
-        lossRt: lossRates[i] ? parseFloat(lossRates[i]) : null,
-        itemPrice: itemPrices[i] ? parseInt(itemPrices[i]) : null,
-        remark: remarks[i] || ""
-      }))
+	
+	const payload = {
+	  versionCode: versionCode,
+	  description: description,
+	  useYn: useYn,
+	  parentItemId: parseInt(parentItemId),
+	  components: childItemIds.map((id, i) => ({
+	    childItemId: parseInt(id),
+	    seqNo: seqNos[i] ? parseInt(seqNos[i]) : null,
+	    qty: parseInt(quantities[i]),
+	    lossRt: lossRates[i] ? parseFloat(lossRates[i]) : null,
+	    itemPrice: itemPrices[i] ? parseInt(itemPrices[i]) : null,
+	    remark: remarks[i] || ""
+	  }))
     };
 
     fetch('/api/bom', {
@@ -247,6 +264,115 @@ function deleteSelectedBoms() {
     console.error('❌ 삭제 중 오류 발생:', err);
     alert("에러가 발생했습니다.");
   });
+}  let selectedParentId = null;
+
+  function openBomVersionSelectModal(parentId) {
+    selectedParentId = parentId;
+
+    fetch(`/api/bom/versions/${parentId}`)
+      .then(res => {
+        if (!res.ok) throw new Error("버전 목록 조회 실패");
+        return res.json();
+      })
+      .then(versions => {
+        const select = document.getElementById("bomVersionSelect");
+        select.innerHTML = versions.map(v =>
+          `<option value="${v.id}">${v.versionCode} (${v.useYn})</option>`
+        ).join('');
+
+        // 모달 열기
+        bootstrap.Modal.getOrCreateInstance(document.getElementById("bomVersionSelectModal")).show();
+      })
+      .catch(err => {
+        console.error("❌ BOM 버전 목록 조회 실패:", err);
+        alert("버전 목록 조회 실패");
+      });
+  }
+function confirmVersionAndOpenView() {
+  const versionId = document.getElementById("bomVersionSelect").value;
+  if (!versionId) {
+    alert("버전을 선택해주세요.");
+    return;
+  }
+
+  // 2. 선택된 versionId로 구성 조회
+  fetch(`/api/bom/version/${versionId}`)
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById("bomParentName").innerText = data.parentName;
+      const tbody = document.getElementById("bomComponentTableBody");
+      tbody.innerHTML = "";
+
+      data.components.forEach((c, i) => {
+        const row = `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${data.parentName}</td>
+            <td>${c.childName}</td>
+            <td>${c.seqNo ?? '-'}</td>
+            <td>${c.qty}</td>
+            <td>${c.lossRate}</td>
+            <td>${c.unitPrice}</td>
+            <td>${c.remark}</td>
+          </tr>`;
+        tbody.insertAdjacentHTML("beforeend", row);
+      });
+
+      // 모달 닫고 구성 보기 모달 열기
+      bootstrap.Modal.getInstance(document.getElementById("bomVersionSelectModal")).hide();
+      bootstrap.Modal.getOrCreateInstance(document.getElementById("bomViewModal")).show();
+    })
+    .catch(err => {
+      alert("BOM 구성 조회 실패");
+      console.error(err);
+    });
 }
 
 
+function loadBomByVersion() {
+	  const versionId = document.getElementById("bomVersionSelect").value;
+	  console.log(versionId); // 🔍 undefined 또는 "" 확인 필요
+	  if (!versionId) {
+	    alert("버전을 선택해주세요.");
+	    return;
+	  }
+	  if (!versionId || versionId.length === 0) {
+	    alert("BOM 버전이 존재하지 않습니다.");
+	    return;
+	  }
+	  fetch(`/api/bom/version/${versionId}`)
+	    .then(res => {
+	      if (!res.ok) throw new Error("구성 조회 실패");
+	      return res.json();
+	    })
+	    .then(data => {
+	      document.getElementById("bomParentName").innerText = data.parentName;
+
+	      const tbody = document.getElementById("bomComponentTableBody");
+	      tbody.innerHTML = "";
+
+	      data.components.forEach((c, i) => {
+	        const row = `
+	          <tr>
+	            <td>${i + 1}</td>
+	            <td>${data.parentName}</td>
+	            <td>${c.childName}</td>
+	            <td>${c.seqNo ?? '-'}</td>
+	            <td>${c.qty}</td>
+	            <td>${c.lossRate}</td>
+	            <td>${c.unitPrice}</td>
+	            <td>${c.remark}</td>
+	          </tr>`;
+	        tbody.insertAdjacentHTML("beforeend", row);
+	      });
+
+	      // 구성보기 모달 열기
+	      bootstrap.Modal.getOrCreateInstance(document.getElementById("bomViewModal")).show();
+	      // 버전 선택 모달 닫기
+	      bootstrap.Modal.getOrCreateInstance(document.getElementById("bomVersionSelectModal")).hide();
+	    })
+	    .catch(err => {
+	      console.error("❌ BOM 구성 조회 실패:", err);
+	      alert("BOM 구성 조회 실패");
+	    });
+	}

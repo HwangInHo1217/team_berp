@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <div th:fragment="detail-fragment">
+    <div class="modal-header">
+      <h5 class="modal-title">주문 상세</h5>
+      <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    </div>
+    <div class="modal-body">
+      <p>주문일자: <span th:text="${orderDetail.orderDate}"/></p>
+      <p>고객사: <span th:text="${orderDetail.companyName}"/></p>
+      <p>담당자: <span th:text="${orderDetail.empName}"/></p>
+      <p>거래처담당자: <span th:text="${orderDetail.companyEmpName}"/></p>
+      <table class="table">
+        <thead><tr>
+          <th>품목명</th><th>코드</th><th>단위</th>
+          <th>단가</th><th>수량</th><th>합계</th>
+          <th>창고</th><th>재고량</th>
+          <th>MRP 알림</th>
+        </tr></thead>
+        <tbody>
+        <tr th:each="it: ${orderDetail.items}">
+          <td th:text="${it.itemName}"></td>
+          <td th:text="${it.itemCode}"></td>
+          <td th:text="${it.unit}"></td>
+          <td th:text="${it.unitPrice}"></td>
+          <td th:text="${it.unitQty}"></td>
+          <td th:text="${it.total}"></td>
+          <td th:text="${it.warehouseName}"></td>
+          <td th:text="${it.stockQty}"></td>
+          <td>
+            <span th:if="${it.unitQty > it.stockQty}"
+                  class="text-danger">MRP 계산 필요</span>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</html>

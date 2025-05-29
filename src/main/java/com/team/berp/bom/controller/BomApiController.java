@@ -21,6 +21,7 @@ import com.team.berp.bom.dto.AddBomRequestDTO;
 import com.team.berp.bom.dto.BomListResponseDTO;
 import com.team.berp.bom.dto.BomListViewResponse;
 import com.team.berp.bom.dto.BomProductItemDTO;
+import com.team.berp.bom.dto.BomVersionResponseDTO;
 import com.team.berp.bom.dto.ItemSelectionDTO;
 import com.team.berp.bom.dto.UpdateBomRequestDTO;
 import com.team.berp.bom.service.BomService;
@@ -36,16 +37,20 @@ public class BomApiController {
 	// ✅ 등록
 	@PostMapping
 	public ResponseEntity<Void> registerBom(@RequestBody AddBomRequestDTO dto) {
-		bomService.addBom(dto);
+		 bomService.registerBomWithVersion(dto); // ✅ 이 메서드로 수정
 		return ResponseEntity.ok().build();
 	}
 
 	// ✅ 상세 조회
-	@GetMapping("/{parentId}")
-	public BomListViewResponse getBomByParentId(@PathVariable("parentId") Long parentId) {
-	    return bomService.getBomByParentItemId(parentId);
+	@GetMapping("/version/{versionId}")
+	public BomListViewResponse getBomByVersionId(@PathVariable("versionId") Long versionId) {
+	    return bomService.getBomByVersionId(versionId);
 	}
-
+	// ✅ 1-1. BOM 버전 목록 조회
+	@GetMapping("/versions/{parentId}")
+	public List<BomVersionResponseDTO> getVersionsByParentId(@PathVariable("parentId") Long parentId) {
+	    return bomService.getVersionsByParentId(parentId);
+	}
 	// ✅ 수정
 	@PutMapping
 	public ResponseEntity<Void> updateBom(@RequestBody UpdateBomRequestDTO dto) {

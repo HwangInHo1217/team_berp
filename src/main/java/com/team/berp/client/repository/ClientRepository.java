@@ -2,6 +2,9 @@ package com.team.berp.client.repository;
 
 import com.team.berp.domain.Company;
 import com.team.berp.domain.Company.CompanyType;
+
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -29,4 +32,7 @@ public interface ClientRepository extends JpaRepository<Company, Long> {
 
     // 유형+대표자명(논리삭제 제외)
     Page<Company> findByCompanyTypeAndPresidentNmContainingAndUseYn(CompanyType companyType, String ceo, String useYn, Pageable pageable);
+
+    //사업장 유형 선택, supplier or customer
+    List<Company> findByCompanyType(String Type);
 }

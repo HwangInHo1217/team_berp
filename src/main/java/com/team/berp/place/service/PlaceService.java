@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
+import com.team.berp.domain.Company;
 import com.team.berp.domain.CompanyOrder;
 import com.team.berp.place.dto.PlaceDTO;
 
@@ -20,7 +21,6 @@ public interface PlaceService {
 	//PlaceDTO dto: 메소드가 입력으로 받는 인자 -> 사용자가 입력한 정보
 	CompanyOrder registerOrder(PlaceDTO dto); //발주등록
 	List<CompanyOrder> getAllOrders();
-
 	
 	
 }

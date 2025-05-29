@@ -1,0 +1,28 @@
+<!-- 수정 모달 -->
+<div th:fragment="fixModal">
+  <div class="modal fade" id="fixModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <form th:action="@{'/shipment/edit/' + ${shipment.id}}" method="post" class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">출고 수정</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <!-- 출고여부 선택 -->
+          <div class="mb-3">
+            <label>출고여부</label>
+            <select name="useYn" class="form-select">
+              <option value="N" th:selected="${shipment.useYn=='N'}">N</option>
+              <option value="Y" th:selected="${shipment.useYn=='Y'}">Y</option>
+            </select>
+          </div>
+          <!-- 기타 정보: readonly로 표시 가능 -->
+          <input type="hidden" name="id" th:value="${shipment.id}" />
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary">수정</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

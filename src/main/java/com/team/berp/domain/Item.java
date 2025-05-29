@@ -43,6 +43,9 @@ public class Item {
 	
 	@Column(name="use_yn") //사용 여부
 	private String use;
+	
+	@Column(name="item_price") // 출고 시의 품목 가격
+	private Long itemPrice;
 
 	@Builder
 	public Item(String code, String name, ItemType type, String unit, String spec, String use) {	

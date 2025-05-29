@@ -1,69 +1,66 @@
-<div class="modal fade" id="orderRegisterModal" tabindex="-1" aria-labelledby="orderRegisterModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="orderRegisterModalLabel">주문 등록</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="orderForm" method="POST">
-                    <div class="mb-3">
-                        <label for="customer_id" class="form-label">고객사</label>
-                        <input type="text" class="form-control" name="customer_id" required />
-                    </div>
-                    <div class="mb-3">
-                        <label for="order_date" class="form-label">주문일자</label>
-                        <input type="date" class="form-control" name="order_date" required />
-                    </div>
-                    <div class="mb-3">
-                        <label for="due_date" class="form-label">납기일자</label>
-                        <input type="date" class="form-control" name="due_date" required />
-                    </div>
-                    <div class="mb-3">
-                        <label for="manager" class="form-label">담당자</label>
-                        <input type="text" class="form-control" name="manager" required />
-                    </div>
-                    <div class="mb-3">
-                        <label for="note" class="form-label">비고</label>
-                        <input type="text" class="form-control" name="note" />
-                    </div>
+<!-- File: src/main/resources/templates/order/order-register-modal.html -->
+<div th:fragment="orderRegisterModal">
+  <div class="modal fade" id="orderRegisterModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+      <div class="modal-content">
 
-                    <table id="orderItemTable" class="table">
-                        <thead>
-                            <tr>
-                                <th>품목</th>
-                                <th>수량</th>
-                                <th>단위</th>
-                                <th>단가</th>
-                                <th>총액</th>
-                                <th>삭제</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Initial row for item -->
-                            <tr>
-                                <td>
-                                    <select class="form-select" name="item_id[]" required>
-                                        <option value="">-- 선택 --</option>
-                                        <option value="P001">P001 - 완제품 A</option>
-                                        <option value="P002">P002 - 완제품 B</option>
-                                    </select>
-                                </td>
-                                <td><input type="number" name="quantity[]" class="form-control" required oninput="calculateRowTotal(this)" /></td>
-                                <td><input type="text" name="unit[]" class="form-control" value="EA" required /></td>
-                                <td><input type="number" name="unit_price[]" class="form-control" required oninput="calculateRowTotal(this)" /></td>
-                                <td><input type="text" class="form-control total" readonly value="0" /></td>
-                                <td><button type="button" class="btn btn-sm btn-outline-danger" onclick="removeOrderItemRow(this)">삭제</button></td>
-                            </tr>
-                        </tbody>
-                    </table>
-
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
-                        <button type="submit" class="btn btn-primary" id="submitBtn">등록</button>
-                    </div>
-                </form>
-            </div>
+        <!-- 헤더 -->
+        <div class="modal-header">
+          <h5 class="modal-title">주문 등록</h5>
+          <button type="button" class="btn-close" aria-label="닫기" onclick="closeModal()"></button>
         </div>
+
+        <!-- 바디: 등록 폼 -->
+        <div class="modal-body">
+          <form id="formRegister" class="row g-3">
+            <div class="col-md-4">
+              <label for="reg-customer" class="form-label">고객사</label>
+              <select id="reg-customer" name="customerId" class="form-select" required onchange="onCompanyChange(this)">
+                <option value="">-- 선택 --</option>
+                <option th:each="c : ${companies}"
+                        th:value="${c.companyId}"
+                        th:text="${c.companyName}"></option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label for="reg-order-date" class="form-label">주문일자</label>
+              <input id="reg-order-date" type="date" name="orderDate" class="form-control" required />
+            </div>
+            <div class="col-md-4">
+              <label for="reg-manager" class="form-label">담당자</label>
+              <input id="reg-manager" type="text" name="manager" class="form-control" required />
+            </div>
+            <div class="col-md-8">
+              <label for="reg-note" class="form-label">비고</label>
+              <input id="reg-note" type="text" name="note" class="form-control" />
+            </div>
+
+            <!-- 품목 테이블 -->
+            <div class="col-12">
+              <div class="table-responsive">
+                <table class="table table-bordered text-center align-middle">
+                  <thead class="table-light">
+                    <tr>
+                      <th>품목</th><th>수량</th><th>단위</th><th>단가</th><th>합계</th><th>삭제</th>
+                    </tr>
+                  </thead>
+                  <tbody id="reg-items-body">
+                    <!-- JS addOrderItemRow()가 초기 1행 추가 -->
+                  </tbody>
+                </table>
+              </div>
+              <button type="button" class="btn btn-outline-primary" onclick="addOrderItemRow()">+ 품목 추가</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- 푸터 -->
+        <div class="modal-footer">
+          <button type="reset" class="btn btn-secondary" form="formRegister">초기화</button>
+          <button type="button" class="btn btn-primary" onclick="registerOrder()">등록</button>
+        </div>
+
+      </div>
     </div>
+  </div>
 </div>

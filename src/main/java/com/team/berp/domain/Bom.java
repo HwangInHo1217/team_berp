@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -13,6 +14,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Table(name = "bom")
 @Data
+@Builder
 public class Bom {
    
 
@@ -30,6 +32,11 @@ public class Bom {
 
     @Column(nullable = false)
     private Integer qty;
+    
+    // 버전 정보 (연관관계 주인)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "bom_version_id") // 연관관계 주인
+    private BomVersion bomVersion;
     
     @Column(name = "seq_no")
     private Integer seqNo;
@@ -49,6 +56,7 @@ public class Bom {
     	this.childItem=child;
     	this.qty=qty;
 	}
+   
    
 }
 
