@@ -74,17 +74,23 @@ public class BomService {
 
         List<BomListViewResponse.Component> components = new ArrayList<>();
         for (Bom bom : bomList) { // BOM 엔티티 → DTO로 변환
-            components.add(new BomListViewResponse.Component(
-                bom.getChildItem().getCode(),
-                bom.getChildItem().getName(),
-                bom.getQty(),
-                bom.getChildItem().getSpec(), // 규격
-                bom.getChildItem().getUnit(), // 단위
-                bom.getSeqNo(),
-                formatLossRate(bom.getLossRt()), // "5%" 포맷
-                bom.getItemPrice() != null ? String.valueOf(bom.getItemPrice()) : "-",
-                bom.getRemark() != null ? bom.getRemark() : "-"
-            ));
+        	components.add(new BomListViewResponse.Component(
+        	    bom.getChildItem().getCode(),                         // childCode
+        	    bom.getChildItem().getName(),                         // childName
+        	    bom.getQty(),                                         // qty
+        	    bom.getChildItem().getSpec(),                         // spec
+        	    bom.getChildItem().getUnit(),                         // unit
+        	    bom.getSeqNo(),                                       // seqNo
+        	    formatLossRate(bom.getLossRt()),                      // lossRate
+        	    bom.getItemPrice() != null ? String.valueOf(bom.getItemPrice()) : "-",
+        	    bom.getRemark() != null ? bom.getRemark() : "-",
+        	    0,        // stockQty (실제 재고 정보를 넣으려면 StockRepository 사용)
+        	    0,        // shortageQty
+        	    0,        // safetyStock
+        	    0,        // purchaseQty
+        	    0,        // purchaseLeadTime
+        	    ""        // expectedDate
+       		));
         }
 
         return new BomListViewResponse( // 최종 응답 DTO 생성
@@ -162,17 +168,23 @@ public class BomService {
 
             List<BomListViewResponse.Component> components = new ArrayList<>();
             for (Bom b : boms) {
-                components.add(new BomListViewResponse.Component(
-                    b.getChildItem().getCode(),
-                    b.getChildItem().getName(),
-                    b.getQty(),
-                    b.getChildItem().getSpec(),
-                    b.getChildItem().getUnit(),
-                    b.getSeqNo(),
-                    formatLossRate(b.getLossRt()),
-                    b.getItemPrice() != null ? String.valueOf(b.getItemPrice()) : "-",
-                    b.getRemark() != null ? b.getRemark() : "-"
-                ));
+            	components.add(new BomListViewResponse.Component(
+            	    b.getChildItem().getCode(),                         // childCode
+            	    b.getChildItem().getName(),                         // childName
+            	    b.getQty(),                                         // qty
+            	    b.getChildItem().getSpec(),                         // spec
+            	    b.getChildItem().getUnit(),                         // unit
+            	    b.getSeqNo(),                                       // seqNo
+            	    formatLossRate(b.getLossRt()),                      // lossRate
+            	    b.getItemPrice() != null ? String.valueOf(b.getItemPrice()) : "-",
+            	    b.getRemark() != null ? b.getRemark() : "-",
+            	    0,        // stockQty (실제 재고 정보를 넣으려면 StockRepository 사용)
+            	    0,        // shortageQty
+            	    0,        // safetyStock
+            	    0,        // purchaseQty
+            	    0,        // purchaseLeadTime
+            	    ""        // expectedDate
+            	));
             }
 
             BomListViewResponse dto = new BomListViewResponse(

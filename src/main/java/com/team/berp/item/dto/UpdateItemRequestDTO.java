@@ -17,5 +17,6 @@ public class UpdateItemRequestDTO {
 	private String unit;
 	private String spec;
 	private String use;
-	
+	private Integer safetyStock;       // nullable
+	private Integer purchaseLeadTime;  // nullable
 }

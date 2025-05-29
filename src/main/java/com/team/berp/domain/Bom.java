@@ -9,14 +9,13 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@NoArgsConstructor
-@AllArgsConstructor
 @Table(name = "bom")
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Bom {
-   
 
-	@Id
+    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long bomId;
 
@@ -30,7 +29,7 @@ public class Bom {
 
     @Column(nullable = false)
     private Integer qty;
-    
+
     @Column(name = "seq_no")
     private Integer seqNo;
 
@@ -42,13 +41,10 @@ public class Bom {
 
     @Column(length = 100)
     private String remark;
-    
-    
-    public Bom(Item parent, Item child, int qty) {
-    	this.parentItem=parent;
-    	this.childItem=child;
-    	this.qty=qty;
-	}
-   
-}
 
+    public Bom(Item parent, Item child, int qty) {
+        this.parentItem = parent;
+        this.childItem  = child;
+        this.qty        = qty;
+    }
+}
