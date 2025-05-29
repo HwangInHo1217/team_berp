@@ -1,21 +1,37 @@
-<!-- 주문 상세 모달 -->
-<div th:fragment="detailModal" id="order-detail-modal" class="modal">
-  <h2>주문 상세</h2>
-  <dl>
-    <dt>주문번호</dt><dd id="det-num"></dd>
-    <dt>주문일자</dt><dd id="det-date"></dd>
-    <dt>고객사</dt><dd id="det-company"></dd>
-    <dt>거래처담당자</dt><dd id="det-comp-emp"></dd>
-    <dt>담당자</dt><dd id="det-emp"></dd>
-    <dt>비고</dt><dd id="det-remark"></dd>
-  </dl>
-  <table>
-    <thead>
-      <tr>
-        <th>품목</th><th>단위</th><th>단가</th><th>수량</th><th>합계</th>
-      </tr>
-    </thead>
-    <tbody id="det-items"></tbody>
-  </table>
-  <button type="button" class="btn-close" onclick="closeModal()">닫기</button>
+<!-- File: team_berp/src/main/resources/templates/order/order-detail-modal.html -->
+<div th:fragment="detailModal">
+  <div class="modal fade show d-block" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">주문 상세</h5>
+          <button type="button" class="btn-close" onclick="closeModal()"></button>
+        </div>
+        <div class="modal-body">
+          <dl class="row">
+            <dt class="col-sm-3">주문번호</dt><dd class="col-sm-9" id="det-num"></dd>
+            <dt class="col-sm-3">주문일자</dt><dd class="col-sm-9" id="det-date"></dd>
+            <dt class="col-sm-3">고객사</dt><dd class="col-sm-9" id="det-company"></dd>
+            <dt class="col-sm-3">거래처담당자</dt><dd class="col-sm-9" id="det-comp-emp"></dd>
+            <dt class="col-sm-3">담당자</dt><dd class="col-sm-9" id="det-emp"></dd>
+            <dt class="col-sm-3">비고</dt><dd class="col-sm-9" id="det-remark"></dd>
+          </dl>
+          <div class="table-responsive">
+            <table class="table table-sm table-bordered align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>품목</th><th>단위</th><th>단가</th>
+                  <th>수량</th><th>합계</th>
+                </tr>
+              </thead>
+              <tbody id="det-items"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" onclick="closeModal()">닫기</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>

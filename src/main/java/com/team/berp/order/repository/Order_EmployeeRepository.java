@@ -1,15 +1,8 @@
-// 2. com/team/berp/order/repository/OrderEmployeeRepository.java
+// File: src/main/java/com/team/berp/order/repository/Order_EmployeeRepository.java
 package com.team.berp.order.repository;
 
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
 import com.team.berp.domain.Employee;
+import org.springframework.data.jpa.repository.JpaRepository;
 
-/**
- * Repository for Employee entities (주문 담당자 관리).
- */
-@Repository
-public interface Order_EmployeeRepository extends JpaRepository<Employee, Long> {
-    // 예: 담당자 이름으로 검색
-    // List<Employee> findByEmpNameContaining(String name);
-}
+/** 우리회사 직원(Employee) 조회 용  */
+public interface Order_EmployeeRepository extends JpaRepository<Employee, Long> { }

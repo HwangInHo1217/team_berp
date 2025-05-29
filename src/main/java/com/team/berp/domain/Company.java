@@ -35,6 +35,9 @@ public class Company {
 
     @Column(length = 20)
     private String companyItem;
+    
+    @Column(length = 20)
+    private String companyEmpName;
 
     // ========== 주소 관련 필드 추가 ==========
     @Column(length = 10)

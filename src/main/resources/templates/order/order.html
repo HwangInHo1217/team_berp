@@ -1,95 +1,85 @@
+<!-- File: team_berp/src/main/resources/templates/order/order.html -->
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <title>주문 관리</title>
-  <!-- 공통 스타일 -->
-  <link rel="stylesheet" th:href="@{/css/style.css}" />
+  <meta charset="UTF-8">
+  <title>주문 관리 시스템</title>
+  <!-- Bootstrap CSS -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+    integrity="sha384-ENjdO4Dr2bkBIFxQpeoANmIEI2yFjL8eTztQ2QpH+XUiwmZMkH6fZt4E0i1NQnN"
+    crossorigin="anonymous">
+  <!-- Custom CSS -->
+  <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
-<body>
-  <h1>주문 관리</h1>
+<body class="p-4">
+  <div class="container">
+    <h1 class="mb-4">주문 관리</h1>
 
-  <!-- 툴바: 주문등록, 필터 -->
-  <div class="toolbar">
-    <button id="btn-add-order" th:onclick="|openRegisterModal()|">+ 주문등록</button>
+    <!-- 툴바 -->
+    <div class="d-flex mb-3 align-items-center">
+      <button class="btn btn-primary me-3" onclick="openRegister()">+ 주문등록</button>
 
-    <!-- 고객사 필터 -->
-    <select id="filter-company" th:field="*{filterCompany}">
-      <option value="" th:text="'전체 고객사'" />
-      <option th:each="company : ${companies}" 
-              th:value="${company.companyName}"
-              th:text="${company.companyName}" />
-    </select>
+      <select id="filter-company" class="form-select me-2" style="width:200px;">
+        <option value="">전체 고객사</option>
+        <option th:each="c : ${companies}"
+                th:value="${c.companyName}"
+                th:text="${c.companyName}"></option>
+      </select>
 
-    <!-- 품목 필터 -->
-    <select id="filter-item" th:field="*{filterItem}">
-      <option value="" th:text="'전체 품목'" />
-      <option th:each="item : ${items}" 
-              th:value="${item.itemName}"
-              th:text="${item.itemName}" />
-    </select>
+      <select id="filter-item" class="form-select me-2" style="width:200px;">
+        <option value="">전체 품목</option>
+        <option th:each="i : ${items}"
+                th:value="${i.name}"
+                th:text="${i.name}"></option>
+      </select>
 
-    <!-- 날짜 범위 필터 -->
-    <input type="date" id="filter-date-from" th:field="*{filterDateFrom}" />
-    <input type="date" id="filter-date-to"   th:field="*{filterDateTo}" />
-    <button id="btn-search" th:onclick="|searchOrders()|">조회</button>
+      <input type="date" id="filter-date-from" class="form-control me-2" style="width:180px;">
+      <input type="date" id="filter-date-to" class="form-control me-2" style="width:180px;">
+
+      <button class="btn btn-success" onclick="loadOrders(0)">조회</button>
+    </div>
+
+    <!-- 주문 리스트 테이블 -->
+    <div class="table-responsive">
+      <table class="table table-bordered table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th scope="col"><input type="checkbox" onclick="toggleAll(this)"></th>
+            <th scope="col">순번</th>
+            <th scope="col">주문일자</th>
+            <th scope="col">주문번호</th>
+            <th scope="col">고객사</th>
+            <th scope="col">품목수</th>
+            <th scope="col">총합계</th>
+            <th scope="col">거래처담당자</th>
+            <th scope="col">담당자</th>
+            <th scope="col">상세</th>
+            <th scope="col">수정</th>
+          </tr>
+        </thead>
+        <tbody id="order-table-body">
+          <!-- JS에서 렌더링 -->
+        </tbody>
+      </table>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mt-3">
+      <button class="btn btn-danger" onclick="deleteSelected()">선택 삭제</button>
+      <nav id="pagination"></nav>
+    </div>
+
+    <!-- 모달 삽입 영역 -->
+    <div id="modal-container"></div>
   </div>
 
-  <!-- 주문 테이블 -->
-  <table id="order-table">
-    <thead>
-      <tr>
-        <th><input type="checkbox" id="chk-all" onclick="toggleAll(this)" /></th>
-        <th>순번</th>
-        <th>주문일자</th>
-        <th>주문번호</th>
-        <th>고객사</th>
-        <th>품목수</th>
-        <th>총합계</th>
-        <th>거래처담당자</th>
-        <th>담당자</th>
-        <th>상세</th>
-        <th>수정</th>
-      </tr>
-    </thead>
-    <tbody>
-      <!-- Thymeleaf 반복: orders -->
-      <tr th:each="order, stat : ${orders}">
-        <!-- 개별 삭제 체크박스 -->
-        <td><input type="checkbox" class="chk-one" th:value="${order.orderNum}" /></td>
-        <!-- 순번: stat.count 사용 -->
-        <td th:text="${stat.count}">1</td>
-        <td th:text="${order.orderDate}">2025-05-28</td>
-        <td th:text="${order.orderNum}">cus-001</td>
-        <td th:text="${order.companyName}">ABC Corp</td>
-        <td th:text="${order.orderQty}">3</td>
-        <td th:text="${order.amount}">120000</td>
-        <td th:text="${order.companyEmpName}">홍길동</td>
-        <td th:text="${order.empName}">김철수</td>
-        <!-- 상세 버튼: 모달 오픈 -->
-        <td><button th:onclick="|showDetail('${order.orderNum}')|">상세</button></td>
-        <!-- 수정 버튼: 모달 오픈 -->
-        <td><button th:onclick="|openUpdateModal('${order.orderNum}')|">수정</button></td>
-      </tr>
-    </tbody>
-  </table>
-
-  <!-- 삭제 버튼 -->
-  <button id="btn-delete-selected" onclick="deleteSelected()">삭제</button>
-
-  <!-- 페이징 컨트롤: Thymeleaf 이용 -->
-  <div class="pagination">
-    <span th:each="pageNum : ${#numbers.sequence(1, totalPages)}">
-      <a th:href="@{|/orders?page=${pageNum - 1}|}" 
-         th:text="${pageNum}" 
-         th:classappend="${pageNum -1 == currentPage} ? 'active' : ''">1</a>
-    </span>
-  </div>
-
-  <!-- 모달 컨테이너: JS에서 템플릿 로딩 -->
-  <div id="modal-container"></div>
-
-  <!-- JS 불러오기 -->
-  <script th:src="@{/js/order.js}"></script>
+  <!-- Bootstrap JS (Modal 등) -->
+  <script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-qQ2QpH+XUiwmZMkH6fZt4E0i1NQnN+St/S6ZWGTbNrYkJc+o7E8Q2w5co2C8YKi7"
+    crossorigin="anonymous"></script>
+  <!-- 주문 관련 JS -->
+  <script th:src="@{/js/order/order.js}"></script>
 </body>
 </html>

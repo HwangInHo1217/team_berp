@@ -1,8 +1,8 @@
-// 5. com/team/berp/order/repository/OrderOrderLineItemRepository.java
+// File: src/main/java/com/team/berp/order/repository/Order_OrderLineItemRepository.java
 package com.team.berp.order.repository;
 
-import org.springframework.data.jpa.repository.JpaRepository;
 import com.team.berp.domain.OrderLineItem;
+import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface Order_OrderLineItemRepository extends JpaRepository<OrderLineItem, Long> {
-}
+/** 주문 라인 아이템 CRUD */
+public interface Order_OrderLineItemRepository extends JpaRepository<OrderLineItem, Long> { }

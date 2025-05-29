@@ -1,31 +1,34 @@
-package com.example.order.service;
+// File: src/main/java/com/team/berp/order/service/OrderService.java
+package com.team.berp.order.service;
 
-import com.example.order.dto.OrderDto;
-import com.example.order.dto.OrderRegisterFormDto;
+import com.team.berp.domain.Company;
+import com.team.berp.domain.Item;
+import com.team.berp.order.dto.*;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 
+/** 주문 관련 비즈니스 로직 */
 public interface OrderService {
-    List<OrderDto> getOrders(String companyName,
-                              String itemName,
-                              LocalDate dateFrom,
-                              LocalDate dateTo);
+    OrderPageDto getOrders(String companyName,
+                           String itemName,
+                           LocalDate dateFrom,
+                           LocalDate dateTo,
+                           Pageable pageable);
 
-    OrderDto getOrder(String orderNum);
+    OrderDto getOrder(Long orderNum);
 
     OrderDto registerOrder(OrderRegisterFormDto form);
 
-    OrderDto updateOrder(String orderNum, OrderRegisterFormDto form);
+    OrderDto updateOrder(Long orderNum, OrderRegisterFormDto form);
 
-    void deleteOrders(List<String> orderNums);
+    void deleteOrders(List<Long> orderNums);
 
-    List<com.example.order.entity.Company> getAllCompanies();
-    List<com.example.order.entity.Item> getAllItems();
+    List<Company> getAllCompanies();
+    List<Item>    getAllItems();
 
-    /**
-     * 고객사 선택 시 empName, companyEmpName 정보 반환
-     */
-    Map<String, String> getCompanyContactInfo(String companyName);
+    /** 고객사 선택 시 our-emp, comp-emp 자동 채움용 */
+    CompanyContactDto getCompanyContactInfo(String companyName);
 }

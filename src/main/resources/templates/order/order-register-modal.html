@@ -1,46 +1,66 @@
-<!-- 주문 등록 모달 -->
-<div th:fragment="registerModal" id="order-register-modal" class="modal">
-  <form id="form-register-order" onsubmit="registerOrder(event)">
-    <h2>주문 등록</h2>
+<!-- File: team_berp/src/main/resources/templates/order/order-register-modal.html -->
+<div th:fragment="registerModal">
+  <div class="modal fade show d-block" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <form id="form-register-order" onsubmit="event.preventDefault(); registerOrder(event);">
+          <div class="modal-header">
+            <h5 class="modal-title">주문 등록</h5>
+            <button type="button" class="btn-close" onclick="closeModal()"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row g-3 mb-3">
+              <div class="col-md-4">
+                <label class="form-label">고객사</label>
+                <select id="reg-company" class="form-select" onchange="onCompanyChange(this)" required>
+                  <option value="">선택하세요</option>
+                  <option th:each="c : ${companies}"
+                          th:value="${c.companyName}"
+                          th:text="${c.companyName}"></option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">담당자</label>
+                <input type="text" id="reg-emp" class="form-control" readonly>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">거래처담당자</label>
+                <input type="text" id="reg-comp-emp" class="form-control" readonly>
+              </div>
+            </div>
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label class="form-label">주문일자</label>
+                <input type="date" id="reg-date" class="form-control" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">비고</label>
+                <textarea id="reg-remark" class="form-control" rows="2"></textarea>
+              </div>
+            </div>
 
-    <!-- 고객사 선택: 변경 시 담당자, 거래처담당자 자동 채움 -->
-    <label>고객사
-      <select name="companyName" id="reg-company" onchange="onCompanyChange(this)">
-        <option value="" th:text="'선택하세요'" />
-        <option th:each="company : ${companies}"
-                th:value="${company.companyName}"
-                th:text="${company.companyName}" />
-      </select>
-    </label>
-
-    <!-- 자동 읽기 전용 필드들 -->
-    <label>담당자<input type="text" name="empName" id="reg-emp" readonly /></label>
-    <label>거래처담당자<input type="text" name="companyEmpName" id="reg-comp-emp" readonly /></label>
-
-    <!-- 주문일자: 필수 -->
-    <label>주문일자<input type="date" name="orderDate" id="reg-date" required /></label>
-
-    <!-- 비고: 선택 -->
-    <label>비고<textarea name="remark" id="reg-remark"></textarea></label>
-
-    <!-- 품목 정보 테이블 -->
-    <div id="reg-items">
-      <table>
-        <thead>
-          <tr>
-            <th>품목</th>
-            <th>단위</th>
-            <th>단가</th>
-            <th>수량</th>
-            <th>합계</th>
-            <th><button type="button" onclick="addItemRow('reg-items-body')">추가</button></th>
-          </tr>
-        </thead>
-        <tbody id="reg-items-body"></tbody>
-      </table>
+            <!-- 품목 테이블 -->
+            <div class="table-responsive mb-2">
+              <table class="table table-sm table-bordered align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>품목</th><th>단위</th><th>단가</th>
+                    <th>수량</th><th>합계</th><th>삭제</th>
+                  </tr>
+                </thead>
+                <tbody id="reg-items-body"></tbody>
+              </table>
+            </div>
+            <button type="button" class="btn btn-outline-secondary" onclick="addItemRow('reg-items-body')">
+              행 추가
+            </button>
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-primary">등록</button>
+            <button type="button" class="btn btn-secondary" onclick="closeModal()">취소</button>
+          </div>
+        </form>
+      </div>
     </div>
-
-    <button type="submit">등록</button>
-    <button type="button" class="btn-close" onclick="closeModal()">닫기</button>
-  </form>
+  </div>
 </div>

@@ -1,26 +1,19 @@
-package com.example.order.dto;
+// File: src/main/java/com/team/berp/order/dto/OrderLineItemDto.java
+package com.team.berp.order.dto;
 
-/**
- * 주문 품목 정보용 DTO
- */
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+/** 주문 라인 아이템 DTO */
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class OrderLineItemDto {
-    private Long orderLineItemId;
-    private String itemName;
-    private String unit;
-    private int unitPrice;
-    private int unitQty;
-    private int unitPriceAll;
-
-    public OrderLineItemDto(Long orderLineItemId, String itemName,
-                            String unit, int unitPrice,
-                            int unitQty, int unitPriceAll) {
-        this.orderLineItemId = orderLineItemId;
-        this.itemName = itemName;
-        this.unit = unit;
-        this.unitPrice = unitPrice;
-        this.unitQty = unitQty;
-        this.unitPriceAll = unitPriceAll;
-    }
-
-    // Getters and setters omitted for brevity
+    private Long orderLineItemId; // PK
+    private String itemName;      // 품목명
+    private String unit;          // 단위
+    private Long unitPrice;       // 단가
+    private Long unitQty;         // 수량
+    private Long unitPriceall;    // 합계 (unitPrice * unitQty)
 }

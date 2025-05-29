@@ -56,6 +56,6 @@ public class CompanyOrder {
     @Column
     private Long orderQty;
     
-    @Column
+    @Column(name = "order_num")
     private Long orderNum;
 }

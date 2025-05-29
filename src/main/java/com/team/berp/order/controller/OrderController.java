@@ -1,42 +1,69 @@
-package com.example.order.controller;
+// File: src/main/java/com/team/berp/order/controller/OrderController.java
+package com.team.berp.order.controller;
 
-import com.example.order.dto.OrderDto;
-import com.example.order.service.OrderService;
+import com.team.berp.order.dto.OrderPageDto;
+import com.team.berp.order.service.OrderService;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
+
 import java.time.LocalDate;
-import java.util.List;
 
 @Controller
+@RequestMapping("/order")
 public class OrderController {
+
     private final OrderService orderService;
 
-    public OrderController(OrderService orderService) {
-        this.orderService = orderService;
+    public OrderController(OrderService service) {
+        this.orderService = service;
     }
 
-    /**
-     * 주문 관리 페이지
-     * - 초기 로딩 시 모든 주문을 조회하여 모델에 담아 Thymeleaf로 렌더링
-     * - 고객사, 품목 필터 옵션도 함께 전달
-     */
-    @GetMapping("/orders")
-    public String listPage(
-            @RequestParam(required = false) String companyName,
-            @RequestParam(required = false) String itemName,
-            @RequestParam(required = false) LocalDate dateFrom,
-            @RequestParam(required = false) LocalDate dateTo,
-            Model model) {
-        // 필터링된 주문 목록 조회
-        List<OrderDto> orders = orderService.getOrders(companyName, itemName, dateFrom, dateTo);
-        model.addAttribute("orders", orders);
-        
-        // 필터 옵션 전달: 고객사, 품목
+    /** 메인 화면: 주문 리스트 + 필터(고객사∙품목∙날짜) + 페이징(10개씩) */
+    @GetMapping
+    public String viewList(
+        @RequestParam(value="companyName", required=false) String companyName,
+        @RequestParam(value="itemName",    required=false) String itemName,
+        @RequestParam(value="dateFrom",    required=false)
+          @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
+        @RequestParam(value="dateTo",      required=false)
+          @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo,
+        @PageableDefault(size = 10) Pageable pageable,
+        Model model
+    ) {
+        // 1) 주문 페이징 데이터
+        OrderPageDto page = orderService.getOrders(companyName, itemName, dateFrom, dateTo, pageable);
+        model.addAttribute("page", page);
+
+        // 2) 검색용 드롭다운 채우기
         model.addAttribute("companies", orderService.getAllCompanies());
-        model.addAttribute("items", orderService.getAllItems());
-        
-        return "order";  // Thymeleaf 템플릿 order.html 사용
+        model.addAttribute("items",     orderService.getAllItems());
+
+        return "order/order";
     }
+    
+    /** 주문 등록 모달 조각 반환 */
+    @GetMapping("/fragments/registerModal")
+    public String registerModalFragment() {
+        // 템플릿 경로: templates/order/order-register-modal.html
+        // ::registerModal 는 그 파일 안의 th:fragment="registerModal" 부분을 가리킵니다.
+        return "order/order-register-modal :: registerModal";
+    }
+
+    /** 주문 수정 모달 조각 반환 */
+    @GetMapping("/fragments/updateModal")
+    public String updateModalFragment() {
+        return "order/order-fixed           :: updateModal";
+    }
+
+    /** 주문 상세 모달 조각 반환 */
+    @GetMapping("/fragments/detailModal")
+    public String detailModalFragment() {
+        return "order/order-detail-modal     :: detailModal";
+    }
+    
+    
 }

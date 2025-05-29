@@ -1,11 +1,10 @@
-package com.example.order.repository;
+// File: src/main/java/com/team/berp/order/repository/Order_ItemRepository.java
+package com.team.berp.order.repository;
 
-import com.example.order.entity.Item;
+import com.team.berp.domain.Item;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface ItemRepository extends JpaRepository<Item, Long> {
-    /**
-     * 품목명으로 품목 엔티티 조회
-     */
-    Item findByItemName(String itemName);
+/** 품목(Item) 조회용 */
+public interface Order_ItemRepository extends JpaRepository<Item, Long> {
+    Item findByName(String name);
 }

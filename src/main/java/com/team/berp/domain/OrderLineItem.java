@@ -34,6 +34,6 @@ public class OrderLineItem {
     @Column
     private Long unitPrice;
 
-    @Column
+    @Column(name = "unit_price_all")
     private Long unitPriceall;
 }
