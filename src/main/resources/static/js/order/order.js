@@ -1,497 +1,237 @@
-// File: team_berp/src/main/resources/static/js/order/order.js
-
-// 주문 관리 스크립트
+// File: src/main/resources/static/js/order/order.js
+/**
+ * order.js
+ * - Bootstrap Modal 제어 (th:replace 로 로드된 모달 열기/닫기)
+ * - CRUD API 호출 (fetch)
+ * - 필터/페이징/테이블 렌더링
+ * - 동적 Row 추가·삭제 및 합계 계산
+ */
 
 document.addEventListener('DOMContentLoaded', () => {
-
-  loadFilterData();
-
-  loadOrders(0);
-
+  loadOrders(0);            // 1) 첫 페이지 불러오기
+  initRegisterForm();       // 2) 등록 폼 초기 행 셋팅
 });
 
-
-
-// 모달 열기
-
-function openRegister() {
-
-  fetch('/order/fragments/registerModal')
-
-    .then(res => res.text())
-
-    .then(html => {
-
-      document.getElementById('modal-container').innerHTML = html;
-
-    });
-
+/** ── 1) 주문 목록 + 테이블·페이징 렌더링 ── */
+function loadOrders(page) {
+  const params = new URLSearchParams({
+    page,
+    companyName: document.getElementById('filter-company').value || '',
+    dateFrom:    document.getElementById('filter-date-from').value || '',
+    dateTo:      document.getElementById('filter-date-to').value || ''
+  });
+  fetch(`/api/orders?${params}`)
+    .then(r => r.json())
+    .then(dto => renderTable(dto, page))
+    .catch(console.error);
 }
 
-function openUpdate(num) {
-
-  fetchOrderDetail(num, html => {
-
-    fetch('/order/fragments/updateModal')
-
-      .then(res => res.text())
-
-      .then(fragment => {
-
-        document.getElementById('modal-container').innerHTML = fragment;
-
-        populateUpdateModal(html);
-
-      });
-
+function renderTable(pageDto, currentPage) {
+  const tbody = document.getElementById('orderTableBody');
+  tbody.innerHTML = '';
+  pageDto.content.forEach((o, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="checkbox" value="${o.orderNum}" /></td>
+      <td>${currentPage * pageDto.size + i + 1}</td>
+      <td>${o.orderDate}</td>
+      <td>${o.orderNum}</td>
+      <td>${o.companyName}</td>
+      <td>${o.items.length}</td>
+      <td>${o.totalPrice.toLocaleString()}</td>
+      <td>${o.manager}</td>
+      <td>${o.note||''}</td>
+      <td><button class="btn btn-info btn-sm"    onclick="openDetail(${o.orderNum})">상세</button></td>
+      <td><button class="btn btn-warning btn-sm" onclick="openEdit(${o.orderNum})">수정</button></td>
+      <td><button class="btn btn-success btn-sm" onclick="openShipment(${o.orderNum})">출고등록</button></td>
+    `;
+    tbody.appendChild(tr);
   });
 
+  // 페이징
+  const nav = document.getElementById('pagination');
+  nav.innerHTML = '';
+  for (let i = 0; i < pageDto.totalPages; i++) {
+    const btn = document.createElement('button');
+    btn.className = `btn btn-sm btn-outline-primary me-1 ${i===currentPage?'active':''}`;
+    btn.textContent = i+1;
+    btn.onclick = () => loadOrders(i);
+    nav.appendChild(btn);
+  }
 }
 
-function showDetail(num) {
-
-  fetchOrderDetail(num, data => {
-
-    fetch('/order/fragments/detailModal')
-
-      .then(res => res.text())
-
-      .then(fragment => {
-
-        document.getElementById('modal-container').innerHTML = fragment;
-
-        populateDetailModal(data);
-
-      });
-
-  });
-
+/** ── 2) 등록 폼 초기화 ── */
+function initRegisterForm() {
+  clearItems('reg-items-body');
+  addOrderItemRow();          // 기본 1행 추가
 }
 
+/** ── 3) 모달 열기/닫기 공통 ── */
+function openRegisterModal() {
+  initRegisterForm();
+  new bootstrap.Modal(document.getElementById('orderRegisterModal')).show();
+}
+function openDetail(orderNum) {
+  fetch(`/api/orders/${orderNum}`)
+    .then(r => r.json())
+    .then(populateDetailModal)
+    .then(() => new bootstrap.Modal(document.getElementById('orderDetailModal')).show());
+}
+function openEdit(orderNum) {
+  fetch(`/api/orders/${orderNum}`)
+    .then(r => r.json())
+    .then(populateUpdateModal)
+    .then(() => new bootstrap.Modal(document.getElementById('orderEditModal')).show());
+}
 function closeModal() {
-
-  document.getElementById('modal-container').innerHTML = '';
-
+  document.querySelectorAll('.modal').forEach(m => bootstrap.Modal.getOrCreateInstance(m).hide());
 }
 
-
-
-// 고객사 변경 시 emp/companyEmp 자동 채움
-
-function onCompanyChange(el) {
-
-  fetch(`/api/orders/company/${encodeURIComponent(el.value)}`)
-
-    .then(res => res.json())
-
+/** ── 4) 고객사 변경 시 담당자 자동 채움 ── */
+function onCompanyChange(sel) {
+  const prefix = sel.id.startsWith('reg') ? 'reg' : 'upd';
+  fetch(`/api/orders/company/${sel.value}`)
+    .then(r => r.json())
     .then(data => {
-
-      const prefix = el.id.startsWith('reg') ? 'reg' : 'upd';
-
-      document.getElementById(`${prefix}-emp`).value = data.empName;
-
-      document.getElementById(`${prefix}-comp-emp`).value = data.companyEmpName;
-
-    });
-
+      document.getElementById(`${prefix}-manager`).value      = data.empName;
+      document.getElementById(`${prefix}-comp-emp`)?.remove(); // 거래처 담당자는 필요 시 확장
+    })
+    .catch(console.error);
 }
 
+/** ── 5) 상세 모달 데이터 채우기 ── */
+function populateDetailModal(dto) {
+  document.getElementById('det-num').textContent     = dto.orderNum;
+  document.getElementById('det-company').textContent = dto.companyName;
+  document.getElementById('det-date').textContent    = dto.orderDate;
+  document.getElementById('det-manager').textContent = dto.manager;
+  document.getElementById('det-note').textContent    = dto.note||'';
 
-
-// 행 추가
-
-function addItemRow(bodyId) {
-
-  const tbody = document.getElementById(bodyId);
-
-  const idx = tbody.children.length;
-
-  const row = document.createElement('tr');
-
-  row.innerHTML = `
-
-    <td>
-
-      <select class="form-select form-select-sm item-select" onchange="onItemChange(this)">
-
-        <option value="">선택</option>
-
-      </select>
-
-    </td>
-
-    <td><input type="text" class="form-control form-control-sm unit-input" readonly></td>
-
-    <td><input type="number" class="form-control form-control-sm price-input" oninput="calcRow(this)"></td>
-
-    <td><input type="number" class="form-control form-control-sm qty-input" oninput="calcRow(this)"></td>
-
-    <td><input type="number" class="form-control form-control-sm total-input" readonly></td>
-
-    <td><button class="btn btn-sm btn-danger" onclick="this.closest('tr').remove()">삭제</button></td>
-
-  `;
-
-  tbody.appendChild(row);
-
-  // 옵션 채우기
-
-  document.querySelectorAll('.item-select').forEach(sel => {
-
-    if (sel.children.length === 1) {
-
-      fetch('/api/items')
-
-        .then(res => res.json())
-
-        .then(items => {
-
-          items.forEach(i => {
-
-            const opt = document.createElement('option');
-
-            opt.value = i.name;
-
-            opt.text = i.name;
-
-            sel.append(opt);
-
-          });
-
-        });
-
-    }
-
+  const tb = document.getElementById('orderDetailItems');
+  tb.innerHTML = '';
+  dto.items.forEach(item => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${item.itemCode}</td>
+      <td>${item.itemName}</td>
+      <td>${item.quantity}</td>
+      <td>${item.unit}</td>
+      <td>${item.unitPrice.toLocaleString()}</td>
+      <td>${(item.quantity * item.unitPrice).toLocaleString()}</td>
+    `;
+    tb.appendChild(tr);
   });
-
 }
 
+/** ── 6) 수정 모달 데이터 채우기 ── */
+function populateUpdateModal(dto) {
+  document.getElementById('edit-order-num').value    = dto.orderNum;
+  document.getElementById('upd-customer').value      = dto.customerId;
+  document.getElementById('upd-order-date').value    = dto.orderDate;
+  document.getElementById('upd-manager').value       = dto.manager;
+  document.getElementById('upd-note').value          = dto.note||'';
 
-
-// 품목 변경 시 단위 자동 채움
-
-function onItemChange(el) {
-
-  const unitInput = el.closest('tr').querySelector('.unit-input');
-
-  fetch(`/api/items/${encodeURIComponent(el.value)}`)
-
-    .then(res => res.json())
-
-    .then(item => {
-
-      unitInput.value = item.unit;
-
-    });
-
+  clearItems('edit-items-body');
+  dto.items.forEach(item => addOrderItemRow(item));
 }
 
+/** ── 7) 동적 행 추가·삭제 및 합계 계산 ── */
+function clearItems(tbodyId) {
+  document.getElementById(tbodyId).innerHTML = '';
+}
+function addOrderItemRow(data={}) {
+  const tbody = data.quantity!==undefined
+    ? document.getElementById('edit-items-body')
+    : document.getElementById('reg-items-body');
 
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td>
+      <select name="itemId" class="form-select" required oninput="onItemChange(this)">
+        <option value="">-- 선택 --</option>
+        <option value="P001">P001 - 완제품 A</option>
+        <option value="P002">P002 - 완제품 B</option>
+      </select>
+    </td>
+    <td><input name="quantity"    class="form-control" type="number" oninput="calcRowTotal(this)" required /></td>
+    <td><input name="unit"        class="form-control" readonly value="EA" /></td>
+    <td><input name="unitPrice"   class="form-control" type="number" oninput="calcRowTotal(this)" required /></td>
+    <td><input name="totalPrice"  class="form-control" readonly value="0" /></td>
+    <td><button class="btn btn-danger btn-sm" onclick="this.closest('tr').remove()">삭제</button></td>
+  `;
+  if (data.quantity !== undefined) {
+    tr.querySelector('[name=itemId]').value      = data.itemId;
+    tr.querySelector('[name=quantity]').value    = data.quantity;
+    tr.querySelector('[name=unit]').value        = data.unit;
+    tr.querySelector('[name=unitPrice]').value   = data.unitPrice;
+    tr.querySelector('[name=totalPrice]').value  = (data.quantity*data.unitPrice).toLocaleString();
+  }
+  tbody.appendChild(tr);
+}
 
-// 단가·수량 변경 시 합계 계산
-
-function calcRow(el) {
-
+function onItemChange(sel) {
+  fetch(`/api/orders/item/${sel.value}`)
+    .then(r=>r.json())
+    .then(d=> sel.closest('tr').querySelector('[name=unit]').value=d.unit)
+    .catch(console.error);
+}
+function calcRowTotal(el) {
   const tr = el.closest('tr');
-
-  const price = parseFloat(tr.querySelector('.price-input').value) || 0;
-
-  const qty   = parseFloat(tr.querySelector('.qty-input').value)   || 0;
-
-  tr.querySelector('.total-input').value = price * qty;
-
+  const qty = +tr.querySelector('[name=quantity]').value || 0;
+  const pr  = +tr.querySelector('[name=unitPrice]').value|| 0;
+  tr.querySelector('[name=totalPrice]').value = (qty*pr).toLocaleString();
 }
 
-
-
-// 주문 등록
-
-function registerOrder(e) {
-
-  const form = e.target;
-
-  const payload = collectFormData('reg');
-
+/** ── 8) CRUD API 호출 ── */
+function registerOrder() {
+  const payload = collectForm('formRegister');
   fetch('/api/orders', {
-
-    method: 'POST',
-
-    headers: {'Content-Type':'application/json'},
-
-    body: JSON.stringify(payload)
-
-  }).then(() => { closeModal(); loadOrders(0); });
-
+    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)
+  })
+    .then(()=>{ closeModal(); loadOrders(0); })
+    .catch(console.error);
 }
 
-
-
-// 주문 수정
-
-function updateOrder(e) {
-
-  const num = document.getElementById('det-num').textContent;
-
-  const payload = collectFormData('upd');
-
+function updateOrder() {
+  const num     = document.getElementById('edit-order-num').value;
+  const payload = collectForm('formEdit');
   fetch(`/api/orders/${num}`, {
-
-    method: 'PUT',
-
-    headers: {'Content-Type':'application/json'},
-
-    body: JSON.stringify(payload)
-
-  }).then(() => { closeModal(); loadOrders(0); });
-
+    method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)
+  })
+    .then(()=>{ closeModal(); loadOrders(0); })
+    .catch(console.error);
 }
-
-
-
-// 선택 삭제
 
 function deleteSelected() {
-
-  const nums = Array.from(document.querySelectorAll('input[name="chk"]:checked'))
-
-    .map(chk => chk.value);
-
-  fetch('/api/orders', {
-
-    method: 'DELETE',
-
-    headers: {'Content-Type':'application/json'},
-
-    body: JSON.stringify(nums)
-
-  }).then(() => loadOrders(0));
-
+  const sel = Array.from(document.querySelectorAll('#orderTableBody input[type=checkbox]:checked'))
+                   .map(cb=>+cb.value);
+  if(!sel.length) return alert('선택된 주문이 없습니다.');
+  if(!confirm('삭제하시겠습니까?')) return;
+  fetch('/api/orders',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify(sel)})
+    .then(()=>loadOrders(0)).catch(console.error);
 }
 
-
-
-// 필터 데이터 로드
-
-function loadFilterData() {
-
-  // companies, items 는 서버에서 OrderController 에서 모델로 전달
-
-}
-
-
-
-// 주문 목록 로드
-
-function loadOrders(page) {
-
-  const params = new URLSearchParams();
-
-  ['filter-company','filter-item','filter-date-from','filter-date-to']
-
-    .forEach(id => {
-
-      const v = document.getElementById(id).value;
-
-      if (v) params.append(id.replace('filter-',''), v);
-
+/** ── 9) form 데이터를 payload 객체로 변환 ── */
+function collectForm(formId) {
+  const fm  = document.getElementById(formId);
+  const obj = {};
+  const items = [];
+  const rows = fm.querySelectorAll('tbody tr');
+  rows.forEach(tr => {
+      const qty = +tr.querySelector('[name=quantity]').value || 0;
+      const price = +tr.querySelector('[name=unitPrice]').value || 0;
+      items.push({
+        itemId:       tr.querySelector('[name=itemId]').value,
+        unitQty:      qty,
+        unitPrice:    price,
+        unitPriceAll: qty * price
+      });
     });
-
-  params.append('page', page);
-
-  fetch(`/api/orders?${params.toString()}`)
-
-    .then(res => res.json())
-
-    .then(data => renderTable(data));
-
-}
-
-
-
-// 테이블 렌더링
-
-function renderTable(dto) {
-
-  const tbody = document.getElementById('order-table-body');
-
-  tbody.innerHTML = '';
-
-  dto.content.forEach((o,i) => {
-
-    const tr = document.createElement('tr');
-
-    tr.innerHTML = `
-
-      <td><input type="checkbox" name="chk" value="${o.orderNum}"></td>
-
-      <td>${i+1}</td>
-
-      <td>${o.orderDate}</td>
-
-      <td>${o.orderNum}</td>
-
-      <td>${o.companyName}</td>
-
-      <td>${o.orderQty}</td>
-
-      <td>${o.amount}</td>
-
-      <td>${o.companyEmpName}</td>
-
-      <td>${o.empName}</td>
-
-      <td><button class="btn btn-info btn-sm" onclick="showDetail(${o.orderNum})">상세</button></td>
-
-      <td><button class="btn btn-warning btn-sm" onclick="openUpdate(${o.orderNum})">수정</button></td>
-
-    `;
-
-    tbody.append(tr);
-
-  });
-
-  // 페이징 렌더링...
-
-}
-
-
-
-// 상세 모달 채우기
-
-function populateDetailModal(data) {
-
-  document.getElementById('det-num').textContent = data.orderNum;
-
-  document.getElementById('det-date').textContent = data.orderDate;
-
-  document.getElementById('det-company').textContent = data.companyName;
-
-  document.getElementById('det-comp-emp').textContent = data.companyEmpName;
-
-  document.getElementById('det-emp').textContent = data.empName;
-
-  document.getElementById('det-remark').textContent = data.note || '';
-
-
-
-  const tb = document.getElementById('det-items');
-
-  tb.innerHTML = '';
-
-  data.items.forEach(li => {
-
-    const row = document.createElement('tr');
-
-    row.innerHTML = `<td>${li.itemName}</td>
-
-                     <td>${li.unit}</td>
-
-                     <td>${li.unitPrice}</td>
-
-                     <td>${li.unitQty}</td>
-
-                     <td>${li.unitPriceall}</td>`;
-
-    tb.append(row);
-
-  });
-
-}
-
-
-
-// 수정 모달 채우기
-
-function populateUpdateModal(data) {
-
-  document.getElementById('upd-company').value      = data.companyName;
-
-  document.getElementById('upd-emp').value          = data.empName;
-
-  document.getElementById('upd-comp-emp').value     = data.companyEmpName;
-
-  document.getElementById('upd-date').value         = data.orderDate;
-
-  document.getElementById('upd-remark').value       = data.note || '';
-
-
-
-  const body = document.getElementById('upd-items-body');
-
-  body.innerHTML = '';
-
-  data.items.forEach(li => {
-
-    addItemRow('upd-items-body');
-
-    const last = body.lastElementChild;
-
-    last.querySelector('.item-select').value  = li.itemName;
-
-    last.querySelector('.unit-input').value   = li.unit;
-
-    last.querySelector('.price-input').value  = li.unitPrice;
-
-    last.querySelector('.qty-input').value    = li.unitQty;
-
-    last.querySelector('.total-input').value  = li.unitPriceall;
-
-  });
-
-}
-
-
-
-// 공통: form 에서 payload 수집
-
-function collectFormData(prefix) {
-
-  const companyName    = document.getElementById(`${prefix}-company`).value;
-
-  const empName        = document.getElementById(`${prefix}-emp`).value;
-
-  const companyEmpName = document.getElementById(`${prefix}-comp-emp`).value;
-
-  const orderDate      = document.getElementById(`${prefix}-date`).value;
-
-  const note           = document.getElementById(`${prefix}-remark`).value;
-
-  const items = Array.from(document.querySelectorAll(`#${prefix}-items-body tr`)).map(tr => ({
-
-    itemName: tr.querySelector('.item-select').value,
-
-    unit:     tr.querySelector('.unit-input').value,
-
-    unitPrice: parseFloat(tr.querySelector('.price-input').value)||0,
-
-    unitQty:   parseFloat(tr.querySelector('.qty-input').value)||0
-
-  }));
-
-  return { companyName, empName, companyEmpName, orderDate, note, items };
-
-}
-
-
-
-// 전체 선택 토글
-
-function toggleAll(cb) {
-
-  document.querySelectorAll('input[name="chk"]').forEach(c => c.checked = cb.checked);
-
-}
-
-
-
-// 주문 상세 API 호출 헬퍼
-
-function fetchOrderDetail(num, cb) {
-
-  fetch(`/api/orders/${num}`)
-
-    .then(res => res.json())
-
-    .then(cb);
-
+  // 공통 필드
+  obj.customerId = +fm.querySelector('[name=customerId]').value;
+  obj.orderDate  = fm.querySelector('[name=orderDate]').value;
+  obj.manager    = fm.querySelector('[name=manager]').value;
+  obj.note       = fm.querySelector('[name=note]').value;
+  obj.items      = items;
+  return obj;
 }

@@ -1,36 +1,44 @@
-<!-- File: team_berp/src/main/resources/templates/order/order-detail-modal.html -->
+<!-- File: src/main/resources/templates/order/order-detail-modal.html -->
 <div th:fragment="detailModal">
-  <div class="modal fade show d-block" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+  <div class="modal fade" id="orderDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
       <div class="modal-content">
+
+        <!-- 헤더 -->
         <div class="modal-header">
           <h5 class="modal-title">주문 상세</h5>
-          <button type="button" class="btn-close" onclick="closeModal()"></button>
+          <button type="button" class="btn-close" aria-label="닫기" onclick="closeModal()"></button>
         </div>
+
+        <!-- 바디: 기본정보 + 품목 테이블 -->
         <div class="modal-body">
-          <dl class="row">
-            <dt class="col-sm-3">주문번호</dt><dd class="col-sm-9" id="det-num"></dd>
-            <dt class="col-sm-3">주문일자</dt><dd class="col-sm-9" id="det-date"></dd>
-            <dt class="col-sm-3">고객사</dt><dd class="col-sm-9" id="det-company"></dd>
-            <dt class="col-sm-3">거래처담당자</dt><dd class="col-sm-9" id="det-comp-emp"></dd>
-            <dt class="col-sm-3">담당자</dt><dd class="col-sm-9" id="det-emp"></dd>
-            <dt class="col-sm-3">비고</dt><dd class="col-sm-9" id="det-remark"></dd>
+          <dl class="row mb-4">
+            <dt class="col-sm-3">주문번호</dt><dd id="det-num" class="col-sm-9"></dd>
+            <dt class="col-sm-3">고객사</dt><dd id="det-company" class="col-sm-9"></dd>
+            <dt class="col-sm-3">주문일자</dt><dd id="det-date" class="col-sm-9"></dd>
+            <dt class="col-sm-3">담당자</dt><dd id="det-manager" class="col-sm-9"></dd>
+            <dt class="col-sm-3">비고</dt><dd id="det-note" class="col-sm-9"></dd>
           </dl>
+
           <div class="table-responsive">
-            <table class="table table-sm table-bordered align-middle">
+            <table class="table table-bordered text-center align-middle">
               <thead class="table-light">
                 <tr>
-                  <th>품목</th><th>단위</th><th>단가</th>
-                  <th>수량</th><th>합계</th>
+                  <th>품목코드</th><th>품목명</th><th>수량</th><th>단위</th><th>단가</th><th>합계</th>
                 </tr>
               </thead>
-              <tbody id="det-items"></tbody>
+              <tbody id="orderDetailItems">
+                <!-- JS populateDetailModal()가 채워넣음 -->
+              </tbody>
             </table>
           </div>
         </div>
+
+        <!-- 푸터 -->
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" onclick="closeModal()">닫기</button>
+          <button class="btn btn-secondary" onclick="closeModal()">닫기</button>
         </div>
+
       </div>
     </div>
   </div>
