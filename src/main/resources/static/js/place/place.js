@@ -1,3 +1,4 @@
+//상세 모달 오픈
 function openplaceDetailModal(data) {
   document.getElementById('placeDetailDate').textContent = data.date;
   document.getElementById('placeDetailCustomer').textContent = data.customer;
@@ -54,7 +55,7 @@ function openplaceDetailModal(data) {
     modal.show();
   }
 
-  //발주 초기화
+  //발주 등록 초기화
   function placereset(){
 	if (confirm("입력한 정보를 초기화하시겠습니까?")) {
 	       document.querySelector('form[action="/place"]').reset();
@@ -84,35 +85,110 @@ function openplaceDetailModal(data) {
       }
     }
 	
+	//품목 선택 
 	function addItemRow() {
 	  const container = document.getElementById("itemListContainer");
-	  const newRow = document.createElement("div");
-	  newRow.className = "row align-items-end g-2 mb-2 item-row";
+	  const newRow = document.createElement("tr");
+	  newRow.className = "item-row";
 	  newRow.innerHTML = `
-	    <div class="col-md-3">
+	    <td>
 	      <select class="form-select" name="itemId" required>
 	        <option value="">-- 품목 선택 --</option>
 	        <option value="P001">완제품 A</option>
 	        <option value="P002">완제품 B</option>
 	      </select>
-	    </div>
-	    <div class="col-md-3">
+	    </td>
+	    <td>
 	      <input type="text" class="form-control" name="itemCode" placeholder="품목코드" required />
-	    </div>
-	    <div class="col-md-2">
+	    </td>
+	    <td>
 	      <input type="number" class="form-control" name="quantity" placeholder="수량" min="1" required />
-	    </div>
-	    <div class="col-md-2">
+	    </td>
+	    <td>
 	      <input type="text" class="form-control" name="unit" value="EA" required />
-	    </div>
-	    <div class="col-md-2">
+	    </td>
+		<td>
+	      <input type="text" class="form-control" name="unit" placeholder="단가" required />
+		</td>
+		<td>
+			<input type="text" class="form-control" name="unit" placeholder="품목총계" required />
+		</td>			
+	    <td class="text-center">
 	      <button type="button" class="btn btn-danger btn-sm" onclick="removeItemRow(this)">삭제</button>
-	    </div>
+	    </td>
 	  `;
 	  container.appendChild(newRow);
 	}
 
+	//품목 삭제
 	function removeItemRow(button) {
 	  const row = button.closest(".item-row");
 	  row.remove();
+	}
+	
+	//사업장 명 불러오기
+	function filterCompanies() {
+	     const type = document.getElementById("companyType").value;
+	     const select = document.getElementById("companySelect");
+
+	     const options = select.querySelectorAll("option");
+
+	     options.forEach(opt => {
+	       const optType = opt.dataset.type;
+	       if (!optType) return; // 첫 번째 기본 옵션은 무시
+	       opt.hidden = optType !== type;
+	     });
+
+	     // 선택된 값 초기화
+	     select.value = "";
+	   }
+
+
+	function loadItemNames(select) {
+	  const type = select.value;
+	  const row = select.closest(".item-row");
+	  const itemSelect = row.querySelector("[name*='itemId']");
+	  fetch(`/api/items?type=${type}`)
+	    .then(res => res.json())
+	    .then(data => {
+	      itemSelect.innerHTML = '<option value="">-- 품목명 --</option>';
+	      data.forEach(item => {
+	        const option = document.createElement("option");
+	        option.value = item.id;
+	        option.text = item.name;
+	        option.dataset.code = item.code;
+	        option.dataset.unit = item.unit;
+	        option.dataset.price = item.unitPrice;
+	        itemSelect.appendChild(option);
+	      });
+	    });
+	}
+
+	function fillItemDetails(select) {
+	  const option = select.selectedOptions[0];
+	  const row = select.closest(".item-row");
+	  row.querySelector("[name*='itemCode']").value = option.dataset.code;
+	  row.querySelector("[name*='unit']").value = option.dataset.unit;
+	  row.querySelector("[name*='unitPrice']").value = option.dataset.price;
+	  calculateItemTotal(row.querySelector("[name*='quantity']"));
+	}
+
+	function calculateItemTotal(qtyInput) {
+	  const row = qtyInput.closest(".item-row");
+	  const unitPrice = parseFloat(row.querySelector("[name*='unitPrice']").value || 0);
+	  const quantity = parseInt(qtyInput.value || 0);
+	  row.querySelector("[name*='unitPriceAll']").value = unitPrice * quantity;
+	  calculateOrderTotals();
+	}
+
+	function calculateOrderTotals() {
+	  let totalQty = 0, totalAmount = 0;
+	  document.querySelectorAll(".item-row").forEach(row => {
+	    const qty = parseInt(row.querySelector("[name*='quantity']").value || 0);
+	    const priceAll = parseFloat(row.querySelector("[name*='unitPriceAll']").value || 0);
+	    totalQty += qty;
+	    totalAmount += priceAll;
+	  });
+	  document.getElementById("totalQty").innerText = totalQty;
+	  document.getElementById("totalAmount").innerText = totalAmount.toLocaleString();
 	}
