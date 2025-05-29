@@ -32,7 +32,7 @@ public class CompanyOrder {
     private Long orderId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "company_id", nullable = false)
+    @JoinColumn(name = "company_id")
     private Company company;
 
     @OneToMany(mappedBy = "companyOrder", cascade = CascadeType.ALL)
@@ -55,5 +55,7 @@ public class CompanyOrder {
 
     @Column
     private Long orderQty;
+    
+    @Column(name = "order_num")
+    private Long orderNum;
 }
-

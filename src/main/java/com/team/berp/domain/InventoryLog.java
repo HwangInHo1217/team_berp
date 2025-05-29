@@ -38,6 +38,9 @@ public class InventoryLog {
 
     @Column(name = "log_datetime")
     private LocalDateTime logDatetime;
+    
+    @Column(name="use_yn") // 출고 여부
+	private String useYn;
 
     @Column(columnDefinition = "TEXT")
     private String comment;
