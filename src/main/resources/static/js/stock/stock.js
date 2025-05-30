@@ -652,34 +652,62 @@ const StockActions = {
         }
     },
     
-    showHistory(stockId) {
-        fetch(`/api/stocks/${stockId}`)
-            .then(response => response.json())
-            .then(stock => {
-                const historyInfo = document.getElementById('historyInfo');
-                if (historyInfo) {
-                    historyInfo.innerHTML = `
-                        <div class="alert alert-info mb-0">
-                            <strong>[${stock.itemCode}] ${stock.itemName}</strong> - 
-                            ${stock.warehouseName} 창고
-                        </div>
-                    `;
-                }
-                
-                return fetch(`/api/stocks/${stockId}/logs`);
-            })
-            .then(response => response.json())
-            .then(history => {
-                this.renderHistory(history.content || []);
-                
-                const modal = new bootstrap.Modal(document.getElementById('stockHistoryModal'));
-                modal.show();
-            })
-            .catch(error => {
-                console.error('재고 이력 조회 실패:', error);
-                StockUtils.showError('재고 이력을 불러올 수 없습니다.');
-            });
-    },
+	showHistory(stockId) {
+	    // 1. 먼저 재고 정보 조회해서 모달 헤더에 표시
+	    fetch(`/api/stocks/${stockId}`)
+	        .then(response => {
+	            if (!response.ok) {
+	                throw new Error(`재고 정보 조회 실패: ${response.status}`);
+	            }
+	            return response.json();
+	        })
+	        .then(stock => {
+	            // 재고 정보를 모달 헤더에 표시
+	            const historyInfo = document.getElementById('historyInfo');
+	            if (historyInfo) {
+	                historyInfo.innerHTML = `
+	                    <div class="alert alert-info mb-0">
+	                        <strong>[${stock.itemCode}] ${stock.itemName}</strong> - 
+	                        ${stock.warehouseName} 창고
+	                    </div>
+	                `;
+	            }
+	            
+	            // 2. 이력 데이터 조회 - /history 엔드포인트 사용 (페이징)
+	            return fetch(`/api/stocks/${stockId}/history?page=0&size=50`);
+	        })
+	        .then(response => {
+	            if (!response.ok) {
+	                throw new Error(`이력 조회 실패: ${response.status}`);
+	            }
+	            return response.json();
+	        })
+	        .then(historyPage => {
+	            console.log('📜 받은 이력 데이터 (Page):', historyPage);
+	            console.log('📊 총 이력 건수:', historyPage.totalElements);
+	            console.log('📋 현재 페이지 데이터:', historyPage.content);
+	            
+	            // 3. 이력 테이블 렌더링 (historyPage.content는 배열)
+	            this.renderHistory(historyPage.content || []);
+	            
+	            // 4. 모달 표시
+	            const modalElement = document.getElementById('stockHistoryModal');
+	            if (modalElement) {
+	                const modal = new bootstrap.Modal(modalElement);
+	                modal.show();
+	            } else {
+					console.log('❌ 모달을 찾을 수 없음 - DOM 전체 확인:');
+					        console.log('📄 전체 모달들:', document.querySelectorAll('.modal'));
+					        console.log('🆔 ID가 stockHistory로 시작하는 요소들:', 
+					                   document.querySelectorAll('[id*="stockHistory"]'));
+					        return;
+	            }
+	        })
+	        .catch(error => {
+	            console.error('❌ 재고 이력 조회 실패:', error);
+	            StockUtils.showError('재고 이력을 불러올 수 없습니다: ' + error.message);
+	        });
+	},
     
     renderHistory(logs) {
         const tbody = document.getElementById('historyTableBody');
