@@ -1,3 +1,5 @@
+// File: src/main/resources/static/js/mrp/mrp.js
+
 const pageSize = 5;  // 페이지당 보여줄 개수
 let currentSortKey = "mrpId";
 let currentSortDir = "desc";
@@ -5,12 +7,38 @@ let currentSortDir = "desc";
 let currentMrpList = [];
 let currentPage = 1;
 let totalPages = 1;
-
 let currentModalIdx = -1;
 
-// 최초 로딩: 필요시 주석 처리 (자동 로딩 대신 버튼으로)
+// 모달 인스턴스 전역 저장 (중복 backdrop 제거용)
+let mrpModalInstance = null;
+
+// 최초 로딩
 window.onload = function() {
-     loadMrpList(1);
+    document.getElementById('selectAll')?.addEventListener('change', function() {
+        const checked = this.checked;
+        document.querySelectorAll('.mrp-checkbox').forEach(cb => {
+            cb.checked = checked;
+            onMrpCheckboxChange(cb);
+        });
+    });
+    document.getElementById('bomSelectAll')?.addEventListener('change', function() {
+        const checked = this.checked;
+        document.querySelectorAll('.bom-checkbox').forEach(cb => cb.checked = checked);
+    });
+    document.getElementById('btn-create-plan')?.addEventListener('click', () => {
+        const codes = Array.from(document.querySelectorAll('.bom-checkbox:checked'))
+                           .map(cb => cb.dataset.code);
+        if (!codes.length) return alert('생산계획을 생성할 자재를 선택하세요.');
+        window.location.href = `/prod-plan?items=${codes.join(',')}`;
+    });
+    document.getElementById('btn-create-order')?.addEventListener('click', () => {
+        const codes = Array.from(document.querySelectorAll('.bom-checkbox:checked'))
+                           .map(cb => cb.dataset.code);
+        if (!codes.length) return alert('발주할 자재를 선택하세요.');
+        window.location.href = `/purchase-order?items=${codes.join(',')}`;
+    });
+
+    loadMrpList(1);
 };
 
 // 정렬
@@ -24,10 +52,9 @@ function sortMrp(key) {
     loadMrpList(1);
 }
 
-// 상단(품목) 리스트 조회 및 렌더링
+// 상단 MRP 리스트 조회
 function loadMrpList(page, callback) {
     currentPage = page;
-    // 검색 input에서 값 읽기
     const params = new URLSearchParams({
         page,
         size: pageSize,
@@ -45,28 +72,27 @@ function loadMrpList(page, callback) {
             renderMrpList(data, page);
             renderPagination(data.currentPage, data.totalPages);
             if (callback) callback();
-        });
+        })
+        .catch(err => console.error("MRP 리스트 로드 실패:", err));
 }
 
-// 품목 리스트 렌더링
 function renderMrpList(data, page) {
     const tbody = document.getElementById("mrpTableBody");
     tbody.innerHTML = "";
-    currentMrpList = data.content;
-    totalPages = data.totalPages;
+    currentMrpList = data.content || [];
+    totalPages = data.totalPages || 1;
 
     if (!data.content || data.content.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9" class="empty-row">등록된 품목 데이터가 없습니다.</td></tr>`;
-        // 하위도 같이 초기화
+        tbody.innerHTML = `<tr><td colspan="15" class="empty-row">등록된 품목 데이터가 없습니다.</td></tr>`;
         renderBomList([]);
         return;
     }
 
     data.content.forEach((mrp, idx) => {
-		const rowNumber = data.totalElements - ((page - 1) * pageSize + idx);
-		
+        const rowNumber = data.totalElements - ((page - 1) * pageSize + idx);
         const tr = document.createElement("tr");
         tr.innerHTML = `
+            <td><input type="checkbox" class="mrp-checkbox" data-code="${mrp.itemCode}" onchange="onMrpCheckboxChange(this)"></td>
             <td class="col-no">${rowNumber}</td>
             <td>${mrp.itemCode ?? '-'}</td>
             <td>${mrp.itemName ?? '-'}</td>
@@ -75,18 +101,34 @@ function renderMrpList(data, page) {
             <td>${mrp.unit ?? '-'}</td>
             <td>${mrp.prodQty ?? 0}</td>
             <td>${mrp.orderQty ?? 0}</td>
-            <td>
-                <button class="btn btn-info btn-sm" onclick="showMrpDetailModalByIndex(${idx})">상세</button>
-            </td>
+            <td>${mrp.stockQty ?? 0}</td>
+            <td>${mrp.shortageQty ?? 0}</td>
+            <td>${mrp.dueDate ?? '-'}</td>
+            <td>${mrp.leadTime ?? 0}</td>
+            <td>${mrp.mrpStatus ?? '-'}</td>
+            <td><button class="btn btn-info btn-sm" onclick="showMrpDetailModalByIndex(${idx})">상세</button></td>
         `;
+        tr.addEventListener('click', e => {
+            if (e.target.type === 'checkbox' || e.target.tagName === 'BUTTON') return;
+            const cb = tr.querySelector('.mrp-checkbox');
+            cb.checked = !cb.checked;
+            onMrpCheckboxChange(cb);
+        });
         tbody.appendChild(tr);
     });
 
-    // 리스트 갱신 시 하위 테이블(투입자재)도 비움
     renderBomList([]);
 }
 
-// 페이징
+function onMrpCheckboxChange(checkbox) {
+    const code = checkbox.dataset.code;
+    if (checkbox.checked) {
+        loadBomList(code);
+    } else {
+        renderBomList([]);
+    }
+}
+
 function renderPagination(currentPage, totalPages) {
     const pagination = document.getElementById("pagination");
     pagination.innerHTML = "";
@@ -94,142 +136,207 @@ function renderPagination(currentPage, totalPages) {
     const prevLi = document.createElement("li");
     prevLi.className = "page-item" + (currentPage === 1 ? " disabled" : "");
     prevLi.innerHTML = `<a class="page-link" href="#">이전</a>`;
-    prevLi.onclick = function() {
-        if (currentPage > 1) loadMrpList(currentPage - 1);
-    };
+    prevLi.onclick = () => currentPage > 1 && loadMrpList(currentPage - 1);
     pagination.appendChild(prevLi);
 
     for (let i = 1; i <= totalPages; i++) {
         const li = document.createElement("li");
         li.className = "page-item" + (i === currentPage ? " active" : "");
         li.innerHTML = `<a class="page-link" href="#">${i}</a>`;
-        li.onclick = function() {
-            loadMrpList(i);
-        };
+        li.onclick = () => loadMrpList(i);
         pagination.appendChild(li);
     }
 
     const nextLi = document.createElement("li");
     nextLi.className = "page-item" + (currentPage === totalPages ? " disabled" : "");
     nextLi.innerHTML = `<a class="page-link" href="#">다음</a>`;
-    nextLi.onclick = function() {
-        if (currentPage < totalPages) loadMrpList(currentPage + 1);
-    };
+    nextLi.onclick = () => currentPage < totalPages && loadMrpList(currentPage + 1);
     pagination.appendChild(nextLi);
 }
 
-// 상세(모달) - 품목 선택
 function showMrpDetailModalByIndex(idx) {
     currentModalIdx = idx;
     showMrpDetailModal(currentMrpList[idx], true);
-    // 품목 상세를 선택하면 투입자재(BOM) 조회도 같이 요청
     loadBomList(currentMrpList[idx].itemCode);
 }
 
-// 하단(BOM/투입자재) 리스트 API
 function loadBomList(itemCode) {
-    // BOM이 없는 경우를 위해서 itemCode 없으면 비움
     if (!itemCode) {
         renderBomList([]);
         return;
     }
     fetch(`/api/mrp/bom/${itemCode}`)
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) throw new Error(`BOM 로드 실패: ${res.status}`);
+            return res.json();
+        })
         .then(bomList => {
-            renderBomList(bomList);
+            if (Array.isArray(bomList)) renderBomList(bomList);
+            else renderBomList([]);
+        })
+        .catch(err => {
+            console.error(err);
+            renderBomList([]);
         });
 }
 
-// 하단(BOM/투입자재) 렌더링
 function renderBomList(bomList) {
     const tbody = document.getElementById("bomListTableBody");
     tbody.innerHTML = "";
-    if (!bomList || bomList.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="empty-row">소요 자재 데이터가 없습니다.</td></tr>`;
+    if (!bomList.length) {
+        tbody.innerHTML = `<tr><td colspan="14" class="empty-row">소요 자재 데이터가 없습니다.</td></tr>`;
         return;
     }
     bomList.forEach((bom, idx) => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
+            <td><input type="checkbox" class="bom-checkbox" data-code="${bom.subItemCode}"></td>
             <td class="col-no">${idx + 1}</td>
             <td>${bom.subItemCode ?? '-'}</td>
             <td>${bom.subItemName ?? '-'}</td>
             <td>${bom.spec ?? '-'}</td>
-            <td>${bom.qty ?? '-'}</td>
             <td>${bom.unit ?? '-'}</td>
-            <td>${bom.estInput ?? '-'}</td>
+            <td>${bom.qty ?? 0}</td>
+            <td>${bom.stockQty ?? 0}</td>
+            <td>${bom.shortageQty ?? 0}</td>
+            <td>${bom.safetyStock ?? 0}</td>
+            <td>${bom.purchaseQty ?? 0}</td>
+            <td>${bom.purchaseLeadTime ?? 0}</td>
+            <td>${bom.expectedDate ?? '-'}</td>
+            <td>
+              <button class="btn btn-outline-primary btn-sm"
+                      onclick="window.location.href='/purchase-order?items=${bom.subItemCode}'">
+                발주
+              </button>
+            </td>
         `;
         tbody.appendChild(tr);
     });
 }
 
-// 상세 모달 내용 표시
 function showMrpDetailModal(mrp, openModal) {
-	document.getElementById("mrpDetailItemCode").textContent = mrp.itemCode || '-';
-	document.getElementById("mrpDetailItemName").textContent = mrp.itemName || '-';
-	document.getElementById("mrpDetailItemType").textContent = mrp.itemType || '-';
-	document.getElementById("mrpDetailUnit").textContent = mrp.unit || '-';
-	document.getElementById("mrpDetailBaseDate").textContent = mrp.baseDate || '-';
-    document.getElementById("mrpDetailRequiredQty").textContent = mrp.requiredQty ?? '-';
-    document.getElementById("mrpDetailStock").textContent = mrp.stockQty ?? '-';
-    document.getElementById("mrpDetailConfirmedQty").textContent = mrp.confirmedQty ?? '-';
-    document.getElementById("mrpDetailShortQty").textContent = mrp.shortageQty ?? '-';
-    document.getElementById("mrpDetailDemandSource").textContent = mrp.source || '-';
-    document.getElementById("mrpDetailLeadTime").textContent = mrp.leadTime ?? '-';
-    document.getElementById("mrpDetailNote").textContent = mrp.comment || '-';
-
-    document.getElementById("modalPrevBtn").disabled = (currentPage === 1 && currentModalIdx === 0);
-    document.getElementById("modalNextBtn").disabled = (currentPage === totalPages && currentModalIdx === currentMrpList.length - 1);
-
-    if (openModal) {
-        const modal = new bootstrap.Modal(document.getElementById('mrpDetailModal'));
-        modal.show();
+    // 기존 모달 인스턴스 제거
+    if (mrpModalInstance) {
+        mrpModalInstance.dispose();
+        mrpModalInstance = null;
     }
+
+    // A. 기본 정보
+    document.getElementById("mrpDetailId").textContent         = mrp.mrpId          ?? '-';
+    document.getElementById("mrpDetailCreateDate").textContent = mrp.baseDate       || '-';
+    document.getElementById("mrpDetailDueDate").textContent    = mrp.dueDate        || '-';
+    document.getElementById("mrpDetailPlanType").textContent   = mrp.source         || '-';
+    document.getElementById("mrpDetailStatus").textContent     = mrp.mrpStatus      || '-';
+    document.getElementById("mrpDetailOwner").textContent      = mrp.ownerName      || '-';
+
+    // B. 품목 정보
+    document.getElementById("mrpDetailItemCode").textContent    = mrp.itemCode       || '-';
+    document.getElementById("mrpDetailItemName").textContent    = mrp.itemName       || '-';
+    document.getElementById("mrpDetailItemType").textContent    = mrp.itemType       || '-';
+    document.getElementById("mrpDetailUnit").textContent        = mrp.unit           || '-';
+    document.getElementById("mrpDetailSpec").textContent        = mrp.spec           || '-';
+    document.getElementById("mrpDetailSafetyStock").textContent = mrp.safetyStock    ?? '0';
+    document.getElementById("mrpDetailStock").textContent       = mrp.stockQty       ?? '0';
+    document.getElementById("mrpDetailLocation").textContent    = mrp.location       || '-';
+
+    // C. 수량·리드타임
+    document.getElementById("mrpDetailRequiredQty").textContent     = mrp.requiredQty    ?? '0';
+    document.getElementById("mrpDetailShortQty").textContent        = mrp.shortageQty    ?? '0';
+    document.getElementById("mrpDetailPurchaseLeadTime").textContent= mrp.purchaseLeadTime ?? '0';
+    document.getElementById("mrpDetailProductionLeadTime").textContent = mrp.productionLeadTime ?? '0';
+    document.getElementById("mrpDetailStartDate").textContent       = mrp.startDate      || '-';
+
+    // D. BOM 구성
+    const bomBody = document.getElementById("mrpDetailBomBody");
+    bomBody.innerHTML = "";
+    (mrp.bomComponents || []).forEach(c => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${c.childCode}</td>
+            <td>${c.childName}</td>
+            <td>${c.perParentQty}</td>
+            <td>${c.totalQty}</td>
+            <td>${c.stockQty}</td>
+            <td>${c.shortageQty}</td>
+            <td>${c.leadTime}</td>
+            <td>${c.supplier}</td>
+        `;
+        bomBody.appendChild(tr);
+    });
+
+    // E. 연계 오더
+    const poBody = document.getElementById("mrpDetailPoList");
+    poBody.innerHTML = "";
+    (mrp.purchaseOrders || []).forEach(po => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${po.poNo}</td>
+            <td>${po.itemCode}</td>
+            <td>${po.qty}</td>
+            <td>${po.dueDate}</td>
+            <td>${po.status}</td>
+        `;
+        poBody.appendChild(tr);
+    });
+    const woBody = document.getElementById("mrpDetailWoList");
+    woBody.innerHTML = "";
+    (mrp.workOrders || []).forEach(wo => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+            <td>${wo.woNo}</td>
+            <td>${wo.itemCode}</td>
+            <td>${wo.qty}</td>
+            <td>${wo.startDate}</td>
+            <td>${wo.endDate}</td>
+            <td>${wo.status}</td>
+        `;
+        woBody.appendChild(tr);
+    });
+
+    // F. 스케줄·이력
+    const logDiv = document.getElementById("mrpDetailLog");
+    logDiv.innerHTML = (mrp.history || []).map(h =>
+        `<div>[${h.timestamp}] ${h.message}</div>`
+    ).join("");
+
+    // 네비게이션 버튼 활성/비활성
+    document.getElementById("modalPrevBtn").disabled = currentModalIdx <= 0;
+    document.getElementById("modalNextBtn").disabled = currentModalIdx >= currentMrpList.length - 1;
+
+    // G. 액션 버튼 이벤트
+    document.getElementById("detailBtnCreatePlan").onclick = () => {
+        window.location.href = `/prod-plan?items=${mrp.itemCode}`;
+    };
+    document.getElementById("detailBtnCreateOrder").onclick = () => {
+        window.location.href = `/purchase-order?items=${mrp.itemCode}`;
+    };
+
+    // 모달 띄우기
+    mrpModalInstance = new bootstrap.Modal(document.getElementById('mrpDetailModal'));
+    if (openModal) mrpModalInstance.show();
 }
 
-// 모달 내 리스트 이전/다음 이동
+// 모달 이전/다음
 function moveModal(offset) {
     let newIdx = currentModalIdx + offset;
-    if (newIdx >= currentMrpList.length) {
-        if (currentPage < totalPages) {
-            loadMrpList(currentPage + 1, function() {
-                currentModalIdx = 0;
-                showMrpDetailModal(currentMrpList[0], false);
-                loadBomList(currentMrpList[0].itemCode);
-            });
-        }
-        return;
-    }
-    if (newIdx < 0) {
-        if (currentPage > 1) {
-            loadMrpList(currentPage - 1, function() {
-                currentModalIdx = currentMrpList.length - 1;
-                showMrpDetailModal(currentMrpList[currentModalIdx], false);
-                loadBomList(currentMrpList[currentModalIdx].itemCode);
-            });
-        }
-        return;
-    }
+    if (newIdx < 0 || newIdx >= currentMrpList.length) return;
     currentModalIdx = newIdx;
-    showMrpDetailModal(currentMrpList[currentModalIdx], false);
-    loadBomList(currentMrpList[currentModalIdx].itemCode);
+    showMrpDetailModal(currentMrpList[newIdx], true);
+    loadBomList(currentMrpList[newIdx].itemCode);
 }
 
-// "MRP 계산" 버튼에 연결
+// 버튼 연결
 function calculateMrp() {
     loadMrpList(1);
 }
 
-// 취소/리셋
 function resetMrpForm() {
-    document.getElementById("startDate").value = "";
-    document.getElementById("endDate").value = "";
-    document.getElementById("itemSearch").value = "";
-    document.getElementById("custSearch").value = "";
+    ['startDate','endDate','itemSearch','custSearch'].forEach(id => {
+        document.getElementById(id).value = "";
+    });
     loadMrpList(1);
 }
 
-// 엑셀 다운로드
 function downloadExcel() {
     alert("엑셀 다운로드 준비중!");
 }

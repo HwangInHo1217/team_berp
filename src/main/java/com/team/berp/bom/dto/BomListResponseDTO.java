@@ -10,11 +10,10 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class BomListResponseDTO {
-    private List<BomProductItemDTO> content;
-    private int totalPages;
-    private int currentPage;
-
-    private List<BomProductItemDTO> productList;
-    private List<Item> selectMaterialList;
-    private List<Item> selectProductList;
+    private final List<BomProductItemDTO> content;
+    private final int totalPages;
+    private final int pageNumber;
+    private final List<Item> products;
+    private final List<Item> materials;
 }
+
