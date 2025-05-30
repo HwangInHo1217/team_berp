@@ -6,6 +6,9 @@ import com.team.berp.domain.Company;
 import com.team.berp.domain.Company.CompanyType;
 import com.team.berp.domain.Employee;
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -127,5 +130,10 @@ public class ClientServiceImpl implements ClientService {
         } else {
             return companyRepository.existsByCompanyNameAndCompanyNoAndCompanyIdNotAndUseYn(companyName, companyNo, excludeId, "Y");
         }
+    }
+    
+    @Override
+    public List<Company> getAllcompanies() {
+    	return companyRepository.findAll();
     }
 }

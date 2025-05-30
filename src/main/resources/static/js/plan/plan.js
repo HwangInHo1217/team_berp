@@ -1,78 +1,63 @@
+// ✅ 페이지 로드 시 목록 자동 조회
+document.addEventListener("DOMContentLoaded", function () {
+  fetchProdPlanList(0);
 
-function openPlanEditModal(data) {
-  document.getElementById("planDate").value = data.plan_date;
-  document.getElementById("itemCode").value = data.item_code;
-  document.getElementById("itemName").value = data.item_name;
-  document.getElementById("quantity").value = data.quantity;
-  document.getElementById("unit").value = data.unit;
-  document.getElementById("dueDate").value = data.due_date;
-  document.getElementById("status").value = data.status;
-  document.getElementById("manager").value = data.manager;
-  document.getElementById("note").value = data.note || '';
+  document.getElementById("itemSelect").addEventListener("change", function (e) {
+    const selectedOption = e.target.selectedOptions[0];
+    if (!selectedOption) return;
 
-  // 폼 액션 변경 및 버튼 텍스트 변경
-  document.getElementById("planForm").action = `/plan/update/${data.id}`;
-  document.getElementById("submitBtn").textContent = "수정";
+    document.getElementById("itemCode").value = selectedOption.dataset.code || '';
+    document.getElementById("itemName").value = selectedOption.dataset.name || '';
+    document.getElementById("unit").value = selectedOption.dataset.unit || '';
 
-  // 모달 열기
-  const modal = new bootstrap.Modal(document.getElementById("planRegisterModal"));
-  modal.show();
-}
+    document.getElementById("itemCode").readOnly = true;
+    document.getElementById("itemName").readOnly = true;
+    document.getElementById("unit").readOnly = true;
+  });
+  document.getElementById("statusFilter").addEventListener("change", () => {
+    fetchProdPlanList(0); // 상태 변경 시 첫 페이지로 조회
+  });
 
-function openPlanDetailModal(data) {
-  // 계획번호 표시
-  document.getElementById("planDetailPlanNo").textContent = data.plan_no;
-  document.getElementById("planDetailPlanDate").textContent = data.plan_date;
-  document.getElementById("planDetailItemCode").textContent = data.item_code;
-  document.getElementById("planDetailItemName").textContent = data.item_name;
-  document.getElementById("planDetailQuantity").textContent = data.quantity;
-  document.getElementById("planDetailUnit").textContent = data.unit;
-  document.getElementById("planDetailDueDate").textContent = data.due_date;
-  document.getElementById("planDetailStatus").textContent = data.status;
-  document.getElementById("planDetailManager").textContent = data.manager;
-  document.getElementById("planDetailNote").textContent = data.note;
+});
 
-  // 모달 열기
-  const modal = new bootstrap.Modal(document.getElementById("planDetailModal"));
-  modal.show();
-}
+// ✅ 생산계획 목록 조회 함수
+function fetchProdPlanList(page = 0) {
+  const keyword = document.getElementById("keywordInput")?.value || '';
+  const startDate = document.getElementById("startDateInput")?.value || '';
+  const endDate = document.getElementById("endDateInput")?.value || '';
+  const status = document.getElementById("statusFilter")?.value || ''; // 🔥 추가
+  const params = new URLSearchParams({ page, size: 10, keyword, startDate, endDate, status });
 
-
-// ✅ 생산계획 리스트 조회 함수
-function fetchProdPlanList() {
-  // API 호출
-  fetch("/api/prod-plan/list")
-    .then(response => response.json()) // JSON 변환
-    .then(data => renderProdPlanTable(data)) // 테이블에 렌더링
-    .catch(error => {
-      console.error("생산계획 목록 조회 실패:", error);
-      alert("생산계획 데이터를 불러오는 데 실패했습니다.");
+  fetch(`/api/prod-plan/list?${params}`)
+    .then(res => res.json())
+    .then(data => {
+      renderProdPlanTable(data.content);
+      renderPagination(data.totalPages, data.number);
+    })
+    .catch(err => {
+      console.error("조회 실패:", err);
+      alert("생산계획 조회 중 오류 발생");
     });
 }
 
-// ✅ 테이블 본문에 데이터 렌더링
+// ✅ 생산계획 테이블 렌더링
 function renderProdPlanTable(planList) {
-  // 테이블 tbody 요소 가져오기
   const tbody = document.querySelector("table tbody");
-  tbody.innerHTML = ""; // 기존 내용 초기화
+  tbody.innerHTML = "";
 
-  // 리스트가 비어있으면 "데이터 없음" 출력
   if (!planList || planList.length === 0) {
-    const row = `<tr><td colspan="14">등록된 생산계획이 없습니다.</td></tr>`;
-    tbody.insertAdjacentHTML("beforeend", row);
+    tbody.insertAdjacentHTML("beforeend", `<tr><td colspan="14">등록된 생산계획이 없습니다.</td></tr>`);
     return;
   }
 
-  // 각 계획 데이터를 테이블 행으로 추가
   planList.forEach(plan => {
-    // HTML 행 생성
     const row = `
       <tr>
         <td><input type="checkbox" /></td>
         <td>${generatePlanNo(plan.planId)}</td>
         <td>${plan.planDate || ''}</td>
         <td>${plan.itemCode}</td>
-        <td>${plan.itemName}</td> <!-- 품목명은 현재 itemId만 있으므로 고정 -->
+        <td>${plan.itemName}</td>
         <td>${plan.planQty}</td>
         <td>${plan.unit}</td>
         <td>${plan.dueDate || ''}</td>
@@ -83,14 +68,14 @@ function renderProdPlanTable(planList) {
           <button class="btn btn-info btn-sm" onclick="openPlanDetailModal({
             plan_no: '${generatePlanNo(plan.planId)}',
             plan_date: '${plan.planDate}',
-            item_code: '${plan.itemId ? 'P' + String(plan.itemId).padStart(3, '0') : ''}',
-            item_name: '완제품',
+            item_code: '${plan.itemCode}',
+            item_name: '${plan.itemName}',
             quantity: ${plan.planQty},
             unit: '${plan.unit}',
             due_date: '${plan.dueDate}',
-            status: '${mapStatus(plan.status)}',
+            status: '${plan.status}',
             manager: '${plan.manager}',
-            note: '${plan.remark || '-'}'
+            note: '${plan.remark || ''}'
           })">상세</button>
         </td>
         <td>
@@ -102,31 +87,28 @@ function renderProdPlanTable(planList) {
             quantity: ${plan.planQty},
             unit: '${plan.unit}',
             due_date: '${plan.dueDate}',
-            status: '${mapStatus(plan.status)}',
+            status: '${plan.status}',
             manager: '${plan.manager}',
             note: '${plan.remark || ''}'
           })">수정</button>
         </td>
         <td>
-          <button class="btn btn-danger btn-sm" onclick="alert('삭제 기능은 추후 구현 예정')">삭제</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteProdPlan(${plan.planId})">삭제</button>
         </td>
       </tr>
     `;
-
-    // 테이블에 행 추가
     tbody.insertAdjacentHTML("beforeend", row);
   });
 }
 
-// ✅ 계획번호 형식 생성 함수 (예: PP202405001)
+// ✅ 계획번호 생성
 function generatePlanNo(id) {
-  // 오늘 날짜 기준 연월 + planId 기준 번호 생성
   const today = new Date();
   const yyyyMM = today.getFullYear().toString() + String(today.getMonth() + 1).padStart(2, '0');
   return `PP${yyyyMM}${String(id).padStart(3, '0')}`;
 }
 
-// ✅ 상태 코드 매핑 함수 (Enum → 한글)
+// ✅ 상태 매핑
 function mapStatus(status) {
   switch (status) {
     case 'PLANNED': return '계획';
@@ -136,90 +118,223 @@ function mapStatus(status) {
   }
 }
 
+// ✅ 페이지네이션
+function renderPagination(totalPages, currentPage) {
+  const pagination = document.getElementById("pagination");
+  if (!pagination) return;
+  pagination.innerHTML = "";
+  if (totalPages <= 1) return;
 
+  if (currentPage > 0) {
+    const prevBtn = document.createElement("button");
+    prevBtn.textContent = "이전";
+    prevBtn.className = "btn btn-sm btn-outline-primary me-1";
+    prevBtn.onclick = () => fetchProdPlanList(currentPage - 1);
+    pagination.appendChild(prevBtn);
+  }
 
-// ✅ 일반 셀렉트로 품목 목록 불러오기
+  for (let i = 0; i < totalPages; i++) {
+    const btn = document.createElement("button");
+    btn.textContent = i + 1;
+    btn.className = `btn btn-sm ${i === currentPage ? 'btn-primary' : 'btn-outline-primary'} me-1`;
+    btn.onclick = () => fetchProdPlanList(i);
+    pagination.appendChild(btn);
+  }
+
+  if (currentPage < totalPages - 1) {
+    const nextBtn = document.createElement("button");
+    nextBtn.textContent = "다음";
+    nextBtn.className = "btn btn-sm btn-outline-primary me-1";
+    nextBtn.onclick = () => fetchProdPlanList(currentPage + 1);
+    pagination.appendChild(nextBtn);
+  }
+}
+
+// ✅ 품목 로딩
 function loadItemOptions() {
-  fetch("/api/item/list?tab=product")
-    .then(response => response.json())
+  return fetch("/api/item/all-products")
+    .then(res => res.json())
     .then(data => {
+      const products = data.products;
       const select = document.getElementById("itemSelect");
-
-      // ✅ 기존 옵션 초기화
       select.innerHTML = "";
-
-      // ✅ 기본 옵션 추가
-      const defaultOption = document.createElement("option");
-      defaultOption.value = "";
+      const defaultOption = new Option("품목을 선택하세요", "", true, true);
       defaultOption.disabled = true;
-      defaultOption.selected = true;
-      defaultOption.textContent = "품목을 선택하세요";
       select.appendChild(defaultOption);
 
-      // ✅ product 타입만 필터링해서 옵션 추가
-      const items = data.content || [];
-      const products = items.filter(item => item.type === "product");
-
       products.forEach(item => {
-        const option = document.createElement("option");
-        option.value = item.id; // 제출될 item_id
-        option.textContent = `[${item.code}] ${item.name}`;
+        const option = new Option(`[${item.code}] ${item.name}`, item.id);
         option.dataset.code = item.code;
         option.dataset.name = item.name;
         option.dataset.unit = item.unit;
         select.appendChild(option);
       });
     })
-    .catch(error => {
-      console.error("품목 목록 로딩 실패", error);
+    .catch(err => {
+      console.error("전체 product 불러오기 실패", err);
     });
 }
-// ✅ select 요소에 change 이벤트 리스너 추가
-document.addEventListener("DOMContentLoaded", function () {
-  
-  document.getElementById("itemSelect").addEventListener("change", function (e) {
-    const selectedOption = e.target.selectedOptions[0];
-    if (!selectedOption) return;
 
-    // ✅ dataset에서 정보 추출하여 입력란 자동 채움
-    document.getElementById("itemCode").value = selectedOption.dataset.code || '';
-    document.getElementById("itemName").value = selectedOption.dataset.name || '';
-    document.getElementById("unit").value = selectedOption.dataset.unit || '';
+// ✅ 등록
+function addProdPlan() {
+  const form = document.getElementById("planForm");
+  const dto = {
+    item_id: document.getElementById("itemSelect").value,
+    plan_date: form.plan_date.value,
+    quantity: form.quantity.value,
+    due_date: form.due_date.value,
+    unit: form.unit.value,
+    status: form.status.value,
+    manager: form.manager.value,
+    note: form.note.value
+  };
 
-    document.getElementById("itemCode").readOnly = true;
-    document.getElementById("itemName").readOnly = true;
-    document.getElementById("unit").readOnly = true;
-  });
-});
+  fetch(`/plan/add`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(dto)
+  })
+    .then(res => {
+      if (!res.ok) throw new Error("등록 실패");
+      return res.text();
+    })
+    .then(() => {
+      alert("등록 완료");
+      const modalInstance = bootstrap.Modal.getOrCreateInstance(document.getElementById("planRegisterModal"));
+      modalInstance.hide();
+	  console.log("모달 닫힘 직후 실행됨"); // 디버깅용
 
-function openPlanAddModal() {
-  const modalEl = document.getElementById("planRegisterModal");
-  if (!modalEl) return;
+      fetchProdPlanList();
+    })
+    .catch(err => {
+      console.error(err);
+      alert("등록 중 오류 발생");
+    });
+}
 
-  document.getElementById("planForm").reset();
+// ✅ 수정
+function updateProdPlan(planId) {
+  const form = document.getElementById("planForm");
+  const dto = {
+    item_id: document.getElementById("itemSelect").value,
+    plan_date: form.plan_date.value,
+    quantity: form.quantity.value,
+    due_date: form.due_date.value,
+    unit: form.unit.value,
+    status: form.status.value,
+    manager: form.manager.value,
+    note: form.note.value
+  };
 
-  // ✅ 필드 초기화
-  document.getElementById("itemCode").value = "";
-  document.getElementById("itemName").value = "";
-  document.getElementById("unit").value = "";
-  document.getElementById("itemCode").readOnly = true;
-  document.getElementById("itemName").readOnly = true;
-  document.getElementById("unit").readOnly = true;
+  fetch(`/api/prod-plan/update/${planId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(dto)
+  })
+    .then(res => {
+      if (!res.ok) throw new Error("수정 실패");
+      return res.text();
+    })
+    .then(() => {
+      alert("수정 완료");
+      bootstrap.Modal.getInstance(document.getElementById("planRegisterModal")).hide();
+      fetchProdPlanList();
+    })
+    .catch(err => {
+      console.error(err);
+      alert("수정 중 오류 발생");
+    });
+}
 
-  // ✅ 일반 select 선택 초기화
-  document.getElementById("itemSelect").selectedIndex = 0;
+// ✅ 삭제
+function deleteProdPlan(planId) {
+  if (!confirm("정말로 삭제하시겠습니까?")) return;
 
-  // ✅ 목록 다시 불러오기 (모달이 열릴 때마다)
-  loadItemOptions();
+  fetch(`/api/prod-plan/delete/${planId}`, { method: "DELETE" })
+    .then(res => {
+      if (!res.ok) throw new Error("삭제 실패");
+      return res.text();
+    })
+    .then(() => {
+      alert("삭제되었습니다.");
+      fetchProdPlanList();
+    })
+    .catch(err => {
+      alert("해당 생산계획은 MRP에서 사용 중이므로 삭제할 수 없습니다.");
+      console.error(err);
+    });
+}
 
-  // ✅ 폼 설정
-  
-  document.getElementById("submitBtn").textContent = "등록";
+// ✅ 상세 모달 열기
+function openPlanDetailModal(data) {
+  document.getElementById("planDetailPlanNo").textContent = data.plan_no;
+  document.getElementById("planDetailPlanDate").textContent = data.plan_date;
+  document.getElementById("planDetailItemCode").textContent = data.item_code;
+  document.getElementById("planDetailItemName").textContent = data.item_name;
+  document.getElementById("planDetailQuantity").textContent = data.quantity;
+  document.getElementById("planDetailUnit").textContent = data.unit;
+  document.getElementById("planDetailDueDate").textContent = data.due_date;
+  document.getElementById("planDetailStatus").textContent = mapStatus(data.status);
+  document.getElementById("planDetailManager").textContent = data.manager;
+  document.getElementById("planDetailNote").textContent = data.note;
 
-  const modal = new bootstrap.Modal(modalEl);
+  const modal = new bootstrap.Modal(document.getElementById("planDetailModal"));
   modal.show();
 }
 
+// ✅ 등록 모달 열기
+function openPlanAddModal() {
+  const form = document.getElementById("planForm");
+  form.reset();
+  document.getElementById("submitBtn").textContent = "등록";
+  document.getElementById("planForm").action = ""; // ✅ 등록일 때는 action을 비워줘야 함
+
+  loadItemOptions().then(() => {
+    const modal = new bootstrap.Modal(document.getElementById("planRegisterModal"));
+    modal.show();
+  });
+}
 
 
+// ✅ 수정 모달 열기
+function openPlanEditModal(data) {
+  loadItemOptions().then(() => {
+    document.getElementById("planDate").value = data.plan_date;
+    document.getElementById("itemCode").value = data.item_code;
+    document.getElementById("itemName").value = data.item_name;
+    document.getElementById("quantity").value = data.quantity;
+    document.getElementById("unit").value = data.unit;
+    document.getElementById("dueDate").value = data.due_date;
+    document.getElementById("status").value = data.status;
+    document.getElementById("manager").value = data.manager;
+    document.getElementById("note").value = data.note;
 
+    const select = document.getElementById("itemSelect");
+    for (let opt of select.options) {
+      if (opt.dataset.code === data.item_code) {
+        opt.selected = true;
+        break;
+      }
+    }
+
+    document.getElementById("planForm").action = `/plan/update/${data.id}`;
+    document.getElementById("submitBtn").textContent = "수정";
+    const modal = new bootstrap.Modal(document.getElementById("planRegisterModal"));
+    modal.show();
+  });
+}
+
+// ✅ 제출 버튼 핸들러
+document.getElementById("submitBtn").onclick = function (e) {
+  e.preventDefault();
+
+  const form = document.getElementById("planForm");
+  const action = form.action;
+  const match = action.match(/\/update\/(\d+)/);
+  if (match) {
+    const planId = match[1];
+    updateProdPlan(planId);
+  } else {
+    addProdPlan();
+  }
+};

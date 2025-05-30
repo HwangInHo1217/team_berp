@@ -65,6 +65,16 @@ public interface ItemRepository extends JpaRepository<Item, Long>{
     Page<Item> findAll(Pageable pageable);
     
     Page<Item> findByUse(String use, Pageable pageable);
+    
+ // 등록된 부모 아이템만 조회 (distinct)
+    @Query("SELECT DISTINCT i FROM Item i WHERE i.id IN (SELECT b.parentItem.id FROM Bom b) AND i.type = :type AND i.name LIKE %:name%")
+    Page<Item> findRegisteredParentItemsByNameContaining(@Param("name") String name, @Param("type") ItemType type, Pageable pageable);
+
+    @Query("SELECT DISTINCT i FROM Item i WHERE i.id IN (SELECT b.parentItem.id FROM Bom b) AND i.type = :type AND i.code LIKE %:code%")
+    Page<Item> findRegisteredParentItemsByCodeContaining(@Param("code") String code, @Param("type") ItemType type, Pageable pageable);
+
+    @Query("SELECT DISTINCT i FROM Item i WHERE i.id IN (SELECT b.parentItem.id FROM Bom b) AND i.type = :type")
+    Page<Item> findRegisteredParentItems(@Param("type") ItemType type, Pageable pageable);
 
 
 }

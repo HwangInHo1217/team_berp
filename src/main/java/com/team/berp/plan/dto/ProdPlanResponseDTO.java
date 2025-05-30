@@ -2,6 +2,7 @@ package com.team.berp.plan.dto;
 
 import java.time.LocalDate;
 
+import com.team.berp.domain.ProdPlan;
 import com.team.berp.domain.ProdPlan.PlanStatus;
 
 import lombok.AllArgsConstructor;
@@ -24,4 +25,20 @@ public class ProdPlanResponseDTO {
     private Integer priority;
     private String manager;
     private String remark;
+ // ✅ 엔티티로부터 DTO를 만드는 생성자 추가
+    public ProdPlanResponseDTO(ProdPlan plan) {
+        this.planId = plan.getPlanId();
+        this.itemCode = plan.getItem().getCode();
+        this.itemName = plan.getItem().getName();
+        this.planQty = plan.getPlanQty();
+        this.unit = plan.getUnit();
+        this.planDate = plan.getPlanDate();
+        this.dueDate = plan.getDueDate();
+        this.startDate = plan.getStartDate();
+        this.status = plan.getStatus();
+        this.priority = plan.getPriority();
+        this.manager = plan.getManager();
+        this.remark = plan.getRemark();
+    }
+
 }

@@ -17,18 +17,23 @@ public class OrderLineItem {
     private Long orderLineItemId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id", nullable = false)
+    @JoinColumn(name = "order_id")
     private CompanyOrder companyOrder;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "item_id", nullable = false)
+    @JoinColumn(name = "item_id")
     private Item item;
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "warehouse_id")
+    private Warehouse warehouse;
 
-    @Column(nullable = false)
+    @Column
     private Long unitQty;
 
-    @Column(nullable = false)
-    private Integer unitPrice;
+    @Column
+    private Long unitPrice;
 
-  
+    @Column(name = "unit_price_all")
+    private Long unitPriceall;
 }

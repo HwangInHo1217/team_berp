@@ -1,6 +1,8 @@
 // File: /Team_BERP/src/main/java/com/team/berp/domain/Mrp.java
 package com.team.berp.domain;
 
+import java.time.LocalDate;
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -27,5 +29,26 @@ public class Mrp {
     @Column(nullable = false)
     private Integer requiredQty;
 
-   
+    // ────────────────────────────────────────────────────
+    // NEW ▶ 납기요청일 컬럼 추가
+    @Column(name = "due_date")
+    private LocalDate dueDate;
+
+    // NEW ▶ MRP 상태(Enum) 추가
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", length = 20)
+    private MrpStatus status;
+    
+    @Column(name = "base_date")
+    private LocalDate baseDate;
+
+    @Column(name = "source")
+    private String source;
+
+    @Column(name = "lead_time")
+    private Integer leadTime;
+
+    @Column(name = "comment", length = 255)
+    private String comment;
+    
 }

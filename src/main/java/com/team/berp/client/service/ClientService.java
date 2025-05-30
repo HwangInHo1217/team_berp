@@ -1,8 +1,12 @@
 package com.team.berp.client.service;
 
 import com.team.berp.client.dto.ClientViewDto;
+import com.team.berp.domain.Company;
 import com.team.berp.domain.Company.CompanyType;
 import com.team.berp.domain.Employee;
+
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -27,4 +31,6 @@ public interface ClientService {
 
     // 회사명+사업자번호로 중복 여부 (등록/수정 둘 다 사용)
     boolean existsDuplicate(String companyName, String companyNo, Long excludeId);
+ 
+    List<Company> getAllcompanies();
 }

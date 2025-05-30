@@ -8,6 +8,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import com.team.berp.client.repository.ClientRepository;
+import com.team.berp.domain.Company;
 import com.team.berp.domain.CompanyOrder;
 import com.team.berp.domain.Item;
 import com.team.berp.domain.OrderLineItem;
@@ -98,4 +99,5 @@ public class PlaceServiceImpl implements PlaceService{ //실제 구현
 //    	return companyOrderRepository.findAll();
     	return companyOrderRepository.findAllWithItems();
     }
+ 
 }
