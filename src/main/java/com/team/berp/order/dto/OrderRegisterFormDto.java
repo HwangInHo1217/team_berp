@@ -1,22 +1,16 @@
 package com.team.berp.order.dto;
-
 import java.time.LocalDate;
 import java.util.List;
-
 import lombok.Data;
-
-/**
- * 등록 폼 DTO (dueDate 제거)
- */
 @Data
 public class OrderRegisterFormDto {
-    private Long customerId;
+    private Long companyId;
+    private String empName;
+    private String companyEmpName;
     private LocalDate orderDate;
-    private String manager;
     private String note;
-    private List<OrderLineItemDto> items;
-
-    public OrderRegisterFormDto() {}
-
-    // getters / setters …
+    private List<Long> itemId;
+    private List<Long> unitQty;
+    private List<Long> unitPrice;
+    private String orderType;
 }

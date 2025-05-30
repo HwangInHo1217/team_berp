@@ -1,61 +1,40 @@
 package com.team.berp.order.apicontroller;
-
+import org.springframework.web.bind.annotation.*;
+import lombok.RequiredArgsConstructor;
 import com.team.berp.order.dto.*;
 import com.team.berp.order.service.OrderService;
-import org.springframework.data.domain.Pageable;
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.web.bind.annotation.*;
-
-import java.time.LocalDate;
-import java.util.List;
+import com.team.berp.order.repository.Order_EmployeeRepository;
+import com.team.berp.order.repository.Order_CompanyRepository;
+import com.team.berp.order.repository.Order_ItemRepository;
+import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/orders")
+@RequiredArgsConstructor
 public class OrderApiController {
+  private final OrderService orderService;
+  private final Order_CompanyRepository compRepo;
+  private final Order_EmployeeRepository empRepo;
+  private final Order_ItemRepository itemRepo;
 
-    private final OrderService orderService;
-    public OrderApiController(OrderService orderService) {
-        this.orderService = orderService;
-    }
+  @GetMapping("/api/order/{id}/detail")
+  public OrderDetailDto detail(@PathVariable Long id) {
+    return orderService.getOrderDetail(id);
+  }
 
-    /** 주문 목록 (dueDate 제거) */
-    @GetMapping
-    public OrderPageDto list(
-        @RequestParam(value="companyName", required=false) String companyName,
-        @RequestParam(value="itemName",    required=false) String itemName,
-        @RequestParam(value="dateFrom",    required=false)
-          @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateFrom,
-        @RequestParam(value="dateTo",      required=false)
-          @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateTo,
-        Pageable pageable
-    ) {
-        return orderService.getOrders(companyName, itemName, dateFrom, dateTo, pageable);
-    }
+  @GetMapping("/api/order/company/{id}")
+  public CompanyContactDto getCompanyInfo(@PathVariable Long id) {
+    var c = compRepo.findById(id).orElseThrow();
+    CompanyContactDto dto = new CompanyContactDto();
+    dto.setEmpName(c.getEmployee().getEmpName());
+    dto.setCompanyEmpName(c.getCompanyEmpName());
+    return dto;
+  }
 
-    @GetMapping("/{orderNum}")
-    public OrderDto detail(@PathVariable Long orderNum) {
-        return orderService.getOrder(orderNum);
-    }
-
-    @PostMapping
-    public OrderDto create(@RequestBody OrderRegisterFormDto form) {
-        return orderService.registerOrder(form);
-    }
-
-    @PutMapping("/{orderNum}")
-    public OrderDto modify(@PathVariable Long orderNum,
-                           @RequestBody OrderRegisterFormDto form) {
-        return orderService.updateOrder(orderNum, form);
-    }
-
-    @DeleteMapping
-    public void remove(@RequestBody List<Long> orderNums) {
-        orderService.deleteOrders(orderNums);
-    }
-
-    /** 고객사 담당자 조회 (ID 기준) */
-    @GetMapping("/company/{customerId}")
-    public CompanyContactDto getContact(@PathVariable Long customerId) {
-        return orderService.getCompanyContactInfo(customerId);
-    }
+  @GetMapping("/api/order/item/{id}")
+  public OrderDetailDto getItemInfo(@PathVariable Long id) {
+    var i = itemRepo.findById(id).orElseThrow();
+    OrderDetailDto dto = new OrderDetailDto();
+    dto.setUnit(i.getUnit());
+    return dto;
+  }
 }

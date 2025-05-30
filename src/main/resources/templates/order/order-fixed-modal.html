@@ -1,0 +1,24 @@
+<!-- File: src/main/resources/templates/order/order-fixed-modal.html -->
+<div th:fragment="fixedModal">
+  <div class="modal fade" id="fixedModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">주문 수정</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <!-- order-register-modal 과 동일 구조, form id 고유하게 fixedForm -->
+          <form id="fixedForm">
+            <!-- ... 필드 동일 ... -->
+            <!-- btnAddItem, tblItems, lblTotalAmount 동일 -->
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="btnResetFixed">초기화</button>
+          <button type="button" class="btn btn-primary" id="btnUpdateOrder">수정</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
