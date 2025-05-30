@@ -144,7 +144,6 @@ const StockList = {
             th.style.cursor = 'pointer';
             th.addEventListener('click', (e) => {
                 const sortField = th.dataset.sort;
-				console.log('🖱️ 클릭된 정렬 필드:', sortField); // ✅ 추가
                 this.toggleSort(sortField);
             });
         });
@@ -178,15 +177,20 @@ const StockList = {
     },
 
     toggleSort(field) {
-		console.log('🔄 toggleSort 호출 - 원본 필드:', field); // ✅ 추가
+		console.log('🔄 toggleSort 호출 - 원본 필드:', field);
+
+		// 🔥 창고명 정렬 필드 매핑 - 이 부분이 핵심!
+		if (field === 'warehouseName') {
+		    field = 'warehouse.warehouseName';
+		    console.log('🏢 창고 필드 매핑:', field);
+		}
+
         const currentSort = StockState.sortBy.split(',');
-		console.log('🔍 현재 정렬 상태:', currentSort); // ✅ 추가
         if (currentSort[0] === field) {
             StockState.sortBy = field + ',' + (currentSort[1] === 'ASC' ? 'DESC' : 'ASC');
         } else {
             StockState.sortBy = field + ',ASC';
         }
-		console.log('🆕 변경된 정렬:', StockState.sortBy); // ✅ 추가
         this.loadStockData();
     },
 
@@ -216,14 +220,6 @@ const StockList = {
             })
             .then(pageData => {
                 console.log("✅ 받은 데이터:", pageData);
-				
-				// 🔍 창고명 순서 확인 추가
-				if (pageData.content && pageData.content.length > 0) {
-				     console.log('📦 창고명 순서:', pageData.content.map(s => s.warehouseName));
-				     console.log('🏷️ 품목코드 순서:', pageData.content.map(s => s.itemCode));
-				     console.log('📊 수량 순서:', pageData.content.map(s => s.quantity));
-				}				
-				
                 this.updateTable(pageData.content);
                 this.updatePaginationControls(pageData);
                 StockState.currentPage = pageData.number;
@@ -670,7 +666,7 @@ const StockActions = {
                     `;
                 }
                 
-                return fetch(`/api/stocks/${stockId}/history`);
+                return fetch(`/api/stocks/${stockId}/logs`);
             })
             .then(response => response.json())
             .then(history => {
@@ -740,16 +736,16 @@ const StockActions = {
         StockUtils.showInfo('일괄 출고 기능은 준비 중입니다.');
     },
     
-    downloadExcel() {
-        const params = new URLSearchParams({
-            keyword: StockState.filters.keyword,
-            whs: StockState.filters.warehouse,
-            itemType: StockState.filters.itemType,
-            stockStatus: StockState.filters.stockStatus
-        });
-        
-        window.location.href = `/api/stocks/excel?${params}`;
-    }
+	downloadExcel() {
+	    const params = new URLSearchParams({
+	        keyword: StockState.filters.keyword || '',
+	        whs: StockState.filters.warehouse || '',
+	        itemType: StockState.filters.itemType || '',
+	        stockStatus: StockState.filters.stockStatus || ''
+	    });
+
+	    window.location.href = `/api/stocks/excel?${params}`;
+	}
 };
 
 // ===== StockFilter =====
