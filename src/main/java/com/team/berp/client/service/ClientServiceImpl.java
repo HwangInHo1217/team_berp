@@ -132,6 +132,7 @@ public class ClientServiceImpl implements ClientService {
         }
     }
     
+    //repository에서 사업장 유형 선택, 모두 찾기
     @Override
     public List<Company> getAllcompanies() {
     	return companyRepository.findAll();

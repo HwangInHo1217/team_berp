@@ -34,5 +34,5 @@ public interface ClientRepository extends JpaRepository<Company, Long> {
     Page<Company> findByCompanyTypeAndPresidentNmContainingAndUseYn(CompanyType companyType, String ceo, String useYn, Pageable pageable);
 
     //사업장 유형 선택, supplier or customer
-    List<Company> findByCompanyType(String Type);
+    List<Company> findByCompanyType(CompanyType Type);
 }
