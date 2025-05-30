@@ -1,40 +1,41 @@
+// OrderApiController.java
 package com.team.berp.order.apicontroller;
-import org.springframework.web.bind.annotation.*;
-import lombok.RequiredArgsConstructor;
-import com.team.berp.order.dto.*;
+
+import com.team.berp.order.dto.OrderDto;
 import com.team.berp.order.service.OrderService;
-import com.team.berp.order.repository.Order_EmployeeRepository;
-import com.team.berp.order.repository.Order_CompanyRepository;
-import com.team.berp.order.repository.Order_ItemRepository;
-import java.util.Optional;
+import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
+/**
+ * 주문 관련 AJAX 요청을 처리하는 API 컨트롤러
+ */
 @RestController
-@RequiredArgsConstructor
+@RequestMapping("/api/orders")
 public class OrderApiController {
-  private final OrderService orderService;
-  private final Order_CompanyRepository compRepo;
-  private final Order_EmployeeRepository empRepo;
-  private final Order_ItemRepository itemRepo;
+    private final OrderService orderService;
 
-  @GetMapping("/api/order/{id}/detail")
-  public OrderDetailDto detail(@PathVariable Long id) {
-    return orderService.getOrderDetail(id);
-  }
+    public OrderApiController(OrderService orderService) {
+        this.orderService = orderService;
+    }
 
-  @GetMapping("/api/order/company/{id}")
-  public CompanyContactDto getCompanyInfo(@PathVariable Long id) {
-    var c = compRepo.findById(id).orElseThrow();
-    CompanyContactDto dto = new CompanyContactDto();
-    dto.setEmpName(c.getEmployee().getEmpName());
-    dto.setCompanyEmpName(c.getCompanyEmpName());
-    return dto;
-  }
+    /**
+     * 특정 주문의 상세 정보 조회
+     */
+    @GetMapping("/{orderId}")
+    public OrderDto getOrderDetail(@PathVariable Long orderId) {
+        return orderService.getOrderDetail(orderId);
+    }
 
-  @GetMapping("/api/order/item/{id}")
-  public OrderDetailDto getItemInfo(@PathVariable Long id) {
-    var i = itemRepo.findById(id).orElseThrow();
-    OrderDetailDto dto = new OrderDetailDto();
-    dto.setUnit(i.getUnit());
-    return dto;
-  }
+    /**
+     * 주문 수정 처리
+     */
+    @PutMapping("/{orderId}")
+    public OrderDto updateOrder(
+            @PathVariable Long orderId,
+            @RequestBody OrderDto dto
+    ) {
+        dto.setOrderId(orderId);
+        return orderService.updateOrder(dto);
+    }
 }

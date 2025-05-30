@@ -1,34 +1,37 @@
-<!-- File: src/main/resources/templates/order/order-detail-modal.html -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
 <div th:fragment="detailModal">
-  <div class="modal fade" id="detailModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">주문 상세</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    <div class="modal fade" id="detailModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">주문 상세</h5>
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <table class="table">
+                        <tr><th>주문번호</th><td id="detailOrderNum"></td></tr>
+                        <tr><th>주문일자</th><td id="detailOrderDate"></td></tr>
+                        <tr><th>고객사</th><td id="detailCompanyName"></td></tr>
+                        <tr><th>담당자</th><td id="detailEmpName"></td></tr>
+                        <tr><th>거래처담당자</th><td id="detailCompanyEmpName"></td></tr>
+                        <tr><th>비고</th><td id="detailRemark"></td></tr>
+                    </table>
+                    <h5>품목 목록</h5>
+                    <table class="table" id="detailItemsTable">
+                        <thead>
+                        <tr><th>품목</th><th>단위</th><th>단가</th><th>수량</th><th>합계</th></tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">닫기</button>
+                </div>
+            </div>
         </div>
-        <div class="modal-body">
-          <div>주문번호: <span id="detailOrderNum"></span></div>
-          <div class="table-responsive mt-3">
-            <table class="table table-bordered">
-              <thead>
-                <tr>
-                  <th>품목</th>
-                  <th>수량</th>
-                  <th>단위</th>
-                  <th>단가</th>
-                  <th>금액</th>
-                </tr>
-              </thead>
-              <tbody id="detailBody"></tbody>
-            </table>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
-          <button type="button" class="btn btn-primary btn-edit">수정</button>
-        </div>
-      </div>
     </div>
-  </div>
 </div>
+</body>
+</html>

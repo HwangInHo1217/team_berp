@@ -1,12 +1,11 @@
+// OrderLineItemRepository.java
 package com.team.berp.order.repository;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
+
 import com.team.berp.domain.OrderLineItem;
-import java.util.List;
-@Repository
+import org.springframework.data.jpa.repository.JpaRepository;
+
+/**
+ * 주문 품목(OrderLineItem) 엔티티 CRUD용 레포지토리
+ */
 public interface Order_OrderLineItemRepository extends JpaRepository<OrderLineItem, Long> {
-  @Query("SELECT oli FROM OrderLineItem oli JOIN FETCH oli.item WHERE oli.order.orderId = :orderId")
-  List<OrderLineItem> findByOrderId(@Param("orderId") Long orderId);
 }
