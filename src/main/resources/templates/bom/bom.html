@@ -181,61 +181,58 @@
 			</div>
 		</div>
 		<!-- BOM 수정 모달 -->
-		<div id="bomEditModalWrapper">
-			<div class="modal fade" id="bomEditModal" tabindex="-1"
-				aria-labelledby="bomEditModalLabel" aria-hidden="true">
-				<div class="modal-dialog modal-xl modal-dialog-scrollable">
-					<div class="modal-content">
-						<form id="bomEditForm">
-							<div class="modal-header">
-								<h5 class="modal-title">BOM 구성 수정</h5>
-								<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-							</div>
+		<!-- ✅ BOM 수정 모달 -->
+<div class="modal fade" id="bomEditModal" tabindex="-1" aria-labelledby="bomEditModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-content">
+      <form id="bomEditForm">
+        <div class="modal-header">
+          <h5 class="modal-title">BOM 수정</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
 
-							<div class="modal-body">
-								<div class="mb-3">
-									<label class="form-label">완제품 (Parent Item)</label> <select
-										class="form-select" name="parent_item_id" required
-										id="parentItemSelect"></select>
-								</div>
-								<div class="mb-3">
-									<label class="form-label">버전 코드 (예: V1, V-PORK)</label> <input
-										type="text" class="form-control" name="version_code"
-										id="versionCodeInput" required />
-								</div>
-								<div class="mb-3">
-									<label class="form-label">설명</label> <input type="text"
-										class="form-control" name="description"
-										id="versionDescriptionInput" />
-								</div>
-								<div class="mb-3">
-									<label class="form-label">사용 여부</label> <select
-										class="form-select" name="use_yn" id="versionUseYnInput">
-										<option value="Y" selected>Y (사용)</option>
-										<option value="N">N (미사용)</option>
-									</select>
-								</div>
+        <div class="modal-body">
+          <!-- 숨김: 버전 ID -->
+          <input type="hidden" id="editVersionId" />
 
-								<div id="bomEditTableArea">
-									<!-- JS에서 채워주는 부분이라서 지움 -->
-								</div>
+          <div class="mb-3">
+            <label class="form-label">완제품 (Parent Item)</label>
+            <select id="editParentItemSelect" class="form-select" required>
+              <!-- JS에서 채워짐 -->
+            </select>
+          </div>
 
-								<div class="text-end mt-2">
-									<button type="button" class="btn btn-outline-secondary"
-										onclick="addEditRow()">+ 자재 추가</button>
-								</div>
-							</div>
+          <div class="mb-3">
+            <label class="form-label">버전 코드</label>
+            <input type="text" id="editVersionCode" class="form-control" required />
+          </div>
 
-							<div class="modal-footer">
-								<button type="button" class="btn btn-secondary"
-									data-bs-dismiss="modal">닫기</button>
-								<button type="submit" class="btn btn-primary">저장</button>
-							</div>
-						</form>
-					</div>
-				</div>
-			</div>
-		</div>
+          <div class="mb-3">
+            <label class="form-label">설명</label>
+            <input type="text" id="editDescription" class="form-control" />
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">사용 여부</label>
+            <select id="editUseYn" class="form-select">
+              <option value="Y">Y</option>
+              <option value="N">N</option>
+            </select>
+          </div>
+
+          <!-- 자재 테이블 렌더링 영역 -->
+          <div id="bomEditTableArea"></div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+          <button type="submit" class="btn btn-primary">저장</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 		<!-- ✅ BOM 버전 선택 모달 -->
 <!-- BOM 버전 선택 모달 -->
 <div class="modal fade" id="bomVersionSelectModal" tabindex="-1" aria-hidden="true">
