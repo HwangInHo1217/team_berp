@@ -28,14 +28,8 @@ public class BomListViewResponse {
         private String  lossRate;       // 예: "5%"
         private String  unitPrice;      // 단위 포맷된 금액
         private String  remark;         // 비고
-
-        // ───────── NEW ─────────
-        private int    stockQty;        // 현재고
-        private int    shortageQty;     // 부족수량
-        private int    safetyStock;     // 안전재고
-        private int    purchaseQty;     // 발주필요수량
-        private int    purchaseLeadTime;// 구매 리드타임
-        private String expectedDate;    // 예상입고일
-        // ───────────────────────
+        
+        
+       
     }
 }
