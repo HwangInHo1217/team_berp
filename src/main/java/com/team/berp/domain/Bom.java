@@ -1,18 +1,15 @@
-// File: /Team_BERP/src/main/java/com/team/berp/domain/Bom.java
 package com.team.berp.domain;
 
 import java.math.BigDecimal;
-
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
 @Table(name = "bom")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class Bom {
 
     @Id
@@ -27,8 +24,14 @@ public class Bom {
     @JoinColumn(name = "child_item_id", nullable = false)
     private Item childItem;
 
+    /** 소요 수량 */
     @Column(nullable = false)
     private Integer qty;
+
+    /** BOM 버전 (연관관계 주인) */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "bom_version_id")
+    private BomVersion bomVersion;
 
     @Column(name = "seq_no")
     private Integer seqNo;
@@ -42,9 +45,13 @@ public class Bom {
     @Column(length = 100)
     private String remark;
 
+    /**
+     * 부모·자식 품목만 지정하고 qty 세팅 시 사용
+     */
     public Bom(Item parent, Item child, int qty) {
         this.parentItem = parent;
         this.childItem  = child;
         this.qty        = qty;
     }
+
 }
