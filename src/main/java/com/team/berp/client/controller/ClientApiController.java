@@ -107,4 +107,21 @@ public class ClientApiController {
         result.put("exists", exists);
         return result;
     }
+    
+    @GetMapping("/duplicate/biznum")
+    public Map<String, Boolean> checkBizNumDuplicate(
+        @RequestParam("companyNo") String companyNo,
+        @RequestParam(value="excludeId", required=false) Long excludeId
+    ) {
+        boolean exists = clientService.existsBizNumDuplicate(companyNo, excludeId);
+        return Map.of("exists", exists);
+    }
+    
+    @GetMapping("/duplicateName")
+    public Map<String, Boolean> checkNameDuplicate(@RequestParam String companyName,
+                                                   @RequestParam(required=false) Long excludeId) {
+        boolean exists = clientService.existsNameDuplicate(companyName, excludeId);
+        return Map.of("exists", exists);
+    }
+    
 }

@@ -33,4 +33,8 @@ public interface ClientService {
     boolean existsDuplicate(String companyName, String companyNo, Long excludeId);
  
     List<Company> getAllcompanies();
+    
+    public boolean existsBizNumDuplicate(String companyNo, Long excludeId);
+    
+    boolean existsNameDuplicate(String companyName, Long excludeId);
 }
