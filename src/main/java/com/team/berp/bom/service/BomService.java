@@ -85,41 +85,31 @@ public class BomService {
 	 */
 	// ✅ 2. Service 수정
 	public BomListViewResponse getBomByVersionId(Long versionId) {
-	    BomVersion version = bomVersionRepository.findById(versionId)
-	        .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 BOM 버전입니다."));
+		BomVersion version = bomVersionRepository.findById(versionId)
+				.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 BOM 버전입니다."));
 
-	    List<Bom> bomList = bomRepository.findByBomVersion(version);
+		List<Bom> bomList = bomRepository.findByBomVersion(version);
 
-	    List<BomListViewResponse.Component> components = new ArrayList<>();
-	    for (Bom bom : bomList) {
-	        components.add(new BomListViewResponse.Component(
-	            bom.getChildItem().getCode(),
-	            bom.getChildItem().getName(),
-	            bom.getQty(),
-	            bom.getChildItem().getSpec(),
-	            bom.getChildItem().getUnit(),
-	            bom.getSeqNo(),
-	            formatLossRate(bom.getLossRt()),
-	            bom.getItemPrice() != null ? String.valueOf(bom.getItemPrice()) : "-",
-	            bom.getRemark() != null ? bom.getRemark() : "-"
-	        ));
-	    }
+		List<BomListViewResponse.Component> components = new ArrayList<>();
+		for (Bom bom : bomList) {
+			components.add(new BomListViewResponse.Component(bom.getChildItem().getCode(), bom.getChildItem().getName(),
+					bom.getQty(), bom.getChildItem().getSpec(), bom.getChildItem().getUnit(), bom.getSeqNo(),
+					formatLossRate(bom.getLossRt()),
+					bom.getItemPrice() != null ? String.valueOf(bom.getItemPrice()) : "-",
+					bom.getRemark() != null ? bom.getRemark() : "-"));
+		}
 
-	    return new BomListViewResponse(
-	        version.getParentItem().getCode(),
-	        version.getParentItem().getName(),
-	        components
-	    );
+		return new BomListViewResponse(version.getParentItem().getCode(), version.getParentItem().getName(),
+				components);
 	}
 
 	public List<BomVersionResponseDTO> getVersionsByParentId(Long parentId) {
-	    Item parent = itemRepository.findById(parentId)
-	        .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 완제품입니다."));
-	    List<BomVersion> versions = bomVersionRepository.findByParentItem(parent);
+		Item parent = itemRepository.findById(parentId)
+				.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 완제품입니다."));
+		List<BomVersion> versions = bomVersionRepository.findByParentItem(parent);
 
-	    return versions.stream()
-	        .map(v -> new BomVersionResponseDTO(v.getId(), v.getVersionCode(), v.getUseYn()))
-	        .toList();
+		return versions.stream().map(v -> new BomVersionResponseDTO(v.getId(), v.getVersionCode(), v.getUseYn()))
+				.toList();
 	}
 
 	// ✅ 로스율을 "10%" 형태로 가공
@@ -156,9 +146,9 @@ public class BomService {
 				.useYn(dto.getUseYn()).parentItem(parentItem).build();
 
 		try {
-		    bomVersionRepository.save(bomVersion);
+			bomVersionRepository.save(bomVersion);
 		} catch (DataIntegrityViolationException e) {
-		    throw new IllegalArgumentException("중복된 BOM 버전 코드입니다.");
+			throw new IllegalArgumentException("중복된 BOM 버전 코드입니다.");
 		}
 
 		// 3. 자재 구성 저장
@@ -169,22 +159,14 @@ public class BomService {
 					.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 자재입니다."));
 
 			Bom bom = Bom.builder().parentItem(parentItem) // ✅ 이거 추가
-				    .bomVersion(bomVersion)
-				    .childItem(childItem)
-				    .qty(comp.getQty())
-				    .seqNo(comp.getSeqNo())
-				    .lossRt(comp.getLossRt())
-				    .itemPrice(comp.getItemPrice())
-				    .remark(comp.getRemark())
-				    .build();
+					.bomVersion(bomVersion).childItem(childItem).qty(comp.getQty()).seqNo(comp.getSeqNo())
+					.lossRt(comp.getLossRt()).itemPrice(comp.getItemPrice()).remark(comp.getRemark()).build();
 
 			bomList.add(bom);
 		}
 
 		bomRepository.saveAll(bomList);
 	}
-
-
 
 	// ✅ BOM 등록용 완제품/자재 선택 리스트
 	public ItemSelectionDTO getSelectableItems() {
@@ -242,10 +224,10 @@ public class BomService {
 
 	@Transactional
 	public void deleteBomVersion(Long versionId) {
-	    BomVersion version = bomVersionRepository.findById(versionId)
-	        .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 BOM 버전입니다."));
-	    
-	    bomVersionRepository.delete(version); // Cascade 옵션 설정 시 자동으로 BOM도 함께 삭제됨
+		BomVersion version = bomVersionRepository.findById(versionId)
+				.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 BOM 버전입니다."));
+
+		bomVersionRepository.delete(version); // Cascade 옵션 설정 시 자동으로 BOM도 함께 삭제됨
 	}
 
 }

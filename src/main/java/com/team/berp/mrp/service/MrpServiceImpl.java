@@ -113,22 +113,17 @@ public class MrpServiceImpl implements MrpService {
             String expectedDate  = today.plusDays(purchaseLeadTime).toString();
 
             return new BomListViewResponse.Component(
-                child.getCode(),             // childCode
-                child.getName(),             // childName
-                requiredQty,                 // qty
-                child.getSpec(),             // spec
-                child.getUnit(),             // unit
-                bom.getSeqNo(),              // seqNo
-                Optional.ofNullable(bom.getLossRt()).map(Object::toString).orElse("0%"), // lossRate
-                Optional.ofNullable(bom.getItemPrice()).map(String::valueOf).orElse("0"), // unitPrice
-                bom.getRemark(),             // remark
-                stockQty,                    // 현재고
-                shortageQty,                 // 부족수량
-                safetyStock,                 // 안전재고
-                purchaseQty,                 // 발주필요수량
-                purchaseLeadTime,            // 구매 리드타임
-                expectedDate                 // 예상입고일
-            );
+            	    child.getCode(),                                        // 자재 코드
+            	    child.getName(),                                        // 자재명
+            	    requiredQty,                                            // 소요량
+            	    child.getSpec(),                                        // 규격
+            	    child.getUnit(),                                        // 단위
+            	    bom.getSeqNo(),                                         // 순번
+            	    Optional.ofNullable(bom.getLossRt()).map(Object::toString).orElse("0%"), // 손실률
+            	    Optional.ofNullable(bom.getItemPrice()).map(String::valueOf).orElse("0"), // 단가
+            	    bom.getRemark()                                         // 비고
+            	);
+
         }).collect(Collectors.toList());
 
         return Collections.singletonList(
