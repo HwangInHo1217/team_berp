@@ -1,84 +1,74 @@
-<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<body>
 <div th:fragment="registerModal">
-    <div class="modal fade" id="registerModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">주문 등록</h5>
-                    <button type="button" class="close" data-dismiss="modal">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <form id="registerForm">
-                        <!-- 고객사 선택 -->
-                        <div class="form-group">
-                            <label>고객사</label>
-                            <select id="companySelect" name="companyId" class="form-control" required></select>
-                        </div>
-                        <!-- 담당자, 거래처담당자 자동 채움 -->
-                        <div class="form-row">
-                            <div class="form-group col-md-6">
-                                <label>담당자</label>
-                                <input type="text" id="empName" class="form-control" readonly />
-                            </div>
-                            <div class="form-group col-md-6">
-                                <label>거래처담당자</label>
-                                <input type="text" id="companyEmpName" class="form-control" readonly />
-                            </div>
-                        </div>
-                        <!-- 주문일자 -->
-                        <div class="form-group">
-                            <label>주문일자</label>
-                            <input type="date" name="orderDate" class="form-control" required />
-                        </div>
-                        <!-- 비고 -->
-                        <div class="form-group">
-                            <label>비고</label>
-                            <textarea name="remark" class="form-control"></textarea>
-                        </div>
-
-                        <!-- 품목 라인 아이템 테이블 -->
-                        <h5>품목 정보</h5>
-                        <table class="table" id="itemsTable">
-                            <thead>
-                            <tr>
-                                <th>품목</th>
-                                <th>단위</th>
-                                <th>단가</th>
-                                <th>수량</th>
-                                <th>합계</th>
-                                <th>액션</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            <!-- 첫 번째 행 초기화 -->
-                            <tr>
-                                <td>
-                                    <select class="form-control itemSelect" required></select>
-                                </td>
-                                <td><input type="text" class="form-control unit" readonly /></td>
-                                <td><input type="number" class="form-control unitPrice" min="0" required /></td>
-                                <td><input type="number" class="form-control unitQty" min="1" required /></td>
-                                <td><input type="number" class="form-control unitTotal" readonly /></td>
-                                <td><button type="button" class="btn btn-danger btn-sm removeItem">삭제</button></td>
-                            </tr>
-                            </tbody>
-                        </table>
-                        <button type="button" id="addItem" class="btn btn-link">+ 품목 추가</button>
-
-                        <!-- Hidden 필드: orderType, itemType -->
-                        <input type="hidden" name="orderType" value="CUSTOMER" />
-                        <input type="hidden" name="itemType" value="product" />
-                    </form>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" id="saveOrder" class="btn btn-primary">저장</button>
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">취소</button>
-                </div>
+  <div class="modal fade" id="registerModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <form id="registerForm">
+          <div class="modal-header">
+            <h5 class="modal-title">주문 등록</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+          </div>
+          <div class="modal-body">
+            <!-- 기본정보 -->
+            <div class="row g-3 mb-4">
+              <div class="col-md-6">
+                <label class="form-label">고객사</label>
+                <select id="companySelect" name="companyId" class="form-select" required>
+                  <option value="">-- 선택 --</option>
+                  <option th:each="c : ${companies}"
+                          th:value="${c.companyId}"
+                          th:text="${c.companyName}"></option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">주문일자</label>
+                <input type="date" name="orderDate" class="form-control" required />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">담당자</label>
+                <input type="text" id="empName" class="form-control" readonly />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">거래처담당자</label>
+                <input type="text" id="companyEmpName" class="form-control" readonly />
+              </div>
+              <div class="col-12">
+                <label class="form-label">비고</label>
+                <textarea name="note" class="form-control"></textarea>
+              </div>
             </div>
-        </div>
+
+            <!-- 품목 리스트 -->
+            <div class="mb-2 d-flex justify-content-between align-items-center">
+              <strong>품목 정보</strong>
+              <button type="button" id="addItem" class="btn btn-sm btn-outline-primary">+ 품목 추가</button>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-bordered text-center align-middle" id="itemsTable">
+                <thead class="table-light">
+                  <tr>
+                    <th>품목</th>
+                    <th>단위</th>
+                    <th>단가</th>
+                    <th>수량</th>
+                    <th>합계</th>
+                    <th>삭제</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+
+            <!-- Hidden -->
+            <input type="hidden" name="orderType" value="CUSTOMER" />
+            <input type="hidden" name="itemType" value="product" />
+          </div>
+          <div class="modal-footer">
+            <span class="me-auto fw-bold">총합계: <span id="totalAmount">0.00</span></span>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+            <button type="button" id="saveOrder" class="btn btn-primary">저장</button>
+          </div>
+        </form>
+      </div>
     </div>
+  </div>
 </div>
-</body>
-</html>

@@ -1,61 +1,69 @@
-// OrderController.java
 package com.team.berp.order.controller;
 
+import com.team.berp.domain.CompanyOrder;
+import com.team.berp.domain.Company;
+import com.team.berp.domain.Item;
 import com.team.berp.order.dto.OrderDto;
+import com.team.berp.order.dto.OrderSummaryDto;
+import com.team.berp.order.repository.Order_CompanyOrderRepository;
+import com.team.berp.order.repository.Order_CompanyRepository;
+import com.team.berp.order.repository.Order_ItemRepository;
 import com.team.berp.order.service.OrderService;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
-import java.util.List;
 
-/**
- * 주문 페이지를 렌더링하고 조회 필터를 처리하는 컨트롤러
- */
 @Controller
+@RequestMapping("/order")
 public class OrderController {
-    private final OrderService orderService;
+	private final OrderService                 orderService;  // 추가
+    private final Order_CompanyOrderRepository orderRepo;
+    private final Order_CompanyRepository     companyRepo;
+    private final Order_ItemRepository        itemRepo;
 
-    public OrderController(OrderService orderService) {
-        this.orderService = orderService;
-    }
-
-    /**
-     * 주문 리스트 페이지 조회
-     */
-    @GetMapping("/orders")
-    public String listOrders(
-            @RequestParam(required = false) Long companyId,
-            @RequestParam(required = false) Long itemId,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate,
-            Model model
+    public OrderController(
+    	OrderService orderService,                 // 생성자 인자에 추가
+        Order_CompanyOrderRepository orderRepo,
+        Order_CompanyRepository companyRepo,
+        Order_ItemRepository itemRepo
     ) {
-        List<OrderDto> orders = orderService.findByFilters(companyId, itemId, fromDate, toDate);
-        model.addAttribute("orders", orders);
-        return "order"; // Thymeleaf 템플릿 order.html
+    	this.orderService = orderService;          // 필드에 할당
+        this.orderRepo   = orderRepo;
+        this.companyRepo = companyRepo;
+        this.itemRepo    = itemRepo;
     }
 
     /**
-     * 주문 등록 폼에서 입력된 데이터를 처리
+     * 주문 목록 페이지
+     * - 페이징: 10개씩
+     * - 필터: 고객사(companyId), 품목(itemId), 날짜(fromDate/toDate)
+     * - 검색용 select 채우기
      */
-    @PostMapping("/orders/register")
-    public String registerOrder(@ModelAttribute OrderDto dto) {
-        orderService.createOrder(dto);
-        return "redirect:/orders";
-    }
+    @GetMapping
+    public String listOrders(
+        @RequestParam(name = "companyId", required = false) Long companyId,
+        @RequestParam(name = "itemId", required = false) Long itemId,
+        @RequestParam(name = "fromDate", required = false)
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+        LocalDate fromDate,
+        @RequestParam(name = "toDate", required = false)
+        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+        LocalDate toDate,
+        @PageableDefault(size = 10) Pageable pageable,
+        Model model
+    ) {
+    	Page<OrderSummaryDto> page = orderService.findOrderSummaries(companyId, itemId, fromDate, toDate, pageable);
 
-    /**
-     * 주문 개별 삭제 (체크박스로 여러 건 삭제 가능)
-     */
-    @PostMapping("/orders/delete")
-    public String deleteOrders(@RequestParam List<Long> orderIds) {
-        orderService.deleteOrders(orderIds);
-        return "redirect:/orders";
+        model.addAttribute("page",      page);
+        model.addAttribute("companies", companyRepo.findAll());
+        model.addAttribute("items",     itemRepo.findAll());
+        return "order/order";
     }
 }

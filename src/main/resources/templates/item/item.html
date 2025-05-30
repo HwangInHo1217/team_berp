@@ -1,131 +1,145 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>품목 관리</title>
-
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>주문 관리</title>
   <!-- Bootstrap -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </head>
 <body class="d-flex flex-column" style="min-height: 100vh;">
   <!-- 공통 헤더/사이드바 -->
   <div th:replace="~{/layouts/header :: header}"></div>
+
   <div class="d-flex flex-grow-1">
     <div th:replace="~{/layouts/sidebar :: sidebar}"></div>
 
     <!-- 메인 -->
     <main class="p-4 flex-fill">
       <div class="container">
-        <h2 class="mb-4">품목 관리</h2>
+        <h2 class="mb-4">주문 관리</h2>
 
         <!-- ✅ 검색 & 버튼 영역 -->
-        <form id="searchForm" class="row mb-3">
-          <div class="col-md-6 d-flex">
-            <select class="form-select me-2" id="type">
-              <option value="name">품목명</option>
-              <option value="code">품목코드</option>
-            </select>
-            <input type="text" class="form-control me-2" id="keyword" placeholder="검색어 입력" />
-            <button type="submit" class="btn btn-outline-secondary">검색</button>
+        <form id="filterForm" class="row mb-3">
+          <!-- 좌측: 고객사, 품목, 기간, 조회 -->
+          <div class="col-md-6 d-flex align-items-center">
+            <label for="companyFilter" class="me-2 mb-0">고객사:</label>
+            <select id="companyFilter" name="companyId" class="form-select me-4" style="width: 180px;"></select>
+
+            <label for="itemFilter" class="me-2 mb-0">품목:</label>
+            <select id="itemFilter" name="itemId" class="form-select me-4" style="width: 180px;"></select>
+
+            <label class="me-2 mb-0">기간:</label>
+            <input type="date" id="fromDate" name="fromDate" class="form-control me-2" style="width: 150px;"/>
+            <input type="date" id="toDate"   name="toDate"   class="form-control me-3" style="width: 150px;"/>
+
+            <button type="button" id="searchBtn" class="btn btn-primary">조회</button>
           </div>
-          <div class="col-md-6 text-end">
-            <select id="searchUseYn" class="form-select w-auto d-inline me-2">
-              <option value="">전체</option>
-              <option value="Y">Y (사용중)</option>
-              <option value="N">N (미사용)</option>
-            </select>
-            <button type="button" class="btn btn-danger me-2" onclick="submitDelete()">삭제</button>
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#itemRegisterModal">+ 품목 등록</button>
+
+          <!-- 우측: 등록 & 삭제 -->
+          <div class="col-md-6 d-flex justify-content-end">
+            <button
+              id="openRegisterModal"
+              type="button"
+              class="btn btn-success me-2"
+              data-bs-toggle="modal"
+              data-bs-target="#registerModal"
+            >
+              + 주문등록
+            </button>
+            <button id="deleteSelected" type="button" class="btn btn-danger">
+              선택 삭제
+            </button>
           </div>
         </form>
 
-        <!-- ✅ 탭 메뉴 -->
-        <ul class="nav nav-tabs mb-3" id="itemTypeTabs" role="tablist">
-          <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab">전체</button>
-          </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" id="raw-tab" data-bs-toggle="tab" data-bs-target="#raw" type="button" role="tab">자재 (raw)</button>
-          </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" id="product-tab" data-bs-toggle="tab" data-bs-target="#product" type="button" role="tab">완제품 (product)</button>
-          </li>
-        </ul>
-
-        <!-- ✅ 테이블 (탭별) -->
-        <div class="tab-content" id="itemTabContent">
-          <div class="tab-pane fade show active" id="all" role="tabpanel">
-            <div class="table-responsive">
-              <table class="table table-bordered text-center align-middle">
-                <thead class="table-light">
-                  <tr>
-                    <th><input type="checkbox" /></th>
-                    <th>품목 코드</th>
-                    <th>품목명</th>
-                    <th>품목유형</th>
-                    <th>규격</th>
-                    <th>단위</th>
-                    <th>사용 여부</th>
-                    <th>관리</th>
-                  </tr>
-                </thead>
-                <tbody></tbody> <!-- JS가 채움 -->
-              </table>
-            </div>
-          </div>
-          <div class="tab-pane fade" id="raw" role="tabpanel">
-            <div class="table-responsive">
-              <table class="table table-bordered text-center align-middle">
-                <thead class="table-light">
-                  <tr>
-                    <th><input type="checkbox" /></th>
-                    <th>품목 코드</th>
-                    <th>품목명</th>
-                    <th>규격</th>
-                    <th>단위</th>
-                    <th>사용 여부</th>
-                    <th>관리</th>
-                  </tr>
-                </thead>
-                <tbody></tbody> <!-- JS가 채움 -->
-              </table>
-            </div>
-          </div>
-          <div class="tab-pane fade" id="product" role="tabpanel">
-            <div class="table-responsive">
-              <table class="table table-bordered text-center align-middle">
-                <thead class="table-light">
-                  <tr>
-                    <th><input type="checkbox" /></th>
-                    <th>품목 코드</th>
-                    <th>품목명</th>
-                    <th>규격</th>
-                    <th>단위</th>
-                    <th>사용 여부</th>
-                    <th>관리</th>
-                  </tr>
-                </thead>
-                <tbody></tbody> <!-- JS가 채움 -->
-              </table>
-            </div>
-          </div>
+        <!-- 주문 테이블 -->
+        <div class="table-responsive">
+          <table class="table table-striped align-middle text-center">
+            <thead>
+              <tr>
+                <th><input type="checkbox" id="selectAll"/></th>
+                <th>순번</th>
+                <th>주문일자</th>
+                <th>주문번호</th>
+                <th>고객사</th>
+                <th>품목수</th>
+                <th>총합계</th>
+                <th>거래처담당자</th>
+                <th>담당자</th>
+                <th>상세</th>
+                <th>수정</th>
+              </tr>
+            </thead>
+            <tbody id="orderTableBody">
+              <tr th:each="order, stat : ${page.content}">
+                <td>
+                  <input type="checkbox" class="selectBox" th:value="${order.orderId}"/>
+                </td>
+                <td th:text="${stat.index + 1 + page.number * page.size}"></td>
+                <td th:text="${order.orderDate}"></td>
+                <td th:text="${order.orderNum}"></td>
+                <td th:text="${order.companyName}"></td>
+                <td th:text="${order.orderQty}"></td>
+                <td th:text="${order.amount}"></td>
+                <td th:text="${order.companyEmpName}"></td>
+                <td th:text="${order.empName}"></td>
+                <td>
+                  <button
+                    type="button"
+                    class="btn btn-info btn-sm detailBtn"
+                    th:data-id="${order.orderId}"
+                    data-bs-toggle="modal"
+                    data-bs-target="#detailModal"
+                  >
+                    상세
+                  </button>
+                </td>
+                <td>
+                  <button
+                    type="button"
+                    class="btn btn-warning btn-sm editBtn"
+                    th:data-id="${order.orderId}"
+                    data-bs-toggle="modal"
+                    data-bs-target="#fixedModal"
+                  >
+                    수정
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
 
-        <!-- ✅ 페이징 -->
+        <!-- 페이징 -->
         <nav class="mt-4">
-          <ul class="pagination justify-content-center"></ul>
+          <ul class="pagination justify-content-center">
+            <li class="page-item" th:classappend="${page.hasPrevious()} ? '' : 'disabled'">
+              <a class="page-link" th:href="@{/orders(page=${page.number-1})}">이전</a>
+            </li>
+            <li
+              class="page-item"
+              th:each="i : ${#numbers.sequence(0, page.totalPages-1)}"
+              th:classappend="${i == page.number} ? 'active'"
+            >
+              <a class="page-link" th:href="@{/orders(page=${i})}" th:text="${i+1}"></a>
+            </li>
+            <li class="page-item" th:classappend="${page.hasNext()} ? '' : 'disabled'">
+              <a class="page-link" th:href="@{/orders(page=${page.number+1})}">다음</a>
+            </li>
+          </ul>
         </nav>
       </div>
     </main>
   </div>
 
-  <!-- ✅ 모달 영역 -->
-  <div th:replace="~{/item/item-add-modal :: itemRegisterModal}"></div>
-  <div th:replace="~{/item/item-edit-modal :: itemEditModal}"></div>
-  <div th:replace="~{/layouts/footer :: footer}"></div>
+  <!-- 모달 포함 (별도 html include) -->
+  <div th:replace="~{order/order-register-modal :: registerModal}"></div>
+  <div th:replace="~{order/order-detail-modal   :: detailModal}"></div>
+  <div th:replace="~{order/order-fixed-modal    :: fixedModal}"></div>
 
-  <script src="/js/item/item.js"></script>
+  <div th:replace="~{/layouts/footer :: footer}"></div>
+  <script src="/js/order.js"></script>
 </body>
 </html>
