@@ -1,4 +1,4 @@
-// ===== 통합 stock.js (모든 기능 포함) =====
+// ===== 통합 stock.js (완전한 버전) =====
 
 // 전역 변수 및 상태
 const globalPageSize = 10;
@@ -144,6 +144,7 @@ const StockList = {
             th.style.cursor = 'pointer';
             th.addEventListener('click', (e) => {
                 const sortField = th.dataset.sort;
+				console.log('🖱️ 클릭된 정렬 필드:', sortField); // ✅ 추가
                 this.toggleSort(sortField);
             });
         });
@@ -177,12 +178,15 @@ const StockList = {
     },
 
     toggleSort(field) {
+		console.log('🔄 toggleSort 호출 - 원본 필드:', field); // ✅ 추가
         const currentSort = StockState.sortBy.split(',');
+		console.log('🔍 현재 정렬 상태:', currentSort); // ✅ 추가
         if (currentSort[0] === field) {
             StockState.sortBy = field + ',' + (currentSort[1] === 'ASC' ? 'DESC' : 'ASC');
         } else {
             StockState.sortBy = field + ',ASC';
         }
+		console.log('🆕 변경된 정렬:', StockState.sortBy); // ✅ 추가
         this.loadStockData();
     },
 
@@ -212,6 +216,14 @@ const StockList = {
             })
             .then(pageData => {
                 console.log("✅ 받은 데이터:", pageData);
+				
+				// 🔍 창고명 순서 확인 추가
+				if (pageData.content && pageData.content.length > 0) {
+				     console.log('📦 창고명 순서:', pageData.content.map(s => s.warehouseName));
+				     console.log('🏷️ 품목코드 순서:', pageData.content.map(s => s.itemCode));
+				     console.log('📊 수량 순서:', pageData.content.map(s => s.quantity));
+				}				
+				
                 this.updateTable(pageData.content);
                 this.updatePaginationControls(pageData);
                 StockState.currentPage = pageData.number;
@@ -491,9 +503,19 @@ const StockActions = {
             stockInBtn.addEventListener('click', () => this.openStockInModal());
         }
         
+        const stockOutBtn = document.getElementById('stockOutBtn');
+        if (stockOutBtn) {
+            stockOutBtn.addEventListener('click', () => this.openBulkOutModal());
+        }
+        
         const confirmStockIn = document.getElementById('confirmStockIn');
         if (confirmStockIn) {
             confirmStockIn.addEventListener('click', () => this.processStockIn());
+        }
+        
+        const excelDownloadBtn = document.getElementById('excelDownloadBtn');
+        if (excelDownloadBtn) {
+            excelDownloadBtn.addEventListener('click', () => this.downloadExcel());
         }
     },
     
@@ -589,6 +611,144 @@ const StockActions = {
             console.error('입고 처리 오류:', error);
             StockUtils.showError('입고 처리 중 오류가 발생했습니다.');
         });
+    },
+    
+    quickOut(stockId, currentQty) {
+        if (currentQty === 0) {
+            StockUtils.showError('재고가 없어 출고할 수 없습니다.');
+            return;
+        }
+        
+        const qty = prompt(`출고 수량을 입력하세요 (현재고: ${StockUtils.formatNumber(currentQty)}개)`);
+        
+        if (qty && parseInt(qty) > 0) {
+            if (parseInt(qty) > currentQty) {
+                StockUtils.showError('출고 수량이 현재고보다 많습니다.');
+                return;
+            }
+            
+            fetch(`/api/stocks/${stockId}/out`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ quantity: parseInt(qty) })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.status === 'success') {
+                    StockUtils.showSuccess(result.message);
+                    StockList.refresh();
+                    // 모달이 열려있다면 닫기
+                    const modalElement = document.getElementById('stockDetailModal');
+                    if (modalElement) {
+                        const modalInstance = bootstrap.Modal.getInstance(modalElement);
+                        if (modalInstance) {
+                            modalInstance.hide();
+                        }
+                    }
+                } else {
+                    StockUtils.showError(result.message || '출고 처리 실패');
+                }
+            })
+            .catch(error => {
+                console.error('출고 처리 오류:', error);
+                StockUtils.showError('출고 처리 중 오류가 발생했습니다.');
+            });
+        }
+    },
+    
+    showHistory(stockId) {
+        fetch(`/api/stocks/${stockId}`)
+            .then(response => response.json())
+            .then(stock => {
+                const historyInfo = document.getElementById('historyInfo');
+                if (historyInfo) {
+                    historyInfo.innerHTML = `
+                        <div class="alert alert-info mb-0">
+                            <strong>[${stock.itemCode}] ${stock.itemName}</strong> - 
+                            ${stock.warehouseName} 창고
+                        </div>
+                    `;
+                }
+                
+                return fetch(`/api/stocks/${stockId}/history`);
+            })
+            .then(response => response.json())
+            .then(history => {
+                this.renderHistory(history.content || []);
+                
+                const modal = new bootstrap.Modal(document.getElementById('stockHistoryModal'));
+                modal.show();
+            })
+            .catch(error => {
+                console.error('재고 이력 조회 실패:', error);
+                StockUtils.showError('재고 이력을 불러올 수 없습니다.');
+            });
+    },
+    
+    renderHistory(logs) {
+        const tbody = document.getElementById('historyTableBody');
+        if (!tbody) return;
+        
+        tbody.innerHTML = '';
+        
+        if (logs.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="4" class="text-center text-muted py-3">
+                        재고 변동 이력이 없습니다.
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        logs.forEach(log => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${StockUtils.formatDateTime(log.logDatetime)}</td>
+                <td>
+                    <span class="badge bg-${this.getLogTypeBadgeColor(log.logType)}">
+                        ${log.logTypeLabel || log.logType}
+                    </span>
+                </td>
+                <td class="text-end">
+                    ${log.logType === 'OUT' || log.logType === 'DISPOSE' ? '-' : '+'}
+                    ${StockUtils.formatNumber(log.quantity)}
+                </td>
+                <td>${log.comment || '-'}</td>
+            `;
+            tbody.appendChild(row);
+        });
+    },
+    
+    getLogTypeBadgeColor(logType) {
+        return {
+            'IN': 'success',
+            'OUT': 'danger',
+            'DISPOSE': 'warning',
+            'RETURN_IN': 'info'
+        }[logType] || 'secondary';
+    },
+    
+    openBulkOutModal() {
+        const selectedItems = document.querySelectorAll('.stock-checkbox:checked');
+        if (selectedItems.length === 0) {
+            StockUtils.showError('출고할 재고를 선택해주세요.');
+            return;
+        }
+        
+        StockUtils.showInfo('일괄 출고 기능은 준비 중입니다.');
+    },
+    
+    downloadExcel() {
+        const params = new URLSearchParams({
+            keyword: StockState.filters.keyword,
+            whs: StockState.filters.warehouse,
+            itemType: StockState.filters.itemType,
+            stockStatus: StockState.filters.stockStatus
+        });
+        
+        window.location.href = `/api/stocks/excel?${params}`;
     }
 };
 

@@ -13,66 +13,87 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
+//=============================================================================
+//🗄️ StockRepository.java - 데이터 접근 계층
+//=============================================================================
+
 @Repository
 public interface StockRepository extends JpaRepository<Stock, Long> {
-    
-    // 🔍 품목명 or 품목코드로 검색
-    @Query("SELECT s FROM Stock s " +
-           "JOIN s.item i " +
-           "JOIN s.warehouse w " +
-           "WHERE LOWER(i.name) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-           "   OR LOWER(i.code) LIKE LOWER(CONCAT('%', :keyword, '%'))")
-    Page<Stock> searchByItem(@Param("keyword") String keyword, Pageable pageable);
-    
-    // 🔍 창고명 or 창고코드로 검색
-    @Query("SELECT s FROM Stock s " +
-           "JOIN s.item i " +
-           "JOIN s.warehouse w " +
-           "WHERE LOWER(w.warehouseName) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-           "   OR LOWER(w.warehouseCode) LIKE LOWER(CONCAT('%', :keyword, '%'))")
-    Page<Stock> searchByWarehouse(@Param("keyword") String keyword, Pageable pageable);
-    
-    // 🔍 통합 검색 (품목명, 코드 + 창고명, 코드)
-    @Query("SELECT s FROM Stock s " +
-           "JOIN s.item i " +
-           "JOIN s.warehouse w " +
-           "WHERE LOWER(i.name) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-           "   OR LOWER(i.code) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-           "   OR LOWER(w.warehouseName) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
-           "   OR LOWER(w.warehouseCode) LIKE LOWER(CONCAT('%', :keyword, '%'))")
-    Page<Stock> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
-    
-    // 🔧 품목+창고 엔티티로 재고 조회
-    Optional<Stock> findByItemAndWarehouse(Item item, Warehouse warehouse);
-    
-    // 🔧 창고 코드로 검색 (효율적)
-    @Query("SELECT s FROM Stock s WHERE s.warehouse.warehouseCode = :whsCode")
-    Page<Stock> findByWarehouseCode(@Param("whsCode") String whsCode, Pageable pageable);
-    
-    // 🔧 창고 ID로 검색 - Long으로 수정
-    Page<Stock> findByWarehouse_Id(Long warehouseId, Pageable pageable);
-    
-    // 🔧 품목 유형별 조회 - ItemType enum 사용
-    @Query("SELECT s FROM Stock s WHERE s.item.type = :itemType")
-    Page<Stock> findByItemType(@Param("itemType") com.team.berp.domain.ItemType itemType, Pageable pageable);
-    
-    // 🔧 품목 유형 + 창고별 조회 - ItemType enum 사용  
-    @Query("SELECT s FROM Stock s WHERE s.item.type = :itemType AND s.warehouse.warehouseCode = :whsCode")
-    Page<Stock> findByItemTypeAndWarehouseCode(@Param("itemType") com.team.berp.domain.ItemType itemType, @Param("whsCode") String whsCode, Pageable pageable);
-    
-    // 🔧 재고 상태별 조회
-    @Query("SELECT s FROM Stock s WHERE s.quantity = 0")
-    Page<Stock> findOutOfStock(Pageable pageable);
-    
-    @Query("SELECT s FROM Stock s WHERE s.quantity > 0")
-    Page<Stock> findInStock(Pageable pageable);
-    
-    // 🔧 특정 품목에 대한 모든 재고
-    List<Stock> findByItem(Item item);
-    
-    // 🔧 특정 창고의 모든 재고
-    List<Stock> findByWarehouse(Warehouse warehouse);
-    
-    // 🔧 로트번호로 검색
-    List<Stock> findByLotNumber(String lotNumber);
+ 
+ /**
+  * 🔍 품목명/코드 검색
+  */
+ @Query("SELECT s FROM Stock s " +
+        "JOIN s.item i " +
+        "JOIN s.warehouse w " +
+        "WHERE LOWER(i.name) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+        "   OR LOWER(i.code) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+ Page<Stock> searchByItem(@Param("keyword") String keyword, Pageable pageable);
+ 
+ /**
+  * 🔍 창고명/코드 검색
+  */
+ @Query("SELECT s FROM Stock s " +
+        "JOIN s.item i " +
+        "JOIN s.warehouse w " +
+        "WHERE LOWER(w.warehouseName) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+        "   OR LOWER(w.warehouseCode) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+ Page<Stock> searchByWarehouse(@Param("keyword") String keyword, Pageable pageable);
+ 
+ /**
+  * 🔍 통합 키워드 검색 (가장 많이 사용)
+  */
+ @Query("SELECT s FROM Stock s " +
+        "JOIN s.item i " +
+        "JOIN s.warehouse w " +
+        "WHERE LOWER(i.name) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+        "   OR LOWER(i.code) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+        "   OR LOWER(w.warehouseName) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+        "   OR LOWER(w.warehouseCode) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+ Page<Stock> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
+ 
+ /**
+  * 🔧 품목+창고로 재고 조회 (입출고시 사용)
+  */
+ Optional<Stock> findByItemAndWarehouse(Item item, Warehouse warehouse);
+ 
+ /**
+  * 🔧 창고코드로 검색
+  */
+ @Query("SELECT s FROM Stock s WHERE s.warehouse.warehouseCode = :whsCode")
+ Page<Stock> findByWarehouseCode(@Param("whsCode") String whsCode, Pageable pageable);
+ 
+ /**
+  * 🔧 창고ID로 검색
+  */
+ Page<Stock> findByWarehouse_Id(Long warehouseId, Pageable pageable);
+ 
+ /**
+  * 🔧 품목유형별 검색
+  */
+ @Query("SELECT s FROM Stock s WHERE s.item.type = :itemType")
+ Page<Stock> findByItemType(@Param("itemType") com.team.berp.domain.ItemType itemType, Pageable pageable);
+ 
+ /**
+  * 🔧 품목유형+창고 조합
+  */
+ @Query("SELECT s FROM Stock s WHERE s.item.type = :itemType AND s.warehouse.warehouseCode = :whsCode")
+ Page<Stock> findByItemTypeAndWarehouseCode(@Param("itemType") com.team.berp.domain.ItemType itemType, 
+                                           @Param("whsCode") String whsCode, Pageable pageable);
+ 
+ /**
+  * 📊 재고 상태별 검색
+  */
+ @Query("SELECT s FROM Stock s WHERE s.quantity = 0")
+ Page<Stock> findOutOfStock(Pageable pageable);
+ 
+ @Query("SELECT s FROM Stock s WHERE s.quantity > 0")
+ Page<Stock> findInStock(Pageable pageable);
+ 
+ /**
+  * 🔍 기타 검색
+  */
+ List<Stock> findByItem(Item item);
+ List<Stock> findByWarehouse(Warehouse warehouse);
+ List<Stock> findByLotNumber(String lotNumber);
 }

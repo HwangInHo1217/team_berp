@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -12,202 +13,221 @@ import org.springframework.transaction.annotation.Transactional;
 import com.team.berp.bom.dto.AddBomRequestDTO;
 import com.team.berp.bom.dto.BomListViewResponse;
 import com.team.berp.bom.dto.BomProductItemDTO;
+import com.team.berp.bom.dto.BomVersionResponseDTO;
 import com.team.berp.bom.dto.ItemSelectionDTO;
 import com.team.berp.bom.dto.UpdateBomRequestDTO;
 import com.team.berp.bom.repository.BomRepository;
+import com.team.berp.bom.repository.BomVersionRepository;
 import com.team.berp.domain.Bom;
+import com.team.berp.domain.BomVersion;
 import com.team.berp.domain.Item;
 import com.team.berp.domain.ItemType;
 import com.team.berp.item.repository.ItemRepository;
 
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
+
 @Service // 스프링 서비스 컴포넌트로 등록
 @RequiredArgsConstructor // final 필드를 가진 생성자를 자동 생성
 public class BomService {
 
-    private final ItemRepository itemRepository; // 품목(완제품/자재) 관련 JPA Repository
-    private final BomRepository bomRepository;   // BOM(구성) 관련 Repository
-    //bom 사용 여부로 구분하여 조회
-    public Page<BomProductItemDTO> getPagedParentProductList(String field, String keyword, String useYn, Pageable pageable) {
-        String searchValue = (keyword != null) ? keyword : "";
-        String useValue = (useYn != null && !useYn.isEmpty()) ? useYn : null;
+	private final ItemRepository itemRepository; // 품목(완제품/자재) 관련 JPA Repository
+	private final BomRepository bomRepository; // BOM(구성) 관련 Repository
+	private final BomVersionRepository bomVersionRepository;
 
-        ItemType type = ItemType.product; // 무조건 제품만 검색 대상
+	// bom 사용 여부로 구분하여 조회
+	public Page<BomProductItemDTO> getPagedParentProductList(String field, String keyword, String useYn,
+			Pageable pageable) {
+		String searchValue = (keyword != null) ? keyword : "";
+		ItemType type = ItemType.product;
 
-        Page<Item> items;
+		Page<Item> items;
 
-        if (field == null || field.equals("name")) {
-            items = (useValue == null) ?
-                itemRepository.findByNameContainingAndType(searchValue, type, pageable) :
-                itemRepository.findByNameContainingAndTypeAndUse(searchValue, type, useValue, pageable);
-        } else if (field.equals("code")) {
-            items = (useValue == null) ?
-                itemRepository.findByCodeContainingAndType(searchValue, type, pageable) :
-                itemRepository.findByCodeContainingAndTypeAndUse(searchValue, type, useValue, pageable);
-        } else {
-            items = itemRepository.findByType(type, pageable); // fallback
-        }
+		// 사용여부는 BOM 테이블에는 없으므로 item의 필드로 따로 필터링하거나 제외해야 함
+		if ("name".equals(field)) {
+			items = itemRepository.findRegisteredParentItemsByNameContaining(searchValue, type, pageable);
+		} else if ("code".equals(field)) {
+			items = itemRepository.findRegisteredParentItemsByCodeContaining(searchValue, type, pageable);
+		} else {
+			items = itemRepository.findRegisteredParentItems(type, pageable);
+		}
 
-        return items.map(item -> new BomProductItemDTO(
-            item.getId(), item.getCode(), item.getName(),
-            item.getSpec(), item.getUnit(), item.getUse(), item.getType()
-        ));
-    }
+		// ✅ item → DTO 매핑
+		return items.map(item -> new BomProductItemDTO(item.getId(), item.getCode(), item.getName(), item.getSpec(),
+				item.getUnit(), item.getUse(), item.getType()));
+	}
 
+	/*
+	 * // ✅ BOM 등록된 완제품 페이징 + 검색 public Page<BomProductItemDTO>
+	 * getPagedParentProductList(String keyword, Pageable pageable) { return
+	 * bomRepository.findPagedParentItemsByKeyword(keyword, pageable); }
+	 */
+	/*
+	 * // ✅ 특정 완제품의 BOM 구성 목록 조회 public BomListViewResponse
+	 * getBomByParentItemId(Long parentId) { Item parent =
+	 * itemRepository.findById(parentId) // parent item 조회 .orElseThrow(() -> new
+	 * IllegalArgumentException("존재하지 않는 품목입니다."));
+	 * 
+	 * List<Bom> bomList = bomRepository.findByParentItemId(parentId); // 해당 품목의 BOM
+	 * 구성 조회
+	 * 
+	 * List<BomListViewResponse.Component> components = new ArrayList<>(); for (Bom
+	 * bom : bomList) { // BOM 엔티티 → DTO로 변환 components.add(new
+	 * BomListViewResponse.Component( bom.getChildItem().getCode(),
+	 * bom.getChildItem().getName(), bom.getQty(), bom.getChildItem().getSpec(), //
+	 * 규격 bom.getChildItem().getUnit(), // 단위 bom.getSeqNo(),
+	 * formatLossRate(bom.getLossRt()), // "5%" 포맷 bom.getItemPrice() != null ?
+	 * String.valueOf(bom.getItemPrice()) : "-", bom.getRemark() != null ?
+	 * bom.getRemark() : "-" )); }
+	 * 
+	 * return new BomListViewResponse( // 최종 응답 DTO 생성 parent.getCode(),
+	 * parent.getName(), components ); }
+	 */
+	// ✅ 2. Service 수정
+	public BomListViewResponse getBomByVersionId(Long versionId) {
+		BomVersion version = bomVersionRepository.findById(versionId)
+				.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 BOM 버전입니다."));
 
+		List<Bom> bomList = bomRepository.findByBomVersion(version);
 
+		List<BomListViewResponse.Component> components = new ArrayList<>();
+		for (Bom bom : bomList) {
+			components.add(new BomListViewResponse.Component(bom.getChildItem().getCode(), bom.getChildItem().getName(),
+					bom.getQty(), bom.getChildItem().getSpec(), bom.getChildItem().getUnit(), bom.getSeqNo(),
+					formatLossRate(bom.getLossRt()),
+					bom.getItemPrice() != null ? String.valueOf(bom.getItemPrice()) : "-",
+					bom.getRemark() != null ? bom.getRemark() : "-"));
+		}
 
+		return new BomListViewResponse(version.getParentItem().getCode(), version.getParentItem().getName(),
+				components);
+	}
 
-    /*
- // ✅ BOM 등록된 완제품 페이징 + 검색
-    public Page<BomProductItemDTO> getPagedParentProductList(String keyword, Pageable pageable) {
-        return bomRepository.findPagedParentItemsByKeyword(keyword, pageable);
-    }*/
+	public List<BomVersionResponseDTO> getVersionsByParentId(Long parentId) {
+		Item parent = itemRepository.findById(parentId)
+				.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 완제품입니다."));
+		List<BomVersion> versions = bomVersionRepository.findByParentItem(parent);
 
-    // ✅ 특정 완제품의 BOM 구성 목록 조회
-    public BomListViewResponse getBomByParentItemId(Long parentId) {
-        Item parent = itemRepository.findById(parentId) // parent item 조회
-            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 품목입니다."));
+		return versions.stream().map(v -> new BomVersionResponseDTO(v.getId(), v.getVersionCode(), v.getUseYn()))
+				.toList();
+	}
 
-        List<Bom> bomList = bomRepository.findByParentItemId(parentId); // 해당 품목의 BOM 구성 조회
+	// ✅ 로스율을 "10%" 형태로 가공
+	private String formatLossRate(BigDecimal lossRt) {
+		if (lossRt == null)
+			return "-";
+		return lossRt.stripTrailingZeros().toPlainString() + "%";
+	}
 
-        List<BomListViewResponse.Component> components = new ArrayList<>();
-        for (Bom bom : bomList) { // BOM 엔티티 → DTO로 변환
-            components.add(new BomListViewResponse.Component(
-                bom.getChildItem().getCode(),
-                bom.getChildItem().getName(),
-                bom.getQty(),
-                bom.getChildItem().getSpec(), // 규격
-                bom.getChildItem().getUnit(), // 단위
-                bom.getSeqNo(),
-                formatLossRate(bom.getLossRt()), // "5%" 포맷
-                bom.getItemPrice() != null ? String.valueOf(bom.getItemPrice()) : "-",
-                bom.getRemark() != null ? bom.getRemark() : "-"
-            ));
-        }
+	// ✅ BOM 등록된 완제품 목록 조회
+	public List<BomProductItemDTO> getParentProductDTOList() {
+		List<Item> items = bomRepository.findDistinctParentItems(); // 중복 없이 parent item 조회
+		List<BomProductItemDTO> dtoList = new ArrayList<>();
 
-        return new BomListViewResponse( // 최종 응답 DTO 생성
-            parent.getCode(),
-            parent.getName(),
-            components
-        );
-    }
+		for (Item item : items) {
+			BomProductItemDTO dto = new BomProductItemDTO(item.getId(), item.getCode(), item.getName(), item.getSpec(),
+					item.getUnit(), item.getUse(), item.getType());
+			dtoList.add(dto);
+		}
 
-    // ✅ 로스율을 "10%" 형태로 가공
-    private String formatLossRate(BigDecimal lossRt) {
-        if (lossRt == null) return "-";
-        return lossRt.stripTrailingZeros().toPlainString() + "%";
-    }
+		return dtoList;
+	}
 
-    // ✅ BOM 등록된 완제품 목록 조회
-    public List<BomProductItemDTO> getParentProductDTOList() {
-        List<Item> items = bomRepository.findDistinctParentItems(); // 중복 없이 parent item 조회
-        List<BomProductItemDTO> dtoList = new ArrayList<>();
+	// ✅ BOM 등록 기능 (완제품 + 구성 자재들 저장)
+	@Transactional
+	public void registerBomWithVersion(AddBomRequestDTO dto) {
 
-        for (Item item : items) {
-            BomProductItemDTO dto = new BomProductItemDTO(
-                item.getId(),
-                item.getCode(),
-                item.getName(),
-                item.getSpec(),
-                item.getUnit(),
-                item.getUse(),
-                item.getType()
-            );
-            dtoList.add(dto);
-        }
+		// 1. 부모 품목 조회
+		Item parentItem = itemRepository.findById(dto.getParentItemId())
+				.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 완제품입니다."));
 
-        return dtoList;
-    }
+		// 2. BOM 버전 저장
+		BomVersion bomVersion = BomVersion.builder().versionCode(dto.getVersionCode()).description(dto.getDescription())
+				.useYn(dto.getUseYn()).parentItem(parentItem).build();
 
-    // ✅ BOM 등록 기능 (완제품 + 구성 자재들 저장)
-    @Transactional
-    public void addBom(AddBomRequestDTO dto) {
-        Item parent = itemRepository.findById(dto.getParentItemId())
-            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 완제품 ID입니다."));
+		try {
+			bomVersionRepository.save(bomVersion);
+		} catch (DataIntegrityViolationException e) {
+			throw new IllegalArgumentException("중복된 BOM 버전 코드입니다.");
+		}
 
-        for (AddBomRequestDTO.BomComponent comp : dto.getComponents()) {
-            Item child = itemRepository.findById(comp.getChildItemId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 자재 ID입니다."));
+		// 3. 자재 구성 저장
+		List<Bom> bomList = new ArrayList<>();
+		for (AddBomRequestDTO.BomComponent comp : dto.getComponents()) {
 
-            Bom bom = new Bom(); // 새 BOM 객체 생성 및 세팅
-            bom.setParentItem(parent);
-            bom.setChildItem(child);
-            bom.setQty(comp.getQty());
-            bom.setSeqNo(comp.getSeqNo());
-            bom.setLossRt(comp.getLossRt() != null ? BigDecimal.valueOf(comp.getLossRt()) : null);
-            bom.setItemPrice(comp.getItemPrice());
-            bom.setRemark(comp.getRemark());
+			Item childItem = itemRepository.findById(comp.getChildItemId())
+					.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 자재입니다."));
 
-            bomRepository.save(bom); // 저장
-        }
-    }
+			Bom bom = Bom.builder().parentItem(parentItem) // ✅ 이거 추가
+					.bomVersion(bomVersion).childItem(childItem).qty(comp.getQty()).seqNo(comp.getSeqNo())
+					.lossRt(comp.getLossRt()).itemPrice(comp.getItemPrice()).remark(comp.getRemark()).build();
 
-    // ✅ BOM 등록용 완제품/자재 선택 리스트
-    public ItemSelectionDTO getSelectableItems() {
-        return new ItemSelectionDTO(
-            itemRepository.findByType(ItemType.product), // 완제품
-            itemRepository.findByType(ItemType.raw)     // 자재
-        );
-    }
-    
-    // ✅ 완제품별로 BOM 구성 목록 그룹화
-    public List<BomListViewResponse> getBomGroupedByParent() {
-        List<Item> parents = itemRepository.findByType(ItemType.product); // 완제품 리스트
-        List<BomListViewResponse> result = new ArrayList<>();
+			bomList.add(bom);
+		}
 
-        for (Item parent : parents) {
-            List<Bom> boms = bomRepository.findByParentItem(parent); // BOM 리스트
+		bomRepository.saveAll(bomList);
+	}
 
-            List<BomListViewResponse.Component> components = new ArrayList<>();
-            for (Bom b : boms) {
-                components.add(new BomListViewResponse.Component(
-                    b.getChildItem().getCode(),
-                    b.getChildItem().getName(),
-                    b.getQty(),
-                    b.getChildItem().getSpec(),
-                    b.getChildItem().getUnit(),
-                    b.getSeqNo(),
-                    formatLossRate(b.getLossRt()),
-                    b.getItemPrice() != null ? String.valueOf(b.getItemPrice()) : "-",
-                    b.getRemark() != null ? b.getRemark() : "-"
-                ));
-            }
+	// ✅ BOM 등록용 완제품/자재 선택 리스트
+	public ItemSelectionDTO getSelectableItems() {
+		return new ItemSelectionDTO(itemRepository.findByType(ItemType.product), // 완제품
+				itemRepository.findByType(ItemType.raw) // 자재
+		);
+	}
 
-            BomListViewResponse dto = new BomListViewResponse(
-                parent.getCode(),
-                parent.getName(),
-                components
-            );
-            result.add(dto);
-        }
+	// ✅ 완제품별로 BOM 구성 목록 그룹화
+	public List<BomListViewResponse> getBomGroupedByParent() {
+		List<Item> parents = itemRepository.findByType(ItemType.product); // 완제품 리스트
+		List<BomListViewResponse> result = new ArrayList<>();
 
-        return result;
-    }
+		for (Item parent : parents) {
+			List<Bom> boms = bomRepository.findByParentItem(parent); // BOM 리스트
 
-    // ✅ BOM 수정 기능 - 기존 BOM 삭제 후 재등록
-    @Transactional
-    public void updateBom(UpdateBomRequestDTO dto) {
-        bomRepository.deleteByParentItemId(dto.getParentItemId()); // 기존 BOM 삭제
+			List<BomListViewResponse.Component> components = new ArrayList<>();
+			for (Bom b : boms) {
+				components.add(new BomListViewResponse.Component(b.getChildItem().getCode(), b.getChildItem().getName(),
+						b.getQty(), b.getChildItem().getSpec(), b.getChildItem().getUnit(), b.getSeqNo(),
+						formatLossRate(b.getLossRt()),
+						b.getItemPrice() != null ? String.valueOf(b.getItemPrice()) : "-",
+						b.getRemark() != null ? b.getRemark() : "-"));
+			}
 
-        for (UpdateBomRequestDTO.BomComponent c : dto.getComponents()) {
-            Bom bom = new Bom();
-            bom.setParentItem(itemRepository.findById(dto.getParentItemId()).orElseThrow());
-            bom.setChildItem(itemRepository.findById(c.getChildItemId()).orElseThrow());
-            bom.setQty(c.getQty());
+			BomListViewResponse dto = new BomListViewResponse(parent.getCode(), parent.getName(), components);
+			result.add(dto);
+		}
 
-            bomRepository.save(bom); // 새 구성 등록
-        }
-    }
+		return result;
+	}
 
-    // ✅ BOM 일괄 삭제 (완제품 기준)
-    @Transactional
-    public void deleteBomsByParentIds(List<Long> parentIds) {
-        for (Long parentId : parentIds) {
-            bomRepository.deleteByParentItemId(parentId);
-        }
-    }
+	// ✅ BOM 수정 기능 - 기존 BOM 삭제 후 재등록
+	@Transactional
+	public void updateBom(UpdateBomRequestDTO dto) {
+		bomRepository.deleteByParentItemId(dto.getParentItemId()); // 기존 BOM 삭제
 
-    
+		for (UpdateBomRequestDTO.BomComponent c : dto.getComponents()) {
+			Bom bom = new Bom();
+			bom.setParentItem(itemRepository.findById(dto.getParentItemId()).orElseThrow());
+			bom.setChildItem(itemRepository.findById(c.getChildItemId()).orElseThrow());
+			bom.setQty(c.getQty());
+
+			bomRepository.save(bom); // 새 구성 등록
+		}
+	}
+
+	// ✅ BOM 일괄 삭제 (완제품 기준)
+	@Transactional
+	public void deleteBomsByParentIds(List<Long> parentIds) {
+		for (Long parentId : parentIds) {
+			bomRepository.deleteByParentItemId(parentId);
+		}
+	}
+
+	@Transactional
+	public void deleteBomVersion(Long versionId) {
+		BomVersion version = bomVersionRepository.findById(versionId)
+				.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 BOM 버전입니다."));
+
+		bomVersionRepository.delete(version); // Cascade 옵션 설정 시 자동으로 BOM도 함께 삭제됨
+	}
+
 }

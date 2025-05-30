@@ -28,7 +28,7 @@ public class PlaceDTO {
         private String itemName;   // 품목 이름 (출력용, 저장은 X)
         private Long unitQty; // 개별 품목 개수
         private String unit;       // 단위 (출력용, 저장은 X)
-        private Integer unitPrice;
+        private Long unitPrice;
 
         private ItemListViewResponse item;
     }

@@ -1,6 +1,8 @@
 package com.team.berp.place.controller;
 
 
+import com.team.berp.client.service.ClientService;
+import com.team.berp.domain.Company;
 import com.team.berp.domain.CompanyOrder;
 import com.team.berp.place.dto.PlaceDTO;
 //import com.team.berp.place.service.PlaceService;
@@ -22,14 +24,27 @@ import org.springframework.web.bind.annotation.*;
 public class PlaceController {
 
     private final PlaceService placeService;
+    private final ClientService clientService;
 
     // GET 요청: 발주 페이지 반환
+//    @GetMapping
+//    public String placePage(Model m) {
+//    	List<CompanyOrder> orderList = placeService.getAllOrders();
+//        m.addAttribute("orderList", orderList);
+//        return "place/place";
+//    }
+    
     @GetMapping
-    public String placePage(Model m) {
-    	List<CompanyOrder> orderList = placeService.getAllOrders();
-        m.addAttribute("orderList", orderList);
-        return "place/place";
+    public String placePage(Model model) {
+        List<CompanyOrder> orderList = placeService.getAllOrders();
+        List<Company> companies = clientService.getAllcompanies();
+
+        model.addAttribute("orderList", orderList);
+        model.addAttribute("companies", companies); // 전체 리스트를 내려보냄
+
+        return "place/place"; // place.html
     }
+
     
     @PostMapping("/add")
     public String placeAdd(@ModelAttribute PlaceDTO dto) {
@@ -37,6 +52,7 @@ public class PlaceController {
     	return "redirect:/place";
     }
     
+
 
     // POST 요청: 발주 등록 처리, api 방식
 //    @PostMapping

@@ -1,71 +1,121 @@
 <!-- src/main/resources/templates/mrp/mrp-detail-modal.html -->
 <div th:fragment="mrp-detail-modal">
   <div class="modal fade" id="mrpDetailModal" tabindex="-1" aria-labelledby="mrpDetailModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-scrollable modal-lg">
+    <div class="modal-dialog modal-dialog-scrollable modal-xl">
       <div class="modal-content">
-        <div class="modal-header">
+        <div class="modal-header bg-primary text-white">
           <h5 class="modal-title" id="mrpDetailModalLabel">MRP 상세 정보</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="닫기"></button>
         </div>
         <div class="modal-body">
-          <table class="table table-sm">
-            <tbody>
-              <tr>
-                <th>품목코드</th>
-                <td id="mrpDetailItemCode"></td>
-              </tr>
-              <tr>
-                <th>품목명</th>
-                <td id="mrpDetailItemName"></td>
-              </tr>
-              <tr>
-                <th>품목유형</th>
-                <td id="mrpDetailItemType"></td>
-              </tr>
-              <tr>
-                <th>단위</th>
-                <td id="mrpDetailUnit"></td>
-              </tr>
-              <tr>
-                <th>기준일자</th>
-                <td id="mrpDetailBaseDate"></td>
-              </tr>
-              <tr>
-                <th>필요수량</th>
-                <td id="mrpDetailRequiredQty"></td>
-              </tr>
-              <tr>
-                <th>현재고</th>
-                <td id="mrpDetailStock"></td>
-              </tr>
-              <tr>
-                <th>확정수량</th>
-                <td id="mrpDetailConfirmedQty"></td>
-              </tr>
-              <tr>
-                <th>부족수량</th>
-                <td id="mrpDetailShortQty"></td>
-              </tr>
-              <tr>
-                <th>소요처</th>
-                <td id="mrpDetailDemandSource"></td>
-              </tr>
-              <tr>
-                <th>리드타임(일)</th>
-                <td id="mrpDetailLeadTime"></td>
-              </tr>
-              <tr>
-                <th>비고</th>
-                <td id="mrpDetailNote"></td>
-              </tr>
-            </tbody>
-          </table>
+
+          <!-- A. 기본 정보 -->
+          <section class="mb-4 p-3 bg-light rounded">
+            <h6 class="text-primary border-bottom pb-1 mb-3">기본 정보</h6>
+            <dl class="row mb-0">
+              <dt class="col-sm-3">MRP 번호</dt><dd class="col-sm-9" id="mrpDetailId"></dd>
+              <dt class="col-sm-3">요청 일자</dt><dd class="col-sm-9" id="mrpDetailCreateDate"></dd>
+              <dt class="col-sm-3">필요 일자</dt><dd class="col-sm-9" id="mrpDetailDueDate"></dd>
+              <dt class="col-sm-3">계획 타입</dt><dd class="col-sm-9" id="mrpDetailPlanType"></dd>
+              <dt class="col-sm-3">상태</dt><dd class="col-sm-9" id="mrpDetailStatus"></dd>
+              <dt class="col-sm-3">담당자/부서</dt><dd class="col-sm-9" id="mrpDetailOwner"></dd>
+            </dl>
+          </section>
+
+          <!-- B. 품목 정보 -->
+          <section class="mb-4 p-3 bg-white rounded">
+            <h6 class="text-primary border-bottom pb-1 mb-3">품목 정보</h6>
+            <dl class="row mb-0">
+              <dt class="col-sm-3">품목 코드</dt><dd class="col-sm-9" id="mrpDetailItemCode"></dd>
+              <dt class="col-sm-3">품목명</dt><dd class="col-sm-9" id="mrpDetailItemName"></dd>
+              <dt class="col-sm-3">품목 분류</dt><dd class="col-sm-9" id="mrpDetailItemType"></dd>
+              <dt class="col-sm-3">단위</dt><dd class="col-sm-9" id="mrpDetailUnit"></dd>
+              <dt class="col-sm-3">사양 (Spec)</dt><dd class="col-sm-9" id="mrpDetailSpec"></dd>
+              <dt class="col-sm-3">안전 재고</dt><dd class="col-sm-9" id="mrpDetailSafetyStock"></dd>
+              <dt class="col-sm-3">현재 가용 재고</dt><dd class="col-sm-9" id="mrpDetailStock"></dd>
+              <dt class="col-sm-3">재고 위치</dt><dd class="col-sm-9" id="mrpDetailLocation"></dd>
+            </dl>
+          </section>
+
+          <!-- C. 수량·리드타임 -->
+          <section class="mb-4 p-3 bg-light rounded">
+            <h6 class="text-primary border-bottom pb-1 mb-3">수량·리드타임</h6>
+            <dl class="row mb-0">
+              <dt class="col-sm-3">요청 수량</dt><dd class="col-sm-9" id="mrpDetailRequiredQty"></dd>
+              <dt class="col-sm-3">부족 수량</dt><dd class="col-sm-9" id="mrpDetailShortQty"></dd>
+              <dt class="col-sm-3">구매 리드타임(일)</dt><dd class="col-sm-9" id="mrpDetailPurchaseLeadTime"></dd>
+              <dt class="col-sm-3">생산 리드타임(일)</dt><dd class="col-sm-9" id="mrpDetailProductionLeadTime"></dd>
+              <dt class="col-sm-3">주문 가능 일자</dt><dd class="col-sm-9" id="mrpDetailStartDate"></dd>
+            </dl>
+          </section>
+
+          <!-- D. BOM 구성 테이블 -->
+          <section class="mb-4">
+            <h6 class="text-primary mb-2">BOM 구성</h6>
+            <div class="table-responsive">
+              <table class="table table-striped table-hover table-sm align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th>부품 코드</th>
+                    <th>부품 명</th>
+                    <th>구성 수량 per 모품</th>
+                    <th>총 필요 수량</th>
+                    <th>가용 재고</th>
+                    <th>부족 수량</th>
+                    <th>리드 타임</th>
+                    <th>공급처</th>
+                  </tr>
+                </thead>
+                <tbody id="mrpDetailBomBody"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- E. 연계 오더 현황 -->
+          <section class="mb-4">
+            <h6 class="text-primary mb-2">연계 오더 현황</h6>
+            <div class="row gx-3">
+              <div class="col-md-6">
+                <strong>구매 오더 리스트</strong>
+                <div class="table-responsive">
+                  <table class="table table-striped table-hover table-sm align-middle">
+                    <thead class="table-light">
+                      <tr><th>PO 번호</th><th>품목</th><th>수량</th><th>납기일</th><th>상태</th></tr>
+                    </thead>
+                    <tbody id="mrpDetailPoList"></tbody>
+                  </table>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <strong>생산 오더 리스트</strong>
+                <div class="table-responsive">
+                  <table class="table table-striped table-hover table-sm align-middle">
+                    <thead class="table-light">
+                      <tr><th>WO 번호</th><th>품목</th><th>수량</th><th>시작일</th><th>종료 예정일</th><th>상태</th></tr>
+                    </thead>
+                    <tbody id="mrpDetailWoList"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- F. 스케줄·이력 -->
+          <section class="mb-4 p-3 bg-white rounded">
+            <h6 class="text-primary border-bottom pb-1 mb-3">스케줄·이력</h6>
+            <div id="mrpDetailLog" class="border p-2" style="max-height:200px; overflow:auto;"></div>
+          </section>
+
         </div>
+
         <div class="modal-footer">
           <button type="button" class="btn btn-outline-primary" id="modalPrevBtn" onclick="moveModal(-1)">이전</button>
-  		  <button type="button" class="btn btn-outline-primary" id="modalNextBtn" onclick="moveModal(1)">다음</button>
+          <button type="button" class="btn btn-outline-primary" id="modalNextBtn" onclick="moveModal(1)">다음</button>
+          <button type="button" class="btn btn-success" id="detailBtnCreatePlan">생산계획 생성</button>
+          <button type="button" class="btn btn-primary" id="detailBtnCreateOrder">발주 생성</button>
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
         </div>
+
       </div>
     </div>
   </div>

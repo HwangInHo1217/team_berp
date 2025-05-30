@@ -32,15 +32,25 @@
 
 				<!-- 🔍 검색 및 버튼 영역 -->
 				<div class="d-flex flex-wrap gap-2 align-items-center mb-3">
-					<input type="date" class="form-control w-auto" placeholder="계획일자" />
-					<span>~</span> <input type="date" class="form-control w-auto"
-						placeholder="계획일자" /> <input type="text"
-						class="form-control w-auto" placeholder="품목명/코드" />
-					<button class="btn btn-outline-secondary">검색</button>
+					<input type="date" id="startDateInput" name="startDate"
+						class="form-control w-auto" placeholder="계획일자" /> <span>~</span>
+					<input type="date" id="endDateInput" name="endDate"
+						class="form-control w-auto" placeholder="계획일자" /> <input
+						type="text" id="keywordInput" name="keyword"
+						class="form-control w-auto" placeholder="품목명/코드" /> <select
+						id="statusFilter" class="form-select w-auto">
+						<option value="">전체</option>
+						<option value="PLANNED">계획</option>
+						<option value="ORDERED">지시됨</option>
+						<option value="COMPLETED">완료</option>
+					</select>
+
+					<button class="btn btn-outline-secondary"
+						onclick="fetchProdPlanList(0)">검색</button>
 					<button class="btn btn-outline-success ms-auto">엑셀 다운로드</button>
-					<button class="btn btn-primary" onclick="openPlanAddModal()"
-						data-bs-toggle="modal" data-bs-target="#planRegisterModal">+
-						생산계획 등록</button>
+					<button class="btn btn-primary" onclick="openPlanAddModal()">
+						+ 생산계획 등록</button>
+
 				</div>
 
 				<!-- 📋 생산계획 테이블 -->
@@ -87,9 +97,15 @@
 						</tbody>
 					</table>
 				</div>
+				<nav aria-label="페이지 네비게이션">
+					<ul class="pagination justify-content-center" id="pagination">
+						<!-- JS에서 채워주는 부분이라서 지움 -->
+					</ul>
+				</nav>
 			</div>
 		</main>
 	</div>
+
 	<div th:replace="~{/layouts/footer :: footer}"></div>
 
 	<!-- 모달 영역 -->
@@ -99,7 +115,7 @@
 			aria-hidden="true">
 			<div class="modal-dialog">
 				<div class="modal-content">
-					<form id="planForm" >
+					<form id="planForm" method="POST">
 						<div class="modal-header">
 							<h5 class="modal-title">생산계획 등록</h5>
 							<button type="button" class="btn-close" data-bs-dismiss="modal"
@@ -142,7 +158,7 @@
 									<option value="PLANNED">계획</option>
 									<option value="ORDERED">진행중</option>
 									<option value="COMPLETED">완료</option>
-									
+
 								</select>
 							</div>
 							<div class="mb-2">
@@ -156,7 +172,7 @@
 						</div>
 						<div class="modal-footer">
 							<button type="reset" class="btn btn-secondary">초기화</button>
-							<button type="submit" class="btn btn-primary" id="submitBtn">등록</button>
+							<button type="button" class="btn btn-primary" id="submitBtn">등록</button>
 						</div>
 					</form>
 				</div>

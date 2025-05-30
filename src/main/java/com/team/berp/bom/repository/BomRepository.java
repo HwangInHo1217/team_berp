@@ -11,11 +11,15 @@ import org.springframework.data.repository.query.Param;
 
 import com.team.berp.bom.dto.BomProductItemDTO;
 import com.team.berp.domain.Bom;
+import com.team.berp.domain.BomVersion;
 import com.team.berp.domain.Item;
 
 public interface BomRepository extends JpaRepository<Bom, Integer> {
 
 	List<Bom> findByParentItem(Item parent);
+	
+	// ✅ 3. Repository 수정
+	List<Bom> findByBomVersion(BomVersion version);
 
 	@Query("SELECT DISTINCT b.parentItem FROM Bom b WHERE b.parentItem.type = 'product'")
 	List<Item> findDistinctParentItems();
@@ -25,7 +29,7 @@ public interface BomRepository extends JpaRepository<Bom, Integer> {
 	@Modifying
 	@Query("DELETE FROM Bom b WHERE b.parentItem.id = :parentItemId")
 	void deleteByParentItemId(@Param("parentItemId") Long parentItemId);
-
+	
 	/*
 	 * @Query(""" SELECT new com.team.berp.bom.dto.BomProductItemDTO( b.bomId,
 	 * b.parentItem.code, b.parentItem.name, b.parentItem.spec, b.parentItem.unit,
