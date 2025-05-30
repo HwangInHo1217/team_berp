@@ -29,7 +29,7 @@ public interface BomRepository extends JpaRepository<Bom, Integer> {
 	@Modifying
 	@Query("DELETE FROM Bom b WHERE b.parentItem.id = :parentItemId")
 	void deleteByParentItemId(@Param("parentItemId") Long parentItemId);
-
+	
 	/*
 	 * @Query(""" SELECT new com.team.berp.bom.dto.BomProductItemDTO( b.bomId,
 	 * b.parentItem.code, b.parentItem.name, b.parentItem.spec, b.parentItem.unit,

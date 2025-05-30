@@ -8,15 +8,16 @@
   <link rel="stylesheet" th:href="@{https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css}" />
   <script th:src="@{https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js}"></script>
 </head>
-<body class="d-flex flex-column" style="min-height: 100vh;">
-  <!-- 헤더 fragment -->
+<body class="d-flex flex-column" style="min-height:100vh;">
+  <!-- 헤더 -->
   <div th:replace="~{layouts/header :: header}"></div>
   <div class="d-flex flex-grow-1">
-    <!-- 사이드바 fragment -->
+    <!-- 사이드바 -->
     <div th:replace="~{layouts/sidebar :: sidebar}"></div>
     <main class="p-4 flex-fill">
       <div class="container">
-        <!-- 검색 조건 및 버튼 -->
+
+        <!-- 검색 조건 & 버튼 -->
         <div class="mb-4">
           <h2 class="mb-3">MRP(자재소요계획) 계산</h2>
           <div class="row g-2 align-items-end">
@@ -37,20 +38,22 @@
               <input type="text" class="form-control" id="custSearch" placeholder="거래처" />
             </div>
             <div class="col-md-4 d-flex gap-2">
-              <button class="btn btn-primary" onclick="calculateMrp()">MRP 계산</button>
-              <button class="btn btn-success" onclick="downloadExcel()">엑셀 다운로드</button>
-              <button class="btn btn-outline-secondary" onclick="resetMrpForm()">취소</button>
+              <!-- 검색 / MRP 계산 / 엑셀 다운로드 -->
+              <button class="btn btn-outline-secondary" onclick="calculateMrp()">검색</button>
+              <button class="btn btn-primary"      onclick="calculateMrp()">MRP 계산</button>
+              <button class="btn btn-success"      onclick="downloadExcel()">엑셀 다운로드</button>
             </div>
           </div>
         </div>
 
         <!-- 주문/생산 품목 리스트 -->
-		<div class="table-section-title">주문/생산 품목 리스트</div>
-		<div class="table-responsive mb-3">
-		  <table class="table table-bordered text-center align-middle">
-		    <thead class="table-light">
+        <div class="table-section-title">주문/생산 품목 리스트</div>
+        <div class="table-responsive mb-3">
+          <table class="table table-bordered text-center align-middle">
+            <thead class="table-light">
               <tr>
-                <th class="col-no">No</th>
+                <th><input type="checkbox" id="selectAll" /></th>
+                <th>No</th>
                 <th>품목코드</th>
                 <th>품목명</th>
                 <th>거래처</th>
@@ -58,38 +61,50 @@
                 <th>단위</th>
                 <th>생산수량</th>
                 <th>주문수량</th>
+                <th>현재고</th>
+                <th>부족수량</th>
+                <th>납기요청일</th>
+                <th>리드타임(일)</th>
+                <th>MRP 상태</th>
                 <th>상세</th>
               </tr>
             </thead>
-		    <tbody id="mrpTableBody" class="table-fixed-min"></tbody>
-		  </table>
-		  <nav>
-		    <ul class="pagination" id="pagination"></ul>
-		  </nav>
-		</div>
+            <tbody id="mrpTableBody" class="table-fixed-min"></tbody>
+          </table>
+          <nav><ul class="pagination" id="pagination"></ul></nav>
+        </div>
 
-        <!-- 하단: 투입자재 소요 리스트 (BOM 분해 결과) -->
-        <!-- 투입 자재 소요 리스트 -->
-		<div class="table-section-title">투입 자재 소요 리스트</div>
-		<div class="table-responsive">
-		  <!-- scroll-table 클래스 추가하면 BOM이 많을 때 세로 스크롤 -->
-		  <div class="scroll-table">
-		    <table class="table table-bordered text-center align-middle">
-		      <thead class="table-light">
-		      <tr>
-                <th class="col-no">No</th>
-                <th>자재코드</th>
-                <th>자재명</th>
-                <th>규격</th>
-                <th>소요량</th>
-                <th>단위</th>
-                <th>투입예상량</th>
-              </tr>
-            </thead>
-		    <tbody id="bomListTableBody" class="table-fixed-min"></tbody>
-		   </table>
-		  </div>
-		</div>
+        <!-- 투입 자재 소요 리스트 & 액션 버튼 -->
+        <div class="table-section-title">투입 자재 소요 리스트</div>
+        <div class="d-flex mb-2 gap-2">
+          <button class="btn btn-sm btn-success" id="btn-create-plan">생산계획으로 이동</button>
+          <button class="btn btn-sm btn-primary" id="btn-create-order">발주 등록</button>
+        </div>
+        <div class="table-responsive">
+          <div class="scroll-table">
+            <table class="table table-bordered text-center align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th><input type="checkbox" id="bomSelectAll" /></th>
+                  <th>No</th>
+                  <th>자재코드</th>
+                  <th>자재명</th>
+                  <th>규격</th>
+                  <th>단위</th>
+                  <th>소요량</th>
+                  <th>현재고</th>
+                  <th>부족수량</th>
+                  <th>안전재고</th>
+                  <th>발주필요수량</th>
+                  <th>리드타임(구매)</th>
+                  <th>예상입고일</th>
+                  <th>이동</th>
+                </tr>
+              </thead>
+              <tbody id="bomListTableBody" class="table-fixed-min"></tbody>
+            </table>
+          </div>
+        </div>
 
         <div class="alert alert-secondary mt-3 small">
           <b>품목리스트</b> - 일자 기간 내 주문받은 품목 리스트<br>
@@ -98,10 +113,52 @@
       </div>
     </main>
   </div>
-  <!-- 모달 fragment 삽입 -->
+
+  <!-- 모달 -->
   <div th:replace="~{mrp/mrp-detail-modal :: mrp-detail-modal}"></div>
-  <!-- 푸터 fragment -->
+  <!-- 푸터 -->
   <div th:replace="~{layouts/footer :: footer}"></div>
+
+  <!-- 외부 JS -->
   <script src="/js/mrp/mrp.js"></script>
+
+  <!-- 페이지별 추가 스크립트 -->
+  <script>
+    // MRP 전체 선택
+    document.getElementById('selectAll')?.addEventListener('change', function() {
+      const checked = this.checked;
+      document.querySelectorAll('.mrp-checkbox').forEach(cb => {
+        cb.checked = checked;
+        onMrpCheckboxChange(cb);
+      });
+    });
+
+    // BOM 전체 선택
+    document.getElementById('bomSelectAll')?.addEventListener('change', function() {
+      const checked = this.checked;
+      document.querySelectorAll('.bom-checkbox').forEach(cb => cb.checked = checked);
+    });
+
+    // 생산계획 이동
+    document.getElementById('btn-create-plan')?.addEventListener('click', () => {
+      const codes = Array.from(document.querySelectorAll('.bom-checkbox:checked'))
+                         .map(cb => cb.dataset.code);
+      if (!codes.length) {
+        return alert('생산계획을 생성할 자재를 선택하세요.');
+      }
+      window.location.href = `/prod-plan?items=${codes.join(',')}`;
+    });
+
+    // 발주 등록 이동
+    document.getElementById('btn-create-order')?.addEventListener('click', () => {
+      const codes = Array.from(document.querySelectorAll('.bom-checkbox:checked'))
+                         .map(cb => cb.dataset.code);
+      if (!codes.length) {
+        return alert('발주할 자재를 선택하세요.');
+      }
+      window.location.href = `/purchase-order?items=${codes.join(',')}`;
+    });
+  </script>
+
 </body>
 </html>

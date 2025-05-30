@@ -240,4 +240,12 @@ public class BomService {
 		}
 	}
 
+	@Transactional
+	public void deleteBomVersion(Long versionId) {
+	    BomVersion version = bomVersionRepository.findById(versionId)
+	        .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 BOM 버전입니다."));
+	    
+	    bomVersionRepository.delete(version); // Cascade 옵션 설정 시 자동으로 BOM도 함께 삭제됨
+	}
+
 }

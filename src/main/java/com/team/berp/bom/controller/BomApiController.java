@@ -90,5 +90,11 @@ public class BomApiController {
 
 	    return ResponseEntity.ok(response);
 	}
+	
+	@DeleteMapping("/version/{versionId}") 
+	public ResponseEntity<?> deleteBomVersion(@PathVariable("versionId") Long versionId) {
+	    bomService.deleteBomVersion(versionId);
+	    return ResponseEntity.ok().build();
+	}
 }
 
