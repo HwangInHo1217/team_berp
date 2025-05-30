@@ -4,6 +4,7 @@ package com.team.berp.domain;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -36,4 +37,7 @@ public class BomVersion {
     // 역방향 - 구성 목록
     @OneToMany(mappedBy = "bomVersion", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Bom> bomList;
+    
+    @OneToMany(mappedBy = "bomVersion", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Bom> components = new ArrayList<>();
 }
