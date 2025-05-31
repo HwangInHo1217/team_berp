@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.team.berp.bom.dto.AddBomRequestDTO;
+import com.team.berp.bom.dto.BomEditResponseDTO;
 import com.team.berp.bom.dto.BomListViewResponse;
 import com.team.berp.bom.dto.BomProductItemDTO;
 import com.team.berp.bom.dto.BomVersionResponseDTO;
@@ -165,7 +166,12 @@ public class BomService {
 			bomList.add(bom);
 		}
 
-		bomRepository.saveAll(bomList);
+		 try {
+		        bomRepository.saveAll(bomList);
+		    } catch (DataIntegrityViolationException e) {
+		        // ✅ 순번 중복 등 UNIQUE 제약 조건 위반 시 사용자에게 알림
+		        throw new IllegalArgumentException("BOM 순번은 동일한 버전 내에서 중복될 수 없습니다.");
+		    }
 	}
 
 	// ✅ BOM 등록용 완제품/자재 선택 리스트
@@ -200,19 +206,50 @@ public class BomService {
 	}
 
 	// ✅ BOM 수정 기능 - 기존 BOM 삭제 후 재등록
+	// ✅ BOM 수정 기능 (버전 기준 수정)
 	@Transactional
 	public void updateBom(UpdateBomRequestDTO dto) {
-		bomRepository.deleteByParentItemId(dto.getParentItemId()); // 기존 BOM 삭제
+	    // 🔍 BOM 버전 조회 (존재하지 않으면 예외 발생)
+	    BomVersion version = bomVersionRepository.findById(dto.getVersionId())
+	            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 BOM 버전입니다."));
 
-		for (UpdateBomRequestDTO.BomComponent c : dto.getComponents()) {
-			Bom bom = new Bom();
-			bom.setParentItem(itemRepository.findById(dto.getParentItemId()).orElseThrow());
-			bom.setChildItem(itemRepository.findById(c.getChildItemId()).orElseThrow());
-			bom.setQty(c.getQty());
+	    // 🔍 부모 품목 정보 재확인
+	    Item parent = itemRepository.findById(dto.getParentItemId())
+	            .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 부모 품목입니다."));
 
-			bomRepository.save(bom); // 새 구성 등록
-		}
+	    // 🔧 버전 정보 업데이트 (설명, 사용여부만 변경)
+	    version.setDescription(dto.getDescription());
+	    version.setUseYn(dto.getUseYn());
+
+	    // ✅ 기존 BOM 구성 제거 (연관된 BOM 구성들을 전부 제거)
+	    List<Bom> existing = bomRepository.findByBomVersion(version);
+	    bomRepository.deleteAll(existing);
+
+	    // ✅ 새로운 BOM 구성 재등록
+	    List<Bom> newBoms = new ArrayList<>();
+	    for (UpdateBomRequestDTO.BomComponent c : dto.getComponents()) {
+
+	        Item child = itemRepository.findById(c.getChildItemId())
+	                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 자재입니다."));
+
+	        Bom bom = Bom.builder()
+	                .parentItem(parent)
+	                .bomVersion(version)
+	                .childItem(child)
+	                .qty(c.getQty())
+	                .seqNo(c.getSeqNo())
+	                .lossRt(c.getLossRt())
+	                .itemPrice(c.getItemPrice())
+	                .remark(c.getRemark())
+	                .build();
+
+	        newBoms.add(bom);
+	    }
+
+	    // ✅ BOM 저장
+	    bomRepository.saveAll(newBoms);
 	}
+
 
 	// ✅ BOM 일괄 삭제 (완제품 기준)
 	@Transactional
@@ -228,6 +265,38 @@ public class BomService {
 				.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 BOM 버전입니다."));
 
 		bomVersionRepository.delete(version); // Cascade 옵션 설정 시 자동으로 BOM도 함께 삭제됨
+	}
+
+	public BomEditResponseDTO getBomEditData(Long versionId) {
+	    BomVersion version = bomVersionRepository.findById(versionId)
+	        .orElseThrow(() -> new RuntimeException("버전 없음"));
+
+	    Item parent = version.getParentItem();
+
+	    List<BomListViewResponse.Component> componentList = version.getBomList().stream()
+	        .map(c -> new BomListViewResponse.Component(
+	            c.getChildItem().getCode(),
+	            c.getChildItem().getName(),
+	            c.getQty(),
+	            c.getChildItem().getSpec(),
+	            c.getChildItem().getUnit(),
+	            c.getSeqNo(),
+	            c.getLossRt() + "%",
+	            c.getItemPrice() != null ? c.getItemPrice().toString() : "0",
+	            c.getRemark()
+	        ))
+	        .toList();
+
+	    return new BomEditResponseDTO(
+	        version.getId(),
+	        version.getVersionCode(),
+	        version.getDescription(),
+	        version.getUseYn(),
+	        parent.getId(),
+	        parent.getCode(),
+	        parent.getName(),
+	        componentList
+	    );
 	}
 
 }

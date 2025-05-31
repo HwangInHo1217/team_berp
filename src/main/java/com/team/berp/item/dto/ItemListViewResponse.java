@@ -15,7 +15,9 @@ public class ItemListViewResponse {
 	private final String spec;
 	private final String unit;
 	private final String use;
-	
+	private final Long itemPrice;
+	private final Integer safetyStock;
+	private final Integer purchaseLeadTime;
 	public ItemListViewResponse(Item item){
 		this.id=item.getId();
 		this.code=item.getCode();
@@ -24,6 +26,9 @@ public class ItemListViewResponse {
 		this.spec=item.getSpec();
 		this.unit=item.getUnit();
 		this.use=item.getUse();
+		this.itemPrice = item.getItemPrice();                   // ✅
+	    this.safetyStock = item.getSafetyStock();               // ✅
+	    this.purchaseLeadTime = item.getPurchaseLeadTime();     // ✅
 		
 	}
 	

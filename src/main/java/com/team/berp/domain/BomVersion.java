@@ -38,6 +38,5 @@ public class BomVersion {
     @OneToMany(mappedBy = "bomVersion", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Bom> bomList;
     
-    @OneToMany(mappedBy = "bomVersion", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Bom> components = new ArrayList<>();
+ 
 }
