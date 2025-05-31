@@ -11,21 +11,87 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ClientRepository extends JpaRepository<Company, Long> {
 
-    // 회사명+사업자번호 중복(등록/수정 시 사용)
-    boolean existsByCompanyNameAndCompanyNoAndUseYn(String companyName, String companyNo, String useYn);
-    boolean existsByCompanyNameAndCompanyNoAndCompanyIdNotAndUseYn(String companyName, String companyNo, Long companyId, String useYn);
+    // ■ 중복 체크
+    boolean existsByCompanyNameAndCompanyNoAndUseYn(
+        String companyName,
+        String companyNo,
+        String useYn
+    );
+    boolean existsByCompanyNameAndCompanyNoAndCompanyIdNotAndUseYn(
+        String companyName,
+        String companyNo,
+        Long excludeCompanyId,
+        String useYn
+    );
 
-    // 논리삭제 제외(전체)
+    // ■ 논리삭제 제외 전체 조회
     Page<Company> findByUseYn(String useYn, Pageable pageable);
 
-    // 회사명 포함(논리삭제 제외)
-    Page<Company> findByCompanyNameContainingAndUseYn(String name, String useYn, Pageable pageable);
+    // ■ 검색 (부분일치)
+    Page<Company> findByCompanyNameContainingAndUseYn(
+        String name,
+        String useYn,
+        Pageable pageable
+    );
+    Page<Company> findByPresidentNmContainingAndUseYn(
+        String ceo,
+        String useYn,
+        Pageable pageable
+    );
+    Page<Company> findByCompanyNoContainingAndUseYn(
+        String bizNum,
+        String useYn,
+        Pageable pageable
+    );
+    Page<Company> findByEmployee_EmpNameContainingAndUseYn(
+        String empName,
+        String useYn,
+        Pageable pageable
+    );
 
-    // 대표자명 포함(논리삭제 제외)
-    Page<Company> findByPresidentNmContainingAndUseYn(String ceo, String useYn, Pageable pageable);
+    // ■ 유형별 조회
+    Page<Company> findByCompanyTypeAndUseYn(
+        CompanyType companyType,
+        String useYn,
+        Pageable pageable
+    );
 
-    // 유형별(논리삭제 제외)
-    Page<Company> findByCompanyTypeAndUseYn(CompanyType companyType, String useYn, Pageable pageable);
+    // ■ 유형별 + 검색
+    Page<Company> findByCompanyTypeAndCompanyNameContainingAndUseYn(
+        CompanyType companyType,
+        String name,
+        String useYn,
+        Pageable pageable
+    );
+    Page<Company> findByCompanyTypeAndPresidentNmContainingAndUseYn(
+        CompanyType companyType,
+        String ceo,
+        String useYn,
+        Pageable pageable
+    );
+    Page<Company> findByCompanyTypeAndCompanyNoContainingAndUseYn(
+        CompanyType companyType,
+        String bizNum,
+        String useYn,
+        Pageable pageable
+    );
+    Page<Company> findByCompanyTypeAndEmployee_EmpNameContainingAndUseYn(
+        CompanyType companyType,
+        String empName,
+        String useYn,
+        Pageable pageable
+    );
+    
+    boolean existsByCompanyNoAndUseYn(String companyNo, String useYn);
+    boolean existsByCompanyNoAndCompanyIdNotAndUseYn(
+        String companyNo, Long excludeCompanyId, String useYn
+    );
+    
+    // ■ 회사명 단독 중복 체크용 JPA 메서드
+    boolean existsByCompanyNameAndUseYn(String companyName, String useYn);
+    boolean existsByCompanyNameAndCompanyIdNotAndUseYn(String companyName,
+                                                      Long companyId,
+                                                      String useYn);
 
     // 유형+회사명(논리삭제 제외)
     Page<Company> findByCompanyTypeAndCompanyNameContainingAndUseYn(CompanyType companyType, String name, String useYn, Pageable pageable);
@@ -34,5 +100,6 @@ public interface ClientRepository extends JpaRepository<Company, Long> {
     Page<Company> findByCompanyTypeAndPresidentNmContainingAndUseYn(CompanyType companyType, String ceo, String useYn, Pageable pageable);
 
     //사업장 유형 선택, supplier or customer
-    List<Company> findByCompanyType(String Type);
+    List<Company> findByCompanyType(CompanyType Type);
+
 }

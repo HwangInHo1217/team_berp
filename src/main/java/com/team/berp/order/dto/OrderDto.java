@@ -1,59 +1,48 @@
+// OrderDto.java
 package com.team.berp.order.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.util.List;
 
-import lombok.Data;
-
 /**
- * 주문 DTO (dueDate 제거)
+ * 주문과 주문품목 정보를 모두 포함하는 DTO
  */
+@NoArgsConstructor
+@AllArgsConstructor
 @Data
 public class OrderDto {
-    private Long   orderNum;
-    private String companyName;
-    private String manager;
-    private String compEmpName;
-    private LocalDate orderDate;
-    private Long   orderQty;
-    private Long   amount;
-    private String note;
-    private List<OrderLineItemDto> items;
+    // 주문 기본 정보
+    private Long orderId;                     // 주문 고유 ID
+    private String orderNum;                  // 주문 번호 (cus-001 등)
+    private LocalDate orderDate;              // 주문일자
+    private Long companyId;                   // 고객사 ID
+    private String companyName;               // 고객사 이름
+    private String empName;                   // 담당자 이름
+    private String companyEmpName;            // 거래처 담당자 이름
+    private String orderType = "CUSTOMER";  // 주문 타입 (고정: CUSTOMER)
+    private String itemType = "product";    // 품목 타입 (고정: product)
+    private Long orderQty;                 // 품목 개수
+    private Long amount;                     // 총합계
+    private String remark;                    // 비고 (선택)
+    private Long warehouseId;
 
-    public OrderDto() {}
+    // 주문품목 리스트
+    private List<LineItem> items;
 
-    /** 목록용 생성자(라인 아이템 제외) */
-    public OrderDto(Long orderNum,
-                    String companyName,
-                    String manager,
-                    String compEmpName,
-                    LocalDate orderDate,
-                    Long orderQty,
-                    Long amount,
-                    String note) {
-        this.orderNum    = orderNum;
-        this.companyName = companyName;
-        this.manager     = manager;
-        this.compEmpName = compEmpName;
-        this.orderDate   = orderDate;
-        this.orderQty    = orderQty;
-        this.amount      = amount;
-        this.note        = note;
+    @Data
+    public static class LineItem {
+        private Long orderLineItemId;        // 품목별 고유 ID
+        private Long itemId;                 // 품목 ID
+        private Long warehouseId;			// 창고 ID
+        private String itemName;             // 품목 이름
+        private String unit;                 // 단위
+        private Long unitPrice;             // 단가
+        private Long unitQty;             // 수량
+        private Long unitPriceAll;          // 합계
+        
     }
-
-    /** 상세용 생성자(라인 아이템 포함) */
-    public OrderDto(Long orderNum,
-                    String companyName,
-                    String manager,
-                    String compEmpName,
-                    LocalDate orderDate,
-                    Long orderQty,
-                    Long amount,
-                    String note,
-                    List<OrderLineItemDto> items) {
-        this(orderNum, companyName, manager, compEmpName, orderDate, orderQty, amount, note);
-        this.items = items;
-    }
-
-    // getters / setters …
 }
