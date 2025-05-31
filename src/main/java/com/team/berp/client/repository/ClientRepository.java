@@ -2,6 +2,9 @@ package com.team.berp.client.repository;
 
 import com.team.berp.domain.Company;
 import com.team.berp.domain.Company.CompanyType;
+
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -89,5 +92,14 @@ public interface ClientRepository extends JpaRepository<Company, Long> {
     boolean existsByCompanyNameAndCompanyIdNotAndUseYn(String companyName,
                                                       Long companyId,
                                                       String useYn);
+
+    // 유형+회사명(논리삭제 제외)
+    Page<Company> findByCompanyTypeAndCompanyNameContainingAndUseYn(CompanyType companyType, String name, String useYn, Pageable pageable);
+
+    // 유형+대표자명(논리삭제 제외)
+    Page<Company> findByCompanyTypeAndPresidentNmContainingAndUseYn(CompanyType companyType, String ceo, String useYn, Pageable pageable);
+
+    //사업장 유형 선택, supplier or customer
+    List<Company> findByCompanyType(CompanyType Type);
 
 }

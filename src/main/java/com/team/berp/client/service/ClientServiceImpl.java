@@ -144,21 +144,8 @@ public class ClientServiceImpl implements ClientService {
         return repo.existsByCompanyNameAndCompanyNoAndCompanyIdNotAndUseYn(companyName, companyNo, excludeId, "Y");
     }
 
-    @Override
-    public boolean existsBizNumDuplicate(String companyNo, Long excludeId) {
-        if (excludeId == null) {
-            return repo.existsByCompanyNoAndUseYn(companyNo, "Y");
-        }
-        return repo.existsByCompanyNoAndCompanyIdNotAndUseYn(companyNo, excludeId, "Y");
-    }
-
-    @Override
-    public boolean existsNameDuplicate(String companyName, Long excludeId) {
-        if (excludeId == null) {
-            return repo.existsByCompanyNameAndUseYn(companyName, "Y");
-        }
-        return repo.existsByCompanyNameAndCompanyIdNotAndUseYn(companyName, excludeId, "Y");
-    }
+    
+    //repository에서 사업장 유형 선택, 모두 찾기
 
     @Override
     public List<Company> getAllcompanies() {
