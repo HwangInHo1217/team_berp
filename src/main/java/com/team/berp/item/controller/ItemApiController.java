@@ -104,18 +104,17 @@ public class ItemApiController {
             else
                 resultPage = itemRepository.findByCodeContaining(keyword, pageable);
         } else {
-            if (isFiltered && hasUseYn)
+            if (isFiltered && hasUseYn) {
                 resultPage = itemRepository.findByTypeAndUse(itemType, useYn, pageable);
-            else if (isFiltered)
+            } else if (isFiltered) {
                 resultPage = itemRepository.findByType(itemType, pageable);
-            else
-                resultPage = itemRepository.findAll(pageable);
-            if (hasUseYn) {
-                resultPage = itemRepository.findByUse(useYn, pageable); // ✅ 전체 + 사용여부만 필터
+            } else if (hasUseYn) {
+                resultPage = itemRepository.findByUse(useYn, pageable);
             } else {
                 resultPage = itemRepository.findAll(pageable);
             }
-        } 
+        }
+
         	
         Page<ItemListViewResponse> response = resultPage.map(ItemListViewResponse::new);
         return ResponseEntity.ok(response);
