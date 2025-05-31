@@ -144,7 +144,6 @@ const StockList = {
             th.style.cursor = 'pointer';
             th.addEventListener('click', (e) => {
                 const sortField = th.dataset.sort;
-				console.log('🖱️ 클릭된 정렬 필드:', sortField); // ✅ 추가
                 this.toggleSort(sortField);
             });
         });
@@ -178,15 +177,20 @@ const StockList = {
     },
 
     toggleSort(field) {
-		console.log('🔄 toggleSort 호출 - 원본 필드:', field); // ✅ 추가
+		console.log('🔄 toggleSort 호출 - 원본 필드:', field);
+
+		// 🔥 창고명 정렬 필드 매핑 - 이 부분이 핵심!
+		if (field === 'warehouseName') {
+		    field = 'warehouse.warehouseName';
+		    console.log('🏢 창고 필드 매핑:', field);
+		}
+
         const currentSort = StockState.sortBy.split(',');
-		console.log('🔍 현재 정렬 상태:', currentSort); // ✅ 추가
         if (currentSort[0] === field) {
             StockState.sortBy = field + ',' + (currentSort[1] === 'ASC' ? 'DESC' : 'ASC');
         } else {
             StockState.sortBy = field + ',ASC';
         }
-		console.log('🆕 변경된 정렬:', StockState.sortBy); // ✅ 추가
         this.loadStockData();
     },
 
@@ -216,14 +220,6 @@ const StockList = {
             })
             .then(pageData => {
                 console.log("✅ 받은 데이터:", pageData);
-				
-				// 🔍 창고명 순서 확인 추가
-				if (pageData.content && pageData.content.length > 0) {
-				     console.log('📦 창고명 순서:', pageData.content.map(s => s.warehouseName));
-				     console.log('🏷️ 품목코드 순서:', pageData.content.map(s => s.itemCode));
-				     console.log('📊 수량 순서:', pageData.content.map(s => s.quantity));
-				}				
-				
                 this.updateTable(pageData.content);
                 this.updatePaginationControls(pageData);
                 StockState.currentPage = pageData.number;
@@ -613,77 +609,197 @@ const StockActions = {
         });
     },
     
-    quickOut(stockId, currentQty) {
-        if (currentQty === 0) {
-            StockUtils.showError('재고가 없어 출고할 수 없습니다.');
-            return;
-        }
-        
-        const qty = prompt(`출고 수량을 입력하세요 (현재고: ${StockUtils.formatNumber(currentQty)}개)`);
-        
-        if (qty && parseInt(qty) > 0) {
-            if (parseInt(qty) > currentQty) {
-                StockUtils.showError('출고 수량이 현재고보다 많습니다.');
-                return;
-            }
-            
-            fetch(`/api/stocks/${stockId}/out`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ quantity: parseInt(qty) })
-            })
-            .then(response => response.json())
-            .then(result => {
-                if (result.status === 'success') {
-                    StockUtils.showSuccess(result.message);
-                    StockList.refresh();
-                    // 모달이 열려있다면 닫기
-                    const modalElement = document.getElementById('stockDetailModal');
-                    if (modalElement) {
-                        const modalInstance = bootstrap.Modal.getInstance(modalElement);
-                        if (modalInstance) {
-                            modalInstance.hide();
-                        }
-                    }
-                } else {
-                    StockUtils.showError(result.message || '출고 처리 실패');
-                }
-            })
-            .catch(error => {
-                console.error('출고 처리 오류:', error);
-                StockUtils.showError('출고 처리 중 오류가 발생했습니다.');
-            });
-        }
-    },
+	quickOut(stockId, currentQty) {
+	        if (currentQty === 0) {
+	            StockUtils.showError('재고가 없어 출고할 수 없습니다.');
+	            return;
+	        }
+	        
+	        const qty = prompt(`출고 수량을 입력하세요 (현재고: ${StockUtils.formatNumber(currentQty)}개)`);
+	        
+	        if (qty && parseInt(qty) > 0) {
+	            if (parseInt(qty) > currentQty) {
+	                StockUtils.showError('출고 수량이 현재고보다 많습니다.');
+	                return;
+	            }
+	            
+	            fetch(`/api/stocks/${stockId}/out`, {
+	                method: 'POST',
+	                headers: { 'Content-Type': 'application/json' },
+	                body: JSON.stringify({ quantity: parseInt(qty) })
+	            })
+	            .then(response => response.json())
+	            .then(result => {
+	                if (result.status === 'success') {
+	                    StockUtils.showSuccess(result.message);
+	                    StockList.refresh();
+	                    // 모달이 열려있다면 닫기
+	                    const modalElement = document.getElementById('stockDetailModal');
+	                    if (modalElement) {
+	                        const modalInstance = bootstrap.Modal.getInstance(modalElement);
+	                        if (modalInstance) {
+	                            modalInstance.hide();
+	                        }
+	                    }
+	                } else {
+	                    StockUtils.showError(result.message || '출고 처리 실패');
+	                }
+	            })
+	            .catch(error => {
+	                console.error('출고 처리 오류:', error);
+	                StockUtils.showError('출고 처리 중 오류가 발생했습니다.');
+	            });
+	        }
+	    },
+
     
-    showHistory(stockId) {
-        fetch(`/api/stocks/${stockId}`)
-            .then(response => response.json())
-            .then(stock => {
-                const historyInfo = document.getElementById('historyInfo');
-                if (historyInfo) {
-                    historyInfo.innerHTML = `
-                        <div class="alert alert-info mb-0">
-                            <strong>[${stock.itemCode}] ${stock.itemName}</strong> - 
-                            ${stock.warehouseName} 창고
-                        </div>
-                    `;
-                }
-                
-                return fetch(`/api/stocks/${stockId}/history`);
-            })
-            .then(response => response.json())
-            .then(history => {
-                this.renderHistory(history.content || []);
-                
-                const modal = new bootstrap.Modal(document.getElementById('stockHistoryModal'));
-                modal.show();
-            })
-            .catch(error => {
-                console.error('재고 이력 조회 실패:', error);
-                StockUtils.showError('재고 이력을 불러올 수 없습니다.');
-            });
-    },
+	// stock.js에서 showHistory 함수만 이것으로 교체하세요
+
+
+	showHistory(stockId) {
+	    console.log('🔍 이력조회 시작 - stockId:', stockId);
+	    
+	    // ✅ 1. 일단 빈 모달이라도 표시하기
+	    let modalElement = document.getElementById('stockHistoryModal');
+	    
+	    // 모달이 없으면 동적으로 생성
+	    if (!modalElement) {
+	        console.log('🆕 모달이 없어서 동적 생성');
+	        const modalHtml = `
+	            <div class="modal fade" id="stockHistoryModal" tabindex="-1">
+	                <div class="modal-dialog modal-lg">
+	                    <div class="modal-content">
+	                        <div class="modal-header">
+	                            <h5 class="modal-title">재고 입출고 이력</h5>
+	                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+	                        </div>
+	                        <div class="modal-body">
+	                            <div id="historyInfo" class="mb-3">
+	                                <div class="alert alert-info">
+	                                    <i class="fas fa-spinner fa-spin me-2"></i>
+	                                    데이터를 불러오는 중입니다...
+	                                </div>
+	                            </div>
+	                            <div class="table-responsive">
+	                                <table class="table table-bordered">
+	                                    <thead>
+	                                        <tr>
+	                                            <th>일시</th>
+	                                            <th>구분</th>
+	                                            <th>수량</th>
+	                                            <th>비고</th>
+	                                        </tr>
+	                                    </thead>
+	                                    <tbody id="historyTableBody">
+	                                        <tr>
+	                                            <td colspan="4" class="text-center py-3">
+	                                                <i class="fas fa-spinner fa-spin me-2"></i>
+	                                                로딩 중...
+	                                            </td>
+	                                        </tr>
+	                                    </tbody>
+	                                </table>
+	                            </div>
+	                        </div>
+	                        <div class="modal-footer">
+	                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+	                        </div>
+	                    </div>
+	                </div>
+	            </div>
+	        `;
+	        
+	        // body에 모달 추가
+	        document.body.insertAdjacentHTML('beforeend', modalHtml);
+	        modalElement = document.getElementById('stockHistoryModal');
+	    }
+	    
+	    // ✅ 2. 모달 무조건 표시
+	    console.log('🚀 모달 표시!');
+	    const modal = new bootstrap.Modal(modalElement, {
+	        backdrop: 'static',
+	        keyboard: true
+	    });
+	    modal.show();
+	    
+	    // ✅ 3. 데이터는 나중에 로딩
+	    setTimeout(() => {
+	        console.log('📡 데이터 로딩 시작...');
+	        
+	        // 재고 정보 조회
+	        fetch(`/api/stocks/${stockId}`)
+	            .then(response => {
+	                if (!response.ok) {
+	                    throw new Error(`재고 정보 조회 실패: ${response.status}`);
+	                }
+	                return response.json();
+	            })
+	            .then(stock => {
+	                console.log('📦 재고 정보:', stock);
+	                
+	                // 재고 정보 표시
+	                const historyInfo = document.getElementById('historyInfo');
+	                if (historyInfo) {
+	                    historyInfo.innerHTML = `
+	                        <div class="alert alert-info mb-0">
+	                            <strong>[${stock.itemCode}] ${stock.itemName}</strong> - 
+	                            ${stock.warehouseName} 창고
+	                        </div>
+	                    `;
+	                }
+	                
+	                // 이력 데이터 조회
+	                return fetch(`/api/stocks/${stockId}/history?page=0&size=50`);
+	            })
+	            .then(response => {
+	                if (!response.ok) {
+	                    throw new Error(`이력 조회 실패: ${response.status}`);
+	                }
+	                return response.json();
+	            })
+	            .then(historyPage => {
+	                console.log('📜 받은 이력 데이터:', historyPage);
+	                
+	                // 이력 테이블 렌더링
+	                this.renderHistory(historyPage.content || []);
+	                
+	                console.log('✅ 이력 데이터 렌더링 완료!');
+	            })
+	            .catch(error => {
+	                console.error('❌ 데이터 로딩 실패:', error);
+	                
+	                // 에러 메시지 표시
+	                const historyInfo = document.getElementById('historyInfo');
+	                const historyTableBody = document.getElementById('historyTableBody');
+	                
+	                if (historyInfo) {
+	                    historyInfo.innerHTML = `
+	                        <div class="alert alert-danger mb-0">
+	                            <i class="fas fa-exclamation-triangle me-2"></i>
+	                            오류: ${error.message}
+	                        </div>
+	                    `;
+	                }
+	                
+	                if (historyTableBody) {
+	                    historyTableBody.innerHTML = `
+	                        <tr>
+	                            <td colspan="4" class="text-center text-danger py-3">
+	                                데이터를 불러올 수 없습니다: ${error.message}
+	                            </td>
+	                        </tr>
+	                    `;
+	                }
+	                
+	                StockUtils.showError('재고 이력을 불러올 수 없습니다: ' + error.message);
+	            });
+	    }, 100); // 0.1초 후 데이터 로딩
+	    
+	    // ✅ 4. 모달 표시 확인
+	    modalElement.addEventListener('shown.bs.modal', () => {
+	        console.log('✅ 모달이 성공적으로 표시됨!');
+	    }, { once: true });
+	},
     
     renderHistory(logs) {
         const tbody = document.getElementById('historyTableBody');
@@ -740,16 +856,16 @@ const StockActions = {
         StockUtils.showInfo('일괄 출고 기능은 준비 중입니다.');
     },
     
-    downloadExcel() {
-        const params = new URLSearchParams({
-            keyword: StockState.filters.keyword,
-            whs: StockState.filters.warehouse,
-            itemType: StockState.filters.itemType,
-            stockStatus: StockState.filters.stockStatus
-        });
-        
-        window.location.href = `/api/stocks/excel?${params}`;
-    }
+	downloadExcel() {
+	    const params = new URLSearchParams({
+	        keyword: StockState.filters.keyword || '',
+	        whs: StockState.filters.warehouse || '',
+	        itemType: StockState.filters.itemType || '',
+	        stockStatus: StockState.filters.stockStatus || ''
+	    });
+
+	    window.location.href = `/api/stocks/excel?${params}`;
+	}
 };
 
 // ===== StockFilter =====

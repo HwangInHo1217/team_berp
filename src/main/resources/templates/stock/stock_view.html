@@ -31,8 +31,8 @@
                         <option value="belowSafety">안전재고 미달</option>
                     </select>
                 </div>
-                <div class="col-md-3">
-                    <button class="btn btn-primary" id="searchBtn">
+                <div class="col-md-3 text-end">
+    				<button class="btn btn-primary" id="searchBtn">
                         <i class="fas fa-search"></i> 검색
                     </button>
                     <button class="btn btn-secondary" id="resetBtn">
@@ -153,6 +153,7 @@
         </div>
     </div>
 </div>
+<div th:replace="~{stock/stock_detail_modal :: stock_modal}"></div>
 
 <!-- 재고 이력 모달 -->
 <div class="modal fade" id="stockHistoryModal" tabindex="-1">
@@ -185,3 +186,6 @@
         </div>
     </div>
 </div>
+
+
+
