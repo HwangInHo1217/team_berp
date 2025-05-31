@@ -1,28 +1,45 @@
-<div class="modal fade" id="stockLogModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">재고 입출고 이력</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <table class="table table-bordered">
-          <thead>
-            <tr>
-              <th>일시</th>
-              <th>유형</th>
-              <th>수량</th>
-              <th>비고</th>
-            </tr>
-          </thead>
-          <tbody id="logTableBody">
-            <!-- JavaScript로 채움 -->
-          </tbody>
-        </table>
-      </div>
+
+<html xmlns:th="http://www.thymeleaf.org">
+
+<!-- 재고 이력 모달 Fragment -->
+<div th:fragment="log_modal" class="modal fade" id="stockHistoryModal" tabindex="-1">
+    <div class="modal-dialog modal-xl"> <!-- modal-lg → modal-xl로 변경 -->
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-history me-2"></i>재고 입출고 이력
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="historyInfo" class="mb-3">
+                    <!-- 품목/창고 정보 표시 -->
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="20%">일시</th>
+                                <th width="12%">구분</th>
+                                <th width="10%">수량</th>
+                                <th width="58%">비고</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody">
+                            <tr>
+                                <td colspan="4" class="text-center py-3">
+                                    <i class="fas fa-spinner fa-spin me-2"></i>
+                                    로딩 중...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+            </div>
+        </div>
     </div>
-  </div>
 </div>
-
-
-
+</html>

@@ -1,22 +1,32 @@
-<!-- ===== stock_view.html (재고조정 버튼 제거) ===== -->
+<!-- ===== stock_view.html (수정된 버전 - 중복 모달 제거) ===== -->
 <div class="container" th:fragment="stock_view">
-    <h2 class="mb-4">재고 관리</h2>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-warehouse me-2"></i>재고 관리</h2>
+        <div class="d-flex gap-2">
+            <span class="badge bg-info">총 재고: <span id="totalStockCount">-</span>개 품목</span>
+            <span class="badge bg-warning">안전재고 미달: <span id="belowSafetyCount">-</span>개</span>
+            <span class="badge bg-danger">재고없음: <span id="outOfStockCount">-</span>개</span>
+        </div>
+    </div>
 
     <!-- 검색 및 필터 영역 -->
     <div class="card mb-3">
         <div class="card-body">
             <div class="row g-3">
                 <div class="col-md-3">
+                    <label class="form-label small text-muted">품목 검색</label>
                     <input type="text" class="form-control" id="searchInput" 
-                           placeholder="품목명 or 품목코드" />
+                           placeholder="품목명 또는 품목코드 입력" />
                 </div>
                 <div class="col-md-2">
+                    <label class="form-label small text-muted">창고</label>
                     <select class="form-select" id="warehouseSelect">
                         <option value="">전체 창고</option>
                         <!-- 동적 로딩됨 -->
                     </select>
                 </div>
                 <div class="col-md-2">
+                    <label class="form-label small text-muted">품목유형</label>
                     <select class="form-select" id="itemTypeFilter">
                         <option value="">전체 품목</option>
                         <option value="raw">자재</option>
@@ -24,6 +34,7 @@
                     </select>
                 </div>
                 <div class="col-md-2">
+                    <label class="form-label small text-muted">재고상태</label>
                     <select class="form-select" id="stockStatusFilter">
                         <option value="">전체 재고</option>
                         <option value="inStock">재고 있음</option>
@@ -31,11 +42,11 @@
                         <option value="belowSafety">안전재고 미달</option>
                     </select>
                 </div>
-                <div class="col-md-3 text-end">
-    				<button class="btn btn-primary" id="searchBtn">
+                <div class="col-md-3 d-flex align-items-end gap-2">
+                    <button class="btn btn-primary" id="searchBtn">
                         <i class="fas fa-search"></i> 검색
                     </button>
-                    <button class="btn btn-secondary" id="resetBtn">
+                    <button class="btn btn-outline-secondary" id="resetBtn">
                         <i class="fas fa-redo"></i> 초기화
                     </button>
                 </div>
@@ -43,20 +54,34 @@
         </div>
     </div>
 
-    <!-- 액션 버튼 영역 (재고조정 버튼 제거) -->
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <div>
-            <button class="btn btn-success" id="stockInBtn">
-                <i class="fas fa-plus-circle"></i> 입고
-            </button>
-            <button class="btn btn-danger" id="stockOutBtn">
-                <i class="fas fa-minus-circle"></i> 출고
-            </button>
-            <!-- 재고조정 버튼 제거 -->
+    <!-- 재고 관리 액션 버튼 영역 -->
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <!-- 재고 전용 관리 기능들 -->
+            <div class="btn-group" role="group">
+                <button class="btn btn-info" id="stockTransferBtn" title="창고간 재고 이동">
+                    <i class="fas fa-exchange-alt"></i> 창고이동
+                </button>
+                <button class="btn btn-outline-danger btn-sm" id="quickOutBtn" title="긴급 소량 출고">
+                    <i class="fas fa-bolt"></i> 긴급출고
+                </button>
+            </div>
         </div>
-        <div>
+        
+        <div class="col-md-6 text-end">
+            <!-- 다른 페이지로 이동 버튼들 -->
+            <div class="btn-group me-2" role="group">
+                <a href="/receiving" class="btn btn-outline-success" title="정식 입고 처리">
+                    <i class="fas fa-truck"></i> 입고페이지로
+                </a>
+                <a href="/shipping" class="btn btn-outline-primary" title="정식 출고 처리">
+                    <i class="fas fa-shipping-fast"></i> 출고페이지로
+                </a>
+            </div>
+            
+            <!-- 유틸리티 -->
             <button class="btn btn-outline-success" id="excelDownloadBtn">
-                <i class="fas fa-file-excel"></i> 엑셀 다운로드
+                <i class="fas fa-file-excel"></i> 엑셀다운로드
             </button>
         </div>
     </div>
@@ -66,26 +91,27 @@
         <table class="table table-hover" id="stockTable">
             <thead class="table-light">
                 <tr>
-                    <th width="5%">
+                    <th width="4%">
                         <input type="checkbox" id="selectAll" />
                     </th>
-                    <th width="5%">순번</th>
-                    <th width="10%" class="sortable" data-sort="itemCode">
+                    <th width="4%">순번</th>
+                    <th width="9%" class="sortable" data-sort="itemCode">
                         품목코드 <i class="fas fa-sort"></i>
                     </th>
-                    <th width="15%" class="sortable" data-sort="itemName">
+                    <th width="13%" class="sortable" data-sort="itemName">
                         품목명 <i class="fas fa-sort"></i>
                     </th>
-                    <th width="10%">품목유형</th>
-                    <th width="10%" class="sortable" data-sort="warehouseName">
+                    <th width="7%">품목유형</th>
+                    <th width="9%" class="sortable" data-sort="warehouseName">
                         창고 <i class="fas fa-sort"></i>
                     </th>
-                    <th width="10%" class="sortable" data-sort="quantity">
+                    <th width="7%" class="sortable" data-sort="quantity">
                         재고수량 <i class="fas fa-sort"></i>
                     </th>
-                    <th width="5%">단위</th>
-                    <th width="10%">최종입고일</th>
-                    <th width="10%">최종출고일</th>
+                    <th width="4%">단위</th>
+                    <th width="8%">LOT번호</th>
+                    <th width="8%">최종입고일</th>
+                    <th width="8%">최종출고일</th>
                     <th width="5%">상태</th>
                     <th width="5%">액션</th>
                 </tr>
@@ -109,83 +135,12 @@
     </div>
 </div>
 
-<!-- 입고 모달 -->
-<div class="modal fade" id="stockInModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">재고 입고</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="stockInForm">
-                    <div class="mb-3">
-                        <label class="form-label">품목 선택</label>
-                        <select class="form-select" id="inItemId" required>
-                            <option value="">품목을 선택하세요</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">창고 선택</label>
-                        <select class="form-select" id="inWarehouseId" required>
-                            <option value="">창고를 선택하세요</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">수량</label>
-                        <input type="number" class="form-control" id="inQuantity" 
-                               min="1" required />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">LOT 번호 (선택)</label>
-                        <input type="text" class="form-control" id="inLotNumber" />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">비고</label>
-                        <textarea class="form-control" id="inComment" rows="2"></textarea>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
-                <button type="button" class="btn btn-primary" id="confirmStockIn">입고 처리</button>
-            </div>
-        </div>
-    </div>
-</div>
+<!-- 🔥 중복 모달 제거! Fragment로만 사용 -->
+<!-- 창고 이동 모달 -->
+<div th:replace="~{stock/stock_transfer :: transfer_modal}"></div>
+
+<!-- 재고 상세 모달 -->
 <div th:replace="~{stock/stock_detail_modal :: stock_modal}"></div>
 
 <!-- 재고 이력 모달 -->
-<div class="modal fade" id="stockHistoryModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">재고 이력</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div id="historyInfo" class="mb-3">
-                    <!-- 품목/창고 정보 표시 -->
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-sm">
-                        <thead>
-                            <tr>
-                                <th>일시</th>
-                                <th>구분</th>
-                                <th>수량</th>
-                                <th>비고</th>
-                            </tr>
-                        </thead>
-                        <tbody id="historyTableBody">
-                            <!-- 동적 로딩 -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-
-
+<div th:replace="~{stock/stock_log_modal :: log_modal}"></div>

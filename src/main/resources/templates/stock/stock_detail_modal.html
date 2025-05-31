@@ -67,3 +67,31 @@
         </div>
     </div>
 </div>
+
+
+
+<!-- 🔄 선택적: 상세보기 모달에 창고이동 버튼 추가 -->
+<script>
+// 상세보기 모달 footer에 버튼 추가하는 스크립트
+document.addEventListener('DOMContentLoaded', function() {
+    const stockDetailModal = document.getElementById('stockDetailModal');
+    if (stockDetailModal) {
+        const modalFooter = stockDetailModal.querySelector('.modal-footer');
+        if (modalFooter && !document.getElementById('detailTransferBtn')) {
+            const transferBtn = document.createElement('button');
+            transferBtn.type = 'button';
+            transferBtn.className = 'btn btn-warning me-2';
+            transferBtn.id = 'detailTransferBtn';
+            transferBtn.innerHTML = '<i class="fas fa-exchange-alt me-2"></i>창고이동';
+            
+            transferBtn.addEventListener('click', () => {
+                if (StockModal.currentStockId && StockModal.currentWarehouseId && StockModal.currentQuantity !== undefined) {
+                    StockModal.openTransferModalFromDetail();
+                }
+            });
+            
+            modalFooter.insertBefore(transferBtn, modalFooter.firstChild);
+        }
+    }
+});
+</script>

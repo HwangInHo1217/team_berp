@@ -1,5 +1,7 @@
 package com.team.berp.stock.service;
 
+import java.util.Map;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -7,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.team.berp.stock.dto.StockRequestDTO;
 import com.team.berp.stock.dto.StockResponseDTO;
+import com.team.berp.stock.dto.StockTransferRequestDTO;
 import com.team.berp.stock.repository.StockRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -78,4 +81,24 @@ public class StockService {
                             String itemType, String stockStatus) {
      return new byte[0]; // TODO: Apache POI 구현
  }
+ 
+//===== StockService.java에 추가할 메서드들 =====
+
+/**
+* 🔄 창고간 재고 이동 (트랜잭션 관리)
+*/
+@Transactional
+public void transferStock(StockTransferRequestDTO req) {
+  stockBiz.transferStock(req);
+}
+
+/**
+* 📊 재고 현황 요약 통계 조회
+*/
+public Map<String, Object> getStockSummary() {
+  return stockBiz.getStockSummary();
+}
+ 
+ 
+ 
 }
