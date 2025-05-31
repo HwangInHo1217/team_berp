@@ -1,56 +1,76 @@
 <!-- item-edit-modal.html -->
 <div th:fragment="itemEditModal">
-  <div class="modal fade" id="itemEditModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-        <form id="itemEditForm">
-          <div class="modal-header">
-            <h5 class="modal-title">품목 수정</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
-          </div>
-          <div class="modal-body">
-            <!-- ID는 숨겨서 전달 -->
-            <input type="hidden" id="editItemId" name="id" />
+	<div class="modal fade" id="itemEditModal" tabindex="-1"
+		aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered">
+			<div class="modal-content">
+				<form id="itemEditForm">
+					<div class="modal-header">
+						<h5 class="modal-title">품목 수정</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal"
+							aria-label="닫기"></button>
+					</div>
+					<div class="modal-body">
+						<!-- ID는 숨겨서 전달 -->
+						<input type="hidden" id="editItemId" name="id" />
 
-            <div class="mb-3">
-              <label for="editName" class="form-label">품목명</label>
-              <input type="text" id="editItemName" name="name" class="form-control" required />
-            </div>
+						<div class="mb-3">
+							<label for="editName" class="form-label">품목명</label> <input
+								type="text" id="editItemName" name="name" class="form-control"
+								required />
+						</div>
 
-            <div class="mb-3">
-              <label for="editType" class="form-label">품목유형</label>
-              <select id="editItemType" name="type" class="form-select" required>
-                <option value="raw">자재</option>
-                <option value="semi">반제품</option>
-                <option value="product">완제품</option>
-              </select>
-            </div>
+						<div class="mb-3">
+							<label for="editType" class="form-label">품목유형</label> <select
+								id="editItemType" name="type" class="form-select" required>
+								<option value="raw">자재</option>
+								<option value="semi">반제품</option>
+								<option value="product">완제품</option>
+							</select>
+						</div>
 
-            <div class="mb-3">
-              <label for="editItemSpec" class="form-label">규격</label>
-              <input type="text" id="editItemSpec" name="spec" class="form-control" />
-            </div>
+						<div class="mb-3">
+							<label for="editItemSpec" class="form-label">규격</label> <input
+								type="text" id="editItemSpec" name="spec" class="form-control" />
+						</div>
 
-            <div class="mb-3">
-              <label for="editItemUnit" class="form-label">단위</label>
-              <input type="text" id="editItemUnit" name="unit" class="form-control" />
-            </div>
+						<div class="mb-3">
+							<label for="editItemUnit" class="form-label">단위</label> <input
+								type="text" id="editItemUnit" name="unit" class="form-control" />
+						</div>
+						<div class="mb-3">
+							<label for="editItemPrice" class="form-label">단가</label> <input
+								type="number" class="form-control" id="editItemPrice"
+								name="itemPrice" />
+						</div>
+						<div class="mb-3">
+							<label for="editItemSafetyStock" class="form-label">안전 재고</label>
+							<input type="number" class="form-control"
+								id="editItemSafetyStock" name="safetyStock" />
+						</div>
+						<div class="mb-3">
+							<label for="editItemPurchaseLeadTime" class="form-label">구매
+								리드타임</label> <input type="number" class="form-control"
+								id="editItemPurchaseLeadTime" name="purchaseLeadTime" />
+						</div>
 
-            <div class="mb-3">
-              <label for="editUse" class="form-label">사용 여부</label>
-              <select id="editItemUse" name="use" class="form-select">
-                <option value="Y">Y</option>
-                <option value="N">N</option>
-              </select>
-            </div>
-          </div>
+						<div class="mb-3">
+							<label for="editUse" class="form-label">사용 여부</label> <select
+								id="editItemUse" name="use" class="form-select">
+								<option value="Y">Y</option>
+								<option value="N">N</option>
+							</select>
+						</div>
+					</div>
 
-          <div class="modal-footer">
-            <button type="button" class="btn btn-primary" onclick="submitItemUpdate()">수정</button>
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-primary"
+							onclick="submitItemUpdate()">수정</button>
+						<button type="button" class="btn btn-secondary"
+							data-bs-dismiss="modal">닫기</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
 </div>

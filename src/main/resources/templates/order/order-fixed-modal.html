@@ -1,18 +1,20 @@
-<div th:fragment="registerModal">
-  <div class="modal fade" id="registerModal" tabindex="-1" aria-hidden="true">
+<div th:fragment="fixedModal">
+  <div class="modal fade" id="fixedModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
-        <form id="registerForm">
+        <form id="fixedForm">
           <div class="modal-header">
-            <h5 class="modal-title">주문 등록</h5>
+            <h5 class="modal-title">주문 수정</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
           </div>
           <div class="modal-body">
-            <!-- 기본정보 -->
+            <!-- registerModal과 동일한 구조, id만 fixedForm으로 바꾸고 hidden orderId 추가 -->
+            <input type="hidden" name="orderId" id="fixedOrderId" />
+
             <div class="row g-3 mb-4">
               <div class="col-md-6">
                 <label class="form-label">고객사</label>
-                <select id="companySelect" name="companyId" class="form-select" required>
+                <select id="fixedCompanySelect" name="companyId" class="form-select" required>
                   <option value="">-- 선택 --</option>
                   <option th:each="c : ${companies}"
                           th:value="${c.companyId}"
@@ -21,29 +23,28 @@
               </div>
               <div class="col-md-6">
                 <label class="form-label">주문일자</label>
-                <input type="date" name="orderDate" class="form-control" required />
+                <input type="date" id="fixedOrderDate" name="orderDate" class="form-control" required />
               </div>
               <div class="col-md-6">
                 <label class="form-label">담당자</label>
-                <input type="text" id="empName" class="form-control" readonly />
+                <input type="text" id="fixedEmpName" class="form-control" readonly />
               </div>
               <div class="col-md-6">
                 <label class="form-label">거래처담당자</label>
-                <input type="text" id="companyEmpName" class="form-control" readonly />
+                <input type="text" id="fixedCompanyEmpName" class="form-control" readonly />
               </div>
               <div class="col-12">
                 <label class="form-label">비고</label>
-                <textarea name="note" class="form-control"></textarea>
+                <textarea name="note" id="fixedRemark" class="form-control"></textarea>
               </div>
             </div>
 
-            <!-- 품목 리스트 -->
             <div class="mb-2 d-flex justify-content-between align-items-center">
               <strong>품목 정보</strong>
               <button type="button" id="addItem" class="btn btn-sm btn-outline-primary">+ 품목 추가</button>
             </div>
             <div class="table-responsive">
-              <table class="table table-bordered text-center align-middle" id="itemsTable">
+              <table class="table table-bordered text-center align-middle" id="fixedItemsTable">
                 <thead class="table-light">
                   <tr>
                     <th>품목</th>
@@ -58,14 +59,13 @@
               </table>
             </div>
 
-            <!-- Hidden -->
             <input type="hidden" name="orderType" value="CUSTOMER" />
             <input type="hidden" name="itemType" value="product" />
           </div>
           <div class="modal-footer">
             <span class="me-auto fw-bold">총합계: <span id="totalAmount">0.00</span></span>
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
-            <button type="button" id="saveOrder" class="btn btn-primary">저장</button>
+            <button type="button" id="updateOrder" class="btn btn-primary">수정</button>
           </div>
         </form>
       </div>
