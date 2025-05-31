@@ -1,152 +1,155 @@
+// OrderServiceImpl.java
 package com.team.berp.order.service;
 
-import com.team.berp.domain.*;
-import com.team.berp.order.dto.*;
-import com.team.berp.order.repository.*;
-import lombok.RequiredArgsConstructor;
+import com.team.berp.order.dto.OrderDto;
+import com.team.berp.order.dto.OrderSummaryDto;
+import com.team.berp.order.repository.Order_CompanyOrderRepository;
+import com.team.berp.order.repository.Order_CompanyRepository;
+import com.team.berp.order.repository.Order_ItemRepository;
+import com.team.berp.order.repository.Order_OrderLineItemRepository;
+import com.team.berp.order.repository.Order_WarehouseRepository;
+import com.team.berp.domain.CompanyOrder;
+import com.team.berp.domain.OrderLineItem;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.util.*;
+import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * 주문 비즈니스 로직 구현체
+ */
 @Service
-@RequiredArgsConstructor
 public class OrderServiceImpl implements OrderService {
     private final Order_CompanyOrderRepository orderRepo;
-    private final Order_CompanyRepository      companyRepo;
-    private final Order_EmployeeRepository     employeeRepo;
-    private final Order_ItemRepository         itemRepo;
-    private final Order_OrderLineItemRepository oliRepo;
+    private final Order_OrderLineItemRepository lineRepo;
+    private final Order_CompanyRepository         companyRepo;
+    private final Order_ItemRepository            itemRepo;
+    private final Order_WarehouseRepository       warehouseRepo;
+
+    public OrderServiceImpl(
+        Order_CompanyOrderRepository orderRepo,
+        Order_OrderLineItemRepository lineRepo,
+        Order_CompanyRepository companyRepo,
+        Order_ItemRepository itemRepo,
+        Order_WarehouseRepository warehouseRepo
+    ) {
+        this.orderRepo    = orderRepo;
+        this.lineRepo     = lineRepo;
+        this.companyRepo  = companyRepo;
+        this.itemRepo     = itemRepo;
+        this.warehouseRepo= warehouseRepo;
+    }
 
     @Override
-    public OrderPageDto getOrders(String companyName, String itemName,
-                                  LocalDate dateFrom, LocalDate dateTo,
-                                  Pageable pageable) {
-        var page = orderRepo.findByFilters(
-            companyName, itemName, dateFrom, dateTo, pageable);
-        return new OrderPageDto(
-            page.getContent(),
-            page.getNumber(),
-            page.getSize(),
-            page.getTotalElements(),
-            page.getTotalPages()
-        );
+    @Transactional
+    public void createOrder(OrderDto dto) {
+        CompanyOrder co = new CompanyOrder();
+        co.setCompany(companyRepo.findById(dto.getCompanyId()).orElseThrow());
+        co.setOrderDate(dto.getOrderDate());
+        co.setNote(dto.getRemark());
+        co.setOrderType(CompanyOrder.OrderType.valueOf(dto.getOrderType()));
+
+        List<OrderLineItem> lines = dto.getItems().stream()
+            .map(liDto -> {
+                OrderLineItem oli = new OrderLineItem();
+                oli.setCompanyOrder(co);
+                oli.setItem(itemRepo.findById(liDto.getItemId()).orElseThrow());
+                oli.setWarehouse(
+                        warehouseRepo.findById(liDto.getWarehouseId()).orElseThrow()
+                    );
+                oli.setUnitQty(liDto.getUnitQty().longValue());
+                oli.setUnitPrice(liDto.getUnitPrice());
+                oli.setUnitPriceall(liDto.getUnitPriceAll());
+                return oli;
+            })
+            .collect(Collectors.toList());
+
+        co.setLineItems(lines);
+        co.setAmount(lines.stream().mapToLong(OrderLineItem::getUnitPriceall).sum());
+        co.setOrderQty(lines.stream().mapToLong(oli -> oli.getUnitQty()).sum());
+        orderRepo.save(co);
+        lines.forEach(lineRepo::save);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public OrderDto getOrder(Long orderNum) {
-        CompanyOrder o = orderRepo.findWithDetailsByOrderNum(orderNum);
-        var items = o.getLineItems().stream()
-            .map(li -> new OrderLineItemDto(
-                li.getOrderLineItemId(),
-                li.getItem().getName(),
-                li.getItem().getUnit(),
-                li.getUnitQty(),
-                li.getUnitPrice(),
-                li.getUnitPriceall()))
-            .collect(Collectors.toList());
-
-        return new OrderDto(
-            o.getOrderNum(),
-            o.getCompany().getCompanyName(),
-            o.getCompany().getEmployee().getEmpName(),
-            o.getCompany().getCompanyEmpName(),
-            o.getOrderDate(),
-            o.getOrderQty(),
-            o.getAmount(),
-            o.getNote(),
-            items
-        );
+    public OrderDto getOrderDetail(Long orderId) {
+        return orderRepo.findById(orderId)
+            .map(this::toDto)
+            .orElseThrow(() -> new IllegalArgumentException("주문을 찾을 수 없습니다."));
     }
 
+    private OrderDto toDto(CompanyOrder co) {
+        OrderDto dto = new OrderDto();
+        dto.setOrderId(co.getOrderId());
+        dto.setOrderNum(co.getOrderNum());
+        dto.setOrderType(co.getOrderType().name());
+        dto.setOrderDate(co.getOrderDate());
+        dto.setOrderQty(co.getOrderQty());           // Long
+        dto.setRemark(co.getNote());
+        dto.setAmount(co.getAmount());
+        dto.setCompanyId(co.getCompany().getCompanyId());
+
+        dto.setItems(co.getLineItems().stream()
+            .map(this::toLineItemDto)
+            .collect(Collectors.toList()));
+        return dto;
+    }
+
+    private OrderDto.LineItem toLineItemDto(OrderLineItem oli) {
+        OrderDto.LineItem li = new OrderDto.LineItem();
+        li.setItemId(oli.getItem().getId());
+        li.setWarehouseId(oli.getWarehouse().getId());
+        li.setUnitQty(oli.getUnitQty());
+        li.setUnitPrice(oli.getUnitPrice());
+        li.setUnitPriceAll(oli.getUnitPriceall());
+        return li;
+    }
+    
+    
     @Override
     @Transactional
-    public OrderDto registerOrder(OrderRegisterFormDto form) {
-        long cnt = orderRepo.countByOrderType(CompanyOrder.OrderType.CUSTOMER);
-        Long nextNum = cnt + 1L;
-        Company comp = companyRepo.findById(form.getCustomerId())
-                          .orElseThrow();
-        CompanyOrder o = new CompanyOrder();
-        o.setOrderType(CompanyOrder.OrderType.CUSTOMER);
-        o.setOrderNum(nextNum);
-        o.setCompany(comp);
-        o.setOrderDate(form.getOrderDate());
-        o.setNote(Optional.ofNullable(form.getNote()).orElse(""));
-        o = orderRepo.save(o);
-
-        long totalQty = 0, totalAmt = 0;
-        for (OrderLineItemDto dto : form.getItems()) {
-            Item it = itemRepo.findByName(dto.getItemName());
-            var li = new OrderLineItem();
-            li.setCompanyOrder(o);
-            li.setItem(it);
-            li.setUnitQty(dto.getUnitQty());
-            li.setUnitPrice(dto.getUnitPrice());
-            li.setUnitPriceall(dto.getUnitQty() * dto.getUnitPrice());
-            oliRepo.save(li);
-            totalQty += dto.getUnitQty();
-            totalAmt += dto.getUnitQty() * dto.getUnitPrice();
-        }
-
-        o.setOrderQty(totalQty);
-        o.setAmount(totalAmt);
-        orderRepo.save(o);
-        return getOrder(o.getOrderNum());
+    public OrderDto updateOrder(OrderDto dto) {
+        CompanyOrder co = orderRepo.findById(dto.getOrderId())
+            .orElseThrow(() -> new IllegalArgumentException("주문을 찾을 수 없습니다."));
+        co.setOrderDate(dto.getOrderDate());
+        co.setNote(dto.getRemark());
+        co.getLineItems().forEach(lineRepo::delete);
+        co.getLineItems().clear();
+        createOrder(dto);
+        return dto;
     }
-
+    
+    
     @Override
     @Transactional
-    public OrderDto updateOrder(Long orderNum, OrderRegisterFormDto form) {
-        CompanyOrder o = orderRepo.findWithDetailsByOrderNum(orderNum);
-        o.setOrderDate(form.getOrderDate());
-        o.setNote(Optional.ofNullable(form.getNote()).orElse(""));
-        oliRepo.deleteAll(o.getLineItems());
-
-        long totalQty = 0, totalAmt = 0;
-        for (OrderLineItemDto dto : form.getItems()) {
-            Item it = itemRepo.findByName(dto.getItemName());
-            var li = new OrderLineItem();
-            li.setCompanyOrder(o);
-            li.setItem(it);
-            li.setUnitQty(dto.getUnitQty());
-            li.setUnitPrice(dto.getUnitPrice());
-            li.setUnitPriceall(dto.getUnitQty() * dto.getUnitPrice());
-            oliRepo.save(li);
-            totalQty += dto.getUnitQty();
-            totalAmt += dto.getUnitQty() * dto.getUnitPrice();
-        }
-
-        o.setOrderQty(totalQty);
-        o.setAmount(totalAmt);
-        orderRepo.save(o);
-        return getOrder(orderNum);
+    public void deleteOrders(List<Long> orderIds) {
+        orderIds.forEach(orderRepo::deleteById);
     }
-
+    
+    
     @Override
-    @Transactional
-    public void deleteOrders(List<Long> orderNums) {
-        for (Long num : orderNums) {
-            CompanyOrder o = orderRepo.findByOrderNum(num);
-            if (o != null) {
-                orderRepo.delete(o);
-            }
-        }
+    @Transactional(readOnly = true)
+    public Page<OrderSummaryDto> findOrderSummaries(
+            Long companyId,
+            Long itemId,
+            LocalDate fromDate,
+            LocalDate toDate,
+            Pageable pageable
+    ) {
+        return orderRepo.findSummariesByFilters(companyId, itemId, fromDate, toDate, pageable);
     }
 
+	@Override
+	public List<OrderDto> findByFilters(Long companyId, Long itemId, LocalDate fromDate, LocalDate toDate) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
-    @Override public List<Company> getAllCompanies() { return companyRepo.findAll(); }
-    @Override public List<Item>    getAllItems()     { return itemRepo.findAll(); }
-
-    @Override
-    public CompanyContactDto getCompanyContactInfo(Long customerId) {
-        Company c = companyRepo.findById(customerId).orElseThrow();
-        return new CompanyContactDto(
-            c.getEmployee().getEmpName(),
-            c.getCompanyEmpName()
-        );
-    }
 }
