@@ -3,6 +3,8 @@ package com.team.berp.mrp.service;
 import com.team.berp.domain.Item;
 import com.team.berp.domain.Mrp;
 import com.team.berp.domain.Stock;
+import com.team.berp.mrp.dto.ExtendedBomListViewResponse;
+import com.team.berp.mrp.dto.ExtendedBomListViewResponse.ExtendedComponent;
 import com.team.berp.mrp.dto.MrpViewDto;
 import com.team.berp.bom.dto.BomListViewResponse;
 import com.team.berp.mrp.repository.EntityMrpRepository;
@@ -90,44 +92,67 @@ public class MrpServiceImpl implements MrpService {
         if (itemCode == null || itemCode.isEmpty()) {
             return Collections.emptyList();
         }
+
+        // 1) 부모 품목 조회
         Item parent = itemRepository.findAll().stream()
             .filter(i -> itemCode.equals(i.getCode()))
             .findFirst().orElse(null);
-        if (parent == null) return Collections.emptyList();
+        if (parent == null) {
+            return Collections.emptyList();
+        }
 
+        // 2) BOM 자재 목록, 전체 재고 캐시
         List<com.team.berp.domain.Bom> bomList = bomRepository.findByParentItem(parent);
         List<Stock> allStocks = stockRepository.findAll();
         LocalDate today = LocalDate.now();
 
-        List<BomListViewResponse.Component> components = bomList.stream().map(bom -> {
+        // 3) ExtendedComponent 생성
+        List<ExtendedComponent> extComps = bomList.stream().map(bom -> {
             Item child = bom.getChildItem();
-            int requiredQty      = bom.getQty();
-            int stockQty         = allStocks.stream()
-                .filter(s -> s.getItem() != null && s.getItem().getCode().equals(child.getCode()))
+            int requiredQty       = bom.getQty();
+            int stockQty          = allStocks.stream()
+                .filter(s -> s.getItem() != null &&
+                             s.getItem().getCode().equals(child.getCode()))
                 .mapToInt(s -> Optional.ofNullable(s.getQuantity()).orElse(0))
                 .sum();
-            int shortageQty      = Math.max(requiredQty - stockQty, 0);
-            int safetyStock      = Optional.ofNullable(child.getSafetyStock()).orElse(0);
-            int purchaseQty      = shortageQty + safetyStock;
-            int purchaseLeadTime = Optional.ofNullable(child.getPurchaseLeadTime()).orElse(0);
-            String expectedDate  = today.plusDays(purchaseLeadTime).toString();
+            int shortageQty       = Math.max(requiredQty - stockQty, 0);
+            int safetyStock       = Optional.ofNullable(child.getSafetyStock()).orElse(0);
+            int purchaseQty       = shortageQty + safetyStock;
+            int purchaseLeadTime  = Optional.ofNullable(child.getPurchaseLeadTime()).orElse(0);
+            String expectedDate   = today.plusDays(purchaseLeadTime).toString();
 
-            return new BomListViewResponse.Component(
-            	    child.getCode(),                                        // 자재 코드
-            	    child.getName(),                                        // 자재명
-            	    requiredQty,                                            // 소요량
-            	    child.getSpec(),                                        // 규격
-            	    child.getUnit(),                                        // 단위
-            	    bom.getSeqNo(),                                         // 순번
-            	    Optional.ofNullable(bom.getLossRt()).map(Object::toString).orElse("0%"), // 손실률
-            	    Optional.ofNullable(bom.getItemPrice()).map(String::valueOf).orElse("0"), // 단가
-            	    bom.getRemark()                                         // 비고
-            	);
+            // 기존 Component 로 기본 필드 채우기
+            BomListViewResponse.Component base = new BomListViewResponse.Component(
+                child.getCode(),
+                child.getName(),
+                requiredQty,
+                child.getSpec(),
+                child.getUnit(),
+                bom.getSeqNo(),
+                Optional.ofNullable(bom.getLossRt()).map(Object::toString).orElse("0%"),
+                Optional.ofNullable(bom.getItemPrice()).map(String::valueOf).orElse("0"),
+                bom.getRemark()
+            );
 
+            return new ExtendedComponent(
+                base,
+                stockQty,
+                shortageQty,
+                safetyStock,
+                purchaseQty,
+                purchaseLeadTime,
+                expectedDate
+            );
         }).collect(Collectors.toList());
 
-        return Collections.singletonList(
-            new BomListViewResponse(parent.getCode(), parent.getName(), components)
-        );
+        // 4) Wrapper DTO 에 담아서 반환 (부모 타입으로)
+        ExtendedBomListViewResponse wrapper =
+            new ExtendedBomListViewResponse(
+                parent.getCode(),
+                parent.getName(),
+                extComps
+            );
+
+        return Collections.<BomListViewResponse>singletonList(wrapper);
     }
 }

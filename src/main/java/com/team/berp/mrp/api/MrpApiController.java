@@ -57,8 +57,15 @@ public class MrpApiController {
      *  • purchaseLeadTime                                (리드타임(구매)) ← NEW
      *  • expectedDate                                    (예상입고일)      ← NEW
      */
+ // File: MrpApiController.java
     @GetMapping("/bom/{itemCode}")
-    public List<BomListViewResponse> getBomList(@PathVariable String itemCode) {
-        return mrpService.findBomByItemCode(itemCode);
+    public List<BomListViewResponse.Component> getBomComponents(@PathVariable String itemCode) {
+        // 1) 기존 service 호출해서 Wrapper DTO 꺼내기
+        List<BomListViewResponse> wrappers = mrpService.findBomByItemCode(itemCode);
+        if (wrappers.isEmpty()) {
+            return List.of();
+        }
+        // 2) 첫 번째(유일한) 래퍼에서 components만 꺼내 리턴
+        return wrappers.get(0).getComponents();
     }
 }

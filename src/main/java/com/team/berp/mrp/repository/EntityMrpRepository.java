@@ -3,11 +3,12 @@ package com.team.berp.mrp.repository;
 import com.team.berp.domain.Mrp;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.*;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.repository.query.Param;
 
-public interface EntityMrpRepository extends JpaRepository<Mrp, Long> {
+public interface EntityMrpRepository
+        extends JpaRepository<Mrp, Long>, JpaSpecificationExecutor<Mrp> {
 
     /**
      * 가장 최근 주문의 주문수량(unit_qty)을 조회합니다.
