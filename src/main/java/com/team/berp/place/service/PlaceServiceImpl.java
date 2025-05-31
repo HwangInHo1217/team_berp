@@ -1,19 +1,18 @@
 package com.team.berp.place.service;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
 
 import com.team.berp.client.repository.ClientRepository;
-import com.team.berp.domain.Company;
 import com.team.berp.domain.CompanyOrder;
 import com.team.berp.domain.Item;
+import com.team.berp.domain.ItemType;
 import com.team.berp.domain.OrderLineItem;
 import com.team.berp.item.repository.ItemRepository;
-import com.team.berp.item.repository.OrderlineItemRepository;
+import com.team.berp.order.repository.Order_OrderLineItemRepository;
 import com.team.berp.place.dto.PlaceDTO;
 import com.team.berp.place.dto.PlaceDTO.OrderLineItemDTO;
 import com.team.berp.place.repository.PlaceRepository;
@@ -30,7 +29,7 @@ public class PlaceServiceImpl implements PlaceService{ //실제 구현
     /*PlaceRepository가 CompanyOrderRepository를 상속받고 있기 때문에
      * ComPanyOrderRepository를 새로 생성 x, PlaceRepository를 사용하였음*/
     private final ItemRepository itemRepository;
-    private final OrderlineItemRepository orderLineItemRepository;
+    private final Order_OrderLineItemRepository orderLineItemRepository;
 	
 	
     @Override
@@ -62,6 +61,7 @@ public class PlaceServiceImpl implements PlaceService{ //실제 구현
         // 4. 코멘트 세팅 (필드 추가되면 Entity에도 추가해야 함)
          order.setNote(dto.getNote()); // Entity에 comment 필드가 있으면
 
+        //발주 등록
         // 5. 발주 저장
         CompanyOrder savedOrder = companyOrderRepository.save(order);
 
@@ -99,5 +99,13 @@ public class PlaceServiceImpl implements PlaceService{ //실제 구현
 //    	return companyOrderRepository.findAll();
     	return companyOrderRepository.findAllWithItems();
     }
+    
+
+    @Override
+    public List<Item> findByType(ItemType type) {
+    	return itemRepository.findByType(type);
+    }
+    
+
  
 }

@@ -17,17 +17,21 @@ public class AddItemRequestDTO {
 	private String unit;
 	private String spec;
 	private String use;
-
+	private Long itemPrice;
+	private Integer safetyStock;
+	private Integer purchaseLeadTime;
 	public Item toEntity(String code) {
-		System.out.println("spec확인" + spec);
-		return Item.builder()
-				.code(code)
-				.name(name)
-				.type(ItemType.valueOf(this.type))
-				.spec(spec)
-				.unit(unit)
-				.use(use)
-				.build();
+	    return Item.builder()
+	            .code(code)
+	            .name(name)
+	            .type(ItemType.valueOf(this.type))
+	            .spec(spec)
+	            .unit(unit)
+	            .use(use)
+	            .itemPrice(itemPrice)
+	            .safetyStock(safetyStock)
+	            .purchaseLeadTime(purchaseLeadTime)
+	            .build();
 	}
 }
 

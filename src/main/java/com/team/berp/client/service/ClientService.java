@@ -32,6 +32,7 @@ public interface ClientService {
     // 회사명+사업자번호로 중복 여부 (등록/수정 둘 다 사용)
     boolean existsDuplicate(String companyName, String companyNo, Long excludeId);
  
+    //회사 타입 불러오기
     List<Company> getAllcompanies();
     
     public boolean existsBizNumDuplicate(String companyNo, Long excludeId);

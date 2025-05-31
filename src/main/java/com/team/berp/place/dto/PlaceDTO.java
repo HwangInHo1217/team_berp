@@ -22,16 +22,21 @@ public class PlaceDTO {
 
     @Data
     public static class OrderLineItemDTO {
-        private Long orderLineItemId;       // 품목 ID(auto_increment)
-        private Long itemId;        // 품목 엔티티 아이디
-        private String itemCode;   // 품목 코드 (출력용, 저장은 X)
-        private String itemName;   // 품목 이름 (출력용, 저장은 X)
-        private Long unitQty; // 개별 품목 개수
-        private String unit;       // 단위 (출력용, 저장은 X)
+        private Long orderLineItemId;
+        private Long itemId;
+        private String itemCode;
+        private String itemName;
+        private Long unitQty;        // 개별 수량
+        private String unit;
         private Long unitPrice;
+
+        private Long orderQty;       // 총 주문 수량 (필요시)
+        private Long amount;         // 해당 품목 총 금액 (unitPrice * unitQty)
+        private Long unitPriceAll;   // 단가 * 수량 (중복으로 필요없다면 생략 가능)
 
         private ItemListViewResponse item;
     }
+
     
     // ↓ 출력용으로 쓸 수 있는 추가 필드들 (선택)
     private String employeeName;    // 담당자 이름

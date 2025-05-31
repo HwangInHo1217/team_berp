@@ -2,6 +2,7 @@ package com.team.berp.bom.controller;
 
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.team.berp.bom.dto.AddBomRequestDTO;
+import com.team.berp.bom.dto.BomEditResponseDTO;
 import com.team.berp.bom.dto.BomListResponseDTO;
 import com.team.berp.bom.dto.BomListViewResponse;
 import com.team.berp.bom.dto.BomProductItemDTO;
@@ -36,16 +38,21 @@ public class BomApiController {
 
 	// ✅ 등록
 	@PostMapping
-	public ResponseEntity<Void> registerBom(@RequestBody AddBomRequestDTO dto) {
-		 bomService.registerBomWithVersion(dto); // ✅ 이 메서드로 수정
-		return ResponseEntity.ok().build();
+	public ResponseEntity<?> registerBom(@RequestBody AddBomRequestDTO dto) {
+	    try {
+	        bomService.registerBomWithVersion(dto);
+	        return ResponseEntity.ok(Map.of("result", "success")); // ✅ 바디 포함
+	    } catch (IllegalArgumentException e) {
+	        return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+	    }
 	}
 
+/*
 	// ✅ 상세 조회
 	@GetMapping("/version/{versionId}")
 	public BomListViewResponse getBomByVersionId(@PathVariable("versionId") Long versionId) {
 	    return bomService.getBomByVersionId(versionId);
-	}
+	}*/
 	// ✅ 1-1. BOM 버전 목록 조회
 	@GetMapping("/versions/{parentId}")
 	public List<BomVersionResponseDTO> getVersionsByParentId(@PathVariable("parentId") Long parentId) {
@@ -91,10 +98,16 @@ public class BomApiController {
 	    return ResponseEntity.ok(response);
 	}
 	
-	@DeleteMapping("/version/{versionId}") 
+	@DeleteMapping("/version/{versionId}")//삭제
 	public ResponseEntity<?> deleteBomVersion(@PathVariable("versionId") Long versionId) {
 	    bomService.deleteBomVersion(versionId);
 	    return ResponseEntity.ok().build();
 	}
+	   // ✅ BOM 버전 상세 조회 (수정용)
+    @GetMapping("/version/{versionId}")
+    public ResponseEntity<BomEditResponseDTO> getBomVersionDetail(@PathVariable("versionId") Long versionId) {
+        BomEditResponseDTO response = bomService.getBomEditData(versionId);
+        return ResponseEntity.ok(response);
+    }
 }
 

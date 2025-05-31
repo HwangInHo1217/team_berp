@@ -1,6 +1,9 @@
 package com.team.berp.domain;
 
 import java.math.BigDecimal;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -31,6 +34,7 @@ public class Bom {
     /** BOM 버전 (연관관계 주인) */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "bom_version_id")
+    @JsonIgnore
     private BomVersion bomVersion;
 
     @Column(name = "seq_no")

@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -52,8 +53,14 @@ public class StockApiController {
          @RequestParam(name = "page", defaultValue = "0") int page,
          @RequestParam(name = "size", defaultValue = "10") int size,
          @RequestParam(name = "sort", defaultValue = "id,DESC") String sort) {
-     
-     try {
+	 System.out.println("🔍 받은 sort 파라미터: " + sort);
+     System.out.println("📄 page: " + page + ", size: " + size);
+     System.out.println("🔎 keyword: " + keyword);
+     System.out.println("🏢 warehouse: " + whs);
+     System.out.println("📦 itemType: " + itemType);
+     System.out.println("📊 stockStatus: " + stockStatus);
+	 
+	 try {
          // 정렬 조건 파싱
          String[] sortParams = sort.split(",");
          Sort.Direction direction = sortParams.length > 1 && "ASC".equalsIgnoreCase(sortParams[1]) 
@@ -63,12 +70,25 @@ public class StockApiController {
          
          // 실제 검색 로직 호출
          Page<StockResponseDTO> stocks = stockSvc.getList(keyword, whs, itemType, stockStatus, pageable);
+         System.out.println("✅ 조회 결과 건수: " + stocks.getTotalElements());
+         System.out.println("📋 실제 반환 데이터 수: " + stocks.getContent().size());
          
+         // 처음 3개 데이터의 창고명 출력
+         if (!stocks.getContent().isEmpty()) {
+             System.out.println("🏢 처음 3개 창고명:");
+             stocks.getContent().stream()
+                 .limit(3)
+                 .forEach(stock -> System.out.println("  - " + stock.getWarehouseName()));
+         }
+         System.out.println("====================================================");
          return ResponseEntity.ok(stocks);
          
      } catch (Exception e) {
-         System.err.println("재고 목록 조회 오류: " + e.getMessage());
-         return ResponseEntity.ok(Page.empty());
+    	 System.out.println("❌ 조회 중 에러: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+    	 e.printStackTrace();
+    	 //return ResponseEntity.ok(Page.empty());
+    	 System.out.println("====================================================");
+    	 throw e;
      }
  }
  
@@ -262,7 +282,7 @@ public class StockApiController {
  }
  
  /**
-  * 📊 엑셀 다운로드 - GET /api/stocks/excel (TODO)
+  * 📊 엑셀 다운로드 - GET /api/stocks/excel
   */
  @GetMapping("/excel")
  public ResponseEntity<byte[]> downloadExcel(
@@ -271,6 +291,48 @@ public class StockApiController {
          @RequestParam(name = "itemType", required = false) String itemType,
          @RequestParam(name = "stockStatus", required = false) String stockStatus) {
      
-     return ResponseEntity.ok(new byte[0]); // TODO: 엑셀 생성 로직
- }
+	    try {
+	        // 1. JPA로 전체 데이터 조회 (기존 Service 그대로 활용)
+	        Pageable allData = PageRequest.of(0, 10000); // 충분히 큰 사이즈
+	        Page<StockResponseDTO> stocks = stockSvc.getList(keyword, whs, itemType, stockStatus, allData);
+	        
+	        // 2. 🔥 UTF-8 BOM 추가해서 한글 깨짐 해결
+	        StringBuilder csv = new StringBuilder();
+	        csv.append("\uFEFF"); // UTF-8 BOM - 엑셀에서 한글 제대로 인식
+	        csv.append("순번,품목코드,품목명,품목유형,창고명,현재수량,단위,최종입고일,최종출고일\n");
+	        
+	        // 3. 🔥 순번 자동 생성 (1부터 시작)
+	        int seq = 1;
+	        for (StockResponseDTO stock : stocks.getContent()) {
+	            csv.append(seq++).append(",") // 순번 자동 증가
+	               .append(stock.getItemCode() != null ? stock.getItemCode() : "").append(",")
+	               .append(stock.getItemName() != null ? stock.getItemName() : "").append(",")
+	               .append(stock.getItemType() != null ? stock.getItemType() : "").append(",")
+	               .append(stock.getWarehouseName() != null ? stock.getWarehouseName() : "").append(",")
+	               .append(stock.getQuantity() != null ? stock.getQuantity() : 0).append(",")
+	               .append(stock.getUnit() != null ? stock.getUnit() : "").append(",")
+	               .append(stock.getLastInDate() != null ? stock.getLastInDate() : "").append(",")
+	               .append(stock.getLastOutDate() != null ? stock.getLastOutDate() : "").append("\n");
+	        }
+	        
+	        // 4. 🔥 응답 헤더 수정 - 한글 파일명 지원
+	        HttpHeaders headers = new HttpHeaders();
+	        headers.add("Content-Type", "application/vnd.ms-excel; charset=UTF-8");
+	        
+	        // 한글 파일명 인코딩
+	        String fileName = "재고현황_" + java.time.LocalDate.now() + ".csv";
+	        String encodedFileName = java.net.URLEncoder.encode(fileName, "UTF-8")
+	                                                   .replaceAll("\\+", "%20");
+	        headers.add("Content-Disposition", 
+	                   "attachment; filename*=UTF-8''" + encodedFileName);
+	        
+	        return ResponseEntity.ok()
+	                .headers(headers)
+	                .body(csv.toString().getBytes("UTF-8"));
+	                
+	    } catch (Exception e) {
+	        e.printStackTrace();
+			return ResponseEntity.status(500).body("오류 발생".getBytes());
+		}
+	}
 }
