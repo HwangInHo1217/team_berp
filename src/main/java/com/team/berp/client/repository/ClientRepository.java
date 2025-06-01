@@ -2,9 +2,6 @@ package com.team.berp.client.repository;
 
 import com.team.berp.domain.Company;
 import com.team.berp.domain.Company.CompanyType;
-
-import java.util.List;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -94,7 +91,7 @@ public interface ClientRepository extends JpaRepository<Company, Long> {
         Long companyId,
         String useYn
     );
-    
-  //사업장 유형 선택, supplier or customer
-    List<Company> findByCompanyType(CompanyType Type);
+
+
 }
+

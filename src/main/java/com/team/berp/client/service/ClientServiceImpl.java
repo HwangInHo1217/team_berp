@@ -155,6 +155,7 @@ public class ClientServiceImpl implements ClientService {
         return repo.existsByCompanyNoAndCompanyIdNotAndUseYn(companyNo, excludeId, "Y");
     }
 
+
     @Override
     public boolean existsNameDuplicate(String companyName, Long excludeId) {
         if (excludeId == null) {
@@ -162,6 +163,8 @@ public class ClientServiceImpl implements ClientService {
         }
         return repo.existsByCompanyNameAndCompanyIdNotAndUseYn(companyName, excludeId, "Y");
     }
+
+   
 
     //repository에서 사업장 유형 선택, 모두 찾기
     @Override
@@ -174,4 +177,5 @@ public class ClientServiceImpl implements ClientService {
         return employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new RuntimeException("직원 정보가 없습니다. id: " + employeeId));
     }
+
 }

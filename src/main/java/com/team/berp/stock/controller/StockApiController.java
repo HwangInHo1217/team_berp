@@ -4,6 +4,7 @@ import com.team.berp.inventory_log.dto.InventoryLogResponseDTO;
 import com.team.berp.inventory_log.service.InventoryLogService;
 import com.team.berp.stock.dto.*;
 import com.team.berp.stock.service.StockService;
+import com.team.berp.warehouse.dto.WarehouseResponseDTO;
 import com.team.berp.warehouse.service.Warehouse_service;
 import com.team.berp.item.service.ItemService; // 기존 ItemService 사용
 import lombok.RequiredArgsConstructor;
@@ -234,18 +235,7 @@ public class StockApiController {
      }
  }
  
- /**
-  * 🏢 창고 목록 - GET /api/stocks/warehouses
-  */
- @GetMapping("/warehouses")
- public ResponseEntity<List<com.team.berp.warehouse.dto.WarehouseResponseDTO>> getWarehouses(
-         @RequestParam(name = "useYn", defaultValue = "Y") String useYn) {
-     try {
-         return ResponseEntity.ok(whsSvc.getWhsByFilter(useYn));
-     } catch (Exception e) {
-         return ResponseEntity.ok(List.of());
-     }
- }
+
  
  /**
   * 📦 품목 목록 - GET /api/stocks/items
@@ -335,4 +325,106 @@ public class StockApiController {
 			return ResponseEntity.status(500).body("오류 발생".getBytes());
 		}
 	}
+ 	
+ 
+
+/**
+ * 🔄 창고간 재고 이동 - POST /api/stocks/transfer
+ */
+@PostMapping("/transfer")
+public ResponseEntity<Map<String, String>> transferStock(@RequestBody StockTransferRequestDTO req) {
+    
+    System.out.println("🔄 창고이동 API 요청: " + req);
+    
+    try {
+        stockSvc.transferStock(req);
+        
+        Map<String, String> response = new HashMap<>();
+        response.put("status", "success");
+        response.put("message", "창고 이동이 완료되었습니다.");
+        
+        System.out.println("✅ 창고이동 성공");
+        return ResponseEntity.ok(response);
+        
+    } catch (IllegalArgumentException e) {
+        System.err.println("❌ 창고이동 유효성 오류: " + e.getMessage());
+        
+        Map<String, String> response = new HashMap<>();
+        response.put("status", "error");
+        response.put("message", e.getMessage());
+        return ResponseEntity.badRequest().body(response);
+        
+    } catch (Exception e) {
+        System.err.println("❌ 창고이동 시스템 오류: " + e.getMessage());
+        e.printStackTrace();
+        
+        Map<String, String> response = new HashMap<>();
+        response.put("status", "error");
+        response.put("message", "창고 이동 중 오류가 발생했습니다: " + e.getMessage());
+        return ResponseEntity.badRequest().body(response);
+    }
+}
+
+/**
+ * 📊 재고 현황 요약 - GET /api/stocks/summary
+ */
+@GetMapping("/summary")
+public ResponseEntity<Map<String, Object>> getStockSummary() {
+    try {
+        Map<String, Object> summary = stockSvc.getStockSummary();
+        return ResponseEntity.ok(summary);
+        
+    } catch (Exception e) {
+        System.err.println("재고 요약 조회 실패: " + e.getMessage());
+        
+        // 실패해도 빈 데이터 반환 (선택적 기능이므로)
+        Map<String, Object> emptySummary = new HashMap<>();
+        emptySummary.put("totalItems", 0);
+        emptySummary.put("belowSafety", 0);
+        emptySummary.put("outOfStock", 0);
+        emptySummary.put("normalStock", 0);
+        
+        return ResponseEntity.ok(emptySummary);
+    }
+}
+
+/**
+ * 🏢 창고 목록 조회 (기존 메서드 개선)
+ * 기존의 /api/stocks/warehouses 를 warehouse 서비스와 연동하도록 수정
+ */
+@GetMapping("/warehouses")
+public ResponseEntity<List<Map<String, Object>>> getWarehouses(
+        @RequestParam(name = "useYn", defaultValue = "Y") String useYn) {
+    try {
+        
+        // 🔥 기존 창고 서비스 활용!
+        List<WarehouseResponseDTO> warehouses = whsSvc.getWhsByFilter(useYn);
+        
+        // Warehouse DTO → Map 변환 (JavaScript 호환성)
+        List<Map<String, Object>> result = warehouses.stream()
+            .map(wh -> {
+                Map<String, Object> whMap = new HashMap<>();
+                whMap.put("id", wh.getWarehouseId());  // ✅ 정확한 필드명
+                whMap.put("warehouseCode", wh.getWarehouseCode());
+                whMap.put("warehouseName", wh.getWarehouseName());
+                whMap.put("warehouseType", wh.getWarehouseType().name());
+                whMap.put("useYn", wh.getUseYn());
+                return whMap;
+            })
+            .collect(Collectors.toList());
+            
+        System.out.println("🏢 창고 목록 조회 성공: " + result.size() + "개");
+        return ResponseEntity.ok(result);
+        
+    } catch (Exception e) {
+        System.err.println("창고 목록 조회 실패: " + e.getMessage());
+        return ResponseEntity.ok(List.of()); // 빈 리스트 반환
+    }
+}
+ 
+ 
+ 
+ 
+ 
+ 
 }

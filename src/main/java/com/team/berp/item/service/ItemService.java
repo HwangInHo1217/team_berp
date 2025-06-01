@@ -25,6 +25,10 @@ public class ItemService {
 
 	private final ItemRepository itemRepository;
 	
+	public Item getItemById(Long id) {
+	    return itemRepository.findById(id)
+	        .orElseThrow(() -> new IllegalArgumentException("해당 ID의 품목을 찾을 수 없습니다: " + id));
+	}
 	public Page<Item> getItemList(Pageable pageable) {
 		  // Repository에서 Pageable 기반으로 전체 아이템 목록을 페이징 조회
 	    return itemRepository.findAll(pageable);
