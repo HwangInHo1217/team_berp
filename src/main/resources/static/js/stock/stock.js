@@ -631,9 +631,9 @@ const StockModal = {
             let className = 'alert alert-info small mt-2';
             
             if (itemType === 'product') {
-                message = '📦 완제품은 완제품 창고로만 이동 가능합니다.';
+                message = '완제품은 완제품 창고로만 이동 가능합니다.';
             } else if (itemType === 'raw') {
-                message = '🔧 자재는 자재 창고로만 이동 가능합니다.';
+                message = '자재는 자재 창고로만 이동 가능합니다.';
             } else {
                 message = '⚠️ 품목 유형에 맞는 창고를 선택해주세요.';
                 className = 'alert alert-warning small mt-2';
@@ -1659,9 +1659,9 @@ const StockTransfer = {
             let message = '';
             
             if (itemType === 'product') {
-                message = '📦 완제품은 완제품 창고로만 이동 가능합니다.';
+                message = '완제품은 완제품 창고로만 이동 가능합니다.';
             } else if (itemType === 'raw') {
-                message = '🔧 자재는 자재 창고로만 이동 가능합니다.';
+                message = '자재는 자재 창고로만 이동 가능합니다.';
             } else {
                 message = '⚠️ 품목 유형에 맞는 창고를 선택해주세요.';
             }
