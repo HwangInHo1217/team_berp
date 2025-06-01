@@ -41,4 +41,8 @@ public interface ClientService {
     // 회사 전체 조회 (타입 포함 여부 없이)
     List<Company> getAllcompanies();
 
+    
+ // employee_id로 직원 조회
+    Employee getEmployeeById(Long employeeId);
+
 }
