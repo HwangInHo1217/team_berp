@@ -1,0 +1,32 @@
+<!-- order-shipment-modal.html -->
+<div th:fragment="shipmentModal">
+  <div class="modal fade" id="shipmentModal" tabindex="-1" aria-labelledby="shipmentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+      
+        <div class="modal-header">
+          <h5 class="modal-title" id="shipmentModalLabel">출고 등록</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        
+        <div class="modal-body">
+          <p id="shipmentModalMsg" class="text-danger d-none">해당 주문에 등록 가능한 상품이 없습니다.</p>
+          
+          <div id="shipmentWarehouseSection">
+            <label for="shipmentWarehouseSelect">출고할 창고</label>
+            <select id="shipmentWarehouseSelect" class="form-select mb-3">
+              <!-- JS에서 동적으로 채워짐 -->
+            </select>
+          </div>
+          
+          <!-- 필요시 추가 필드 여기에 배치 -->
+        </div>
+        
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+          <button type="button" class="btn btn-primary" id="shipmentSaveBtn">출고 등록</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

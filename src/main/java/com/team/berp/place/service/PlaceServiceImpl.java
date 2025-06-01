@@ -3,14 +3,17 @@ package com.team.berp.place.service;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
 import com.team.berp.client.repository.ClientRepository;
 import com.team.berp.domain.CompanyOrder;
+import com.team.berp.domain.Employee;
 import com.team.berp.domain.Item;
 import com.team.berp.domain.ItemType;
 import com.team.berp.domain.OrderLineItem;
+import com.team.berp.employee.repository.EmployeeRepository;
 import com.team.berp.item.repository.ItemRepository;
 import com.team.berp.order.repository.Order_OrderLineItemRepository;
 import com.team.berp.place.dto.PlaceDTO;
@@ -30,6 +33,8 @@ public class PlaceServiceImpl implements PlaceService{ //실제 구현
      * ComPanyOrderRepository를 새로 생성 x, PlaceRepository를 사용하였음*/
     private final ItemRepository itemRepository;
     private final Order_OrderLineItemRepository orderLineItemRepository;
+    private final EmployeeRepository employeeRepository;  // 생성자 주입으로 추가
+
 	
 	
     @Override
@@ -53,20 +58,33 @@ public class PlaceServiceImpl implements PlaceService{ //실제 구현
         }
         order.setOrderType(orderType);
 
-//        // 3. orderDate 변환: String -> LocalDateTime
+        //orderDate 변환: String -> LocalDateTime, 발주일 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         LocalDate orderDate = LocalDate.parse(dto.getOrderDate(), formatter);
         order.setOrderDate(orderDate);
 
-        // 4. 코멘트 세팅 (필드 추가되면 Entity에도 추가해야 함)
+         //비고 코멘트 세팅 (필드 추가되면 Entity에도 추가해야 함)
          order.setNote(dto.getNote()); // Entity에 comment 필드가 있으면
 
+         // employeeId 처리 추가
+         if (dto.getEmployeeId() != null) {
+             Employee employee = employeeRepository.findById(dto.getEmployeeId())
+                                    .orElseThrow(() -> new RuntimeException("해당 직원이 존재하지 않습니다."));
+             order.setEmployee(employee);
+         }
+         
+         //주문번호 생성 및 세팅
+         String orderNum = generateOrderNum();
+         order.setOrderNum(orderNum);
+         
         //발주 등록
-        // 5. 발주 저장
+        //발주 저장
         CompanyOrder savedOrder = companyOrderRepository.save(order);
 
         // 6. 품목 리스트 저장
         List<OrderLineItemDTO> lineItems = dto.getLineItems();
+        long totalOrderQty = 0L;
+        long totalAmount = 0L;
 
         if (lineItems != null && !lineItems.isEmpty()) {
             for (OrderLineItemDTO itemDTO : lineItems) {
@@ -76,7 +94,7 @@ public class PlaceServiceImpl implements PlaceService{ //실제 구현
                 Item item = itemRepository.findById(itemDTO.getItemId())
                     .orElseThrow(() -> new RuntimeException("해당 품목이 존재하지 않습니다."));
 
-             // 발주와 품목 연결
+                // 발주와 품목 연결
                 lineItem.setCompanyOrder(savedOrder);
                 lineItem.setItem(item); 
 
@@ -86,10 +104,25 @@ public class PlaceServiceImpl implements PlaceService{ //실제 구현
                 // 단가 세팅 (필요하면)
                 lineItem.setUnitPrice(itemDTO.getUnitPrice());
 
-                // 저장
+                // unit 필드 반드시 세팅
+                lineItem.setUnit(itemDTO.getUnit());
+                
+                // 추가 계산 및 저장
+                Long unitPriceAll = itemDTO.getUnitQty() * itemDTO.getUnitPrice();
+                lineItem.setUnitPriceall(unitPriceAll); // DB에 필드 있다면
+
+                // DB 저장
                 orderLineItemRepository.save(lineItem);
+
+                // 총합 계산
+                totalOrderQty += itemDTO.getUnitQty();
+                totalAmount += unitPriceAll;
             }
         }
+       // 총합을 발주에 반영
+        savedOrder.setOrderQty(totalOrderQty);
+        savedOrder.setAmount(totalAmount);
+        companyOrderRepository.save(savedOrder); // 다시 저장
 
         return savedOrder;
     }
@@ -106,6 +139,10 @@ public class PlaceServiceImpl implements PlaceService{ //실제 구현
     	return itemRepository.findByType(type);
     }
     
-
+    private String generateOrderNum() {
+        String datePart = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String randomPart = UUID.randomUUID().toString().substring(0, 4);
+        return "PO-" + datePart + "-" + randomPart;
+    }
  
 }

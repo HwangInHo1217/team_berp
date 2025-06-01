@@ -1,6 +1,8 @@
 // ===== StockBusinessService.java (수정된 버전) =====
 package com.team.berp.stock.service;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.data.domain.Page;
@@ -18,6 +20,7 @@ import com.team.berp.inventory_log.service.InventoryLogService;
 import com.team.berp.item.repository.ItemRepository;
 import com.team.berp.stock.dto.StockRequestDTO;
 import com.team.berp.stock.dto.StockResponseDTO;
+import com.team.berp.stock.dto.StockTransferRequestDTO;
 import com.team.berp.stock.repository.StockRepository;
 import com.team.berp.warehouse.repository.Warehouse_repository;
 
@@ -245,6 +248,165 @@ public class StockBusinessService {
             default -> stockRepo.findAll(page);
         };
     }
+    
+    
+ // ===== StockBusinessService.java에 추가할 메서드들 =====
+
+    /**
+     * 🔄 창고간 재고 이동 처리
+     */
+    @Transactional
+    public void transferStock(StockTransferRequestDTO req) {
+        
+        System.out.println("🔄 창고 이동 시작: " + req);
+        
+        // 1. 유효성 검사
+        validateTransferRequest(req);
+        
+        // 2. 필요한 엔티티들 조회
+        Item item = getItem(req.getItemId());
+        Warehouse fromWhs = getWarehouse(req.getFromWarehouseId());
+        Warehouse toWhs = getWarehouse(req.getToWarehouseId());
+        
+        // 3. 출발지 재고 확인 및 차감
+        Stock fromStock = stockRepo.findByItemAndWarehouse(item, fromWhs)
+                .orElseThrow(() -> new RuntimeException("출발지에 해당 재고가 없습니다."));
+        
+        validationSvc.checkQty(fromStock, req.getQuantity());
+        
+        System.out.println("✅ 출발지 재고 확인 완료: " + fromStock.getQuantity() + "개");
+        
+        // 4. 출발지 재고 차감
+        updateSvc.subQty(fromStock, req.getQuantity());
+        
+        // 5. 도착지 재고 증가 (없으면 생성)
+        Optional<Stock> toStockOpt = stockRepo.findByItemAndWarehouse(item, toWhs);
+        
+        if (toStockOpt.isPresent()) {
+            // 기존 재고가 있으면 수량 추가
+            updateSvc.addQty(toStockOpt.get(), req.getQuantity());
+            System.out.println("✅ 기존 재고에 추가: " + toStockOpt.get().getQuantity());
+        } else {
+            // 새 재고 생성
+            StockRequestDTO newStockReq = new StockRequestDTO();
+            newStockReq.setItemId(req.getItemId());
+            newStockReq.setWarehouseId(req.getToWarehouseId());
+            newStockReq.setQuantity(req.getQuantity());
+            newStockReq.setComment("창고간 이동으로 생성");
+            
+            updateSvc.createStock(newStockReq, item, toWhs);
+            System.out.println("✅ 새로운 재고 생성 완료");
+        }
+        
+        // 6. 이동 로그 기록
+        String reasonText = getReasonText(req.getReason());
+        String comment = String.format("[창고이동] %s → %s, 사유: %s", 
+                                      fromWhs.getWarehouseName(), 
+                                      toWhs.getWarehouseName(),
+                                      reasonText);
+        
+        if (req.getComment() != null && !req.getComment().trim().isEmpty()) {
+            comment += ", 비고: " + req.getComment();
+        }
+        
+        // 출발지 출고 로그
+        logSvc.createLog(LogType.OUT, item, fromWhs, req.getQuantity(), 
+                        comment + " (출고)");
+        
+        // 도착지 입고 로그  
+        logSvc.createLog(LogType.IN, item, toWhs, req.getQuantity(), 
+                        comment + " (입고)");
+        
+        System.out.println("✅ 창고 이동 완료!");
+    }
+
+    /**
+     * 📊 재고 현황 요약 통계
+     */
+    public Map<String, Object> getStockSummary() {
+        try {
+            Map<String, Object> summary = new HashMap<>();
+            
+            // 전체 재고 품목 수 (중복 제거)
+            long totalItems = stockRepo.countDistinctItems();
+            
+            // 재고 없는 품목 수
+            long outOfStockItems = stockRepo.countByQuantity(0);
+            
+            // 안전재고 미달 품목 수 (1~9개)
+            long belowSafetyItems = stockRepo.countByQuantityBetween(1, 9);
+            
+            // 정상 재고 품목 수
+            long normalStockItems = Math.max(0, totalItems - outOfStockItems - belowSafetyItems);
+            
+            summary.put("totalItems", totalItems);
+            summary.put("outOfStock", outOfStockItems); 
+            summary.put("belowSafety", belowSafetyItems);
+            summary.put("normalStock", normalStockItems);
+            
+            System.out.println("📊 재고 요약: " + summary);
+            return summary;
+            
+        } catch (Exception e) {
+            System.err.println("재고 요약 통계 조회 실패: " + e.getMessage());
+            e.printStackTrace();
+            
+            // 실패시 기본값 반환
+            Map<String, Object> defaultSummary = new HashMap<>();
+            defaultSummary.put("totalItems", 0L);
+            defaultSummary.put("outOfStock", 0L);
+            defaultSummary.put("belowSafety", 0L);
+            defaultSummary.put("normalStock", 0L);
+            
+            return defaultSummary;
+        }
+    }
+
+    // === 내부 헬퍼 메서드들 ===
+
+    /**
+     * 🔍 창고 이동 요청 유효성 검사
+     */
+    private void validateTransferRequest(StockTransferRequestDTO req) {
+        if (req.getFromWarehouseId() == null) {
+            throw new IllegalArgumentException("출발 창고가 선택되지 않았습니다.");
+        }
+        
+        if (req.getToWarehouseId() == null) {
+            throw new IllegalArgumentException("도착 창고가 선택되지 않았습니다.");
+        }
+        
+        if (req.getFromWarehouseId().equals(req.getToWarehouseId())) {
+            throw new IllegalArgumentException("출발 창고와 도착 창고가 같을 수 없습니다.");
+        }
+        
+        if (req.getQuantity() == null || req.getQuantity() <= 0) {
+            throw new IllegalArgumentException("이동 수량은 0보다 커야 합니다.");
+        }
+        
+        if (req.getItemId() == null) {
+            throw new IllegalArgumentException("품목 정보가 없습니다.");
+        }
+    }
+
+    /**
+     * 이동 사유 코드를 한글로 변환
+     */
+    private String getReasonText(String reasonCode) {
+        if (reasonCode == null || reasonCode.trim().isEmpty()) {
+            return "일반 이동";
+        }
+        
+        return switch (reasonCode) {
+            case "PRODUCTION" -> "생산 투입";
+            case "SHIPPING_PREPARE" -> "출하 준비";
+            case "REORGANIZATION" -> "창고 정리";
+            case "MAINTENANCE" -> "창고 보수";
+            case "OTHER" -> "기타";
+            default -> reasonCode; // 그대로 표시
+        };
+    }
+    
     
     // === 나머지 메서드들 (기존과 동일) ===
     

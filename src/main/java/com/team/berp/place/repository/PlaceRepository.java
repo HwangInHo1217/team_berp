@@ -20,18 +20,25 @@ public interface PlaceRepository extends JpaRepository<CompanyOrder, Long> {
     Join FETCH: 연관된 엔티티를 즉시 함께 조회, 즉시 로딩처럼 연관 객체도 함께 가져옴, 
     조회 + N + 1 문제 해결, 기준 + 연관된 엔티티도 함께 가져옴
      */
-
-	// PlaceRepository.java
 //	@Query("SELECT DISTINCT o FROM CompanyOrder o " +
-//	       "JOIN FETCH o.lineItems li " +
-//	       "JOIN FETCH li.item")
-//	List<CompanyOrder> findAllWithItems();
+//		       "JOIN FETCH o.company c " + //companyorder가 연관된 company를 같이 가져옴
+//		       "JOIN FETCH c.employee e " +  // 회사 → 직원까지 fetch
+//		       "JOIN FETCH o.lineItems li " + //주문 상세 항목을 가져옴
+//		       "JOIN FETCH li.item") //품목 항목을 가져옴
+//		List<CompanyOrder> findAllWithItems();
+	
+//	@Query("SELECT DISTINCT o FROM CompanyOrder o " +
+//		       "JOIN FETCH o.company c " +
+//		       "LEFT JOIN FETCH o.employee e " +  // 담당자 정보 fetch
+//		       "JOIN FETCH o.lineItems li " +
+//		       "JOIN FETCH li.item")
+//		List<CompanyOrder> findAllWithItems();
 
 	@Query("SELECT DISTINCT o FROM CompanyOrder o " +
-		       "JOIN FETCH o.company c " + //companyorder가 연관된 company를 같이 가져옴
-		       "JOIN FETCH c.employee e " +  // 회사 → 직원까지 fetch
-		       "JOIN FETCH o.lineItems li " + //주문 상세 항목을 가져옴
-		       "JOIN FETCH li.item") //품목 항목을 가져옴
+		       "LEFT JOIN FETCH o.employee e " +
+		       "JOIN FETCH o.company c " +
+		       "JOIN FETCH o.lineItems li " +
+		       "JOIN FETCH li.item")
 		List<CompanyOrder> findAllWithItems();
 
 

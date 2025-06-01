@@ -1,3 +1,4 @@
+
 package com.team.berp.client.service;
 
 import com.team.berp.client.dto.ClientViewDto;
@@ -39,4 +40,5 @@ public interface ClientService {
 
     // 회사 전체 조회 (타입 포함 여부 없이)
     List<Company> getAllcompanies();
+
 }

@@ -216,6 +216,34 @@ public interface StockRepository extends JpaRepository<Stock, Long> {
                                   @Param("stockStatus") String stockStatus,
                                   Pageable pageable);
 
+ 
+
+/**
+* 재고 수량별 카운트 조회 (재고 없는 품목 수)
+*/
+long countByQuantity(Integer quantity);
+
+/**
+* 재고 수량 범위별 카운트 조회 (안전재고 미달용)
+* 예: 1개 이상 9개 이하 = 안전재고 미달
+*/
+long countByQuantityBetween(Integer minQty, Integer maxQty);
+
+/**
+* 창고별 재고 현황 통계 (필요시 사용)
+*/
+@Query("SELECT w.warehouseName, COUNT(s) FROM Stock s " +
+     "JOIN s.warehouse w " +
+     "GROUP BY w.warehouseName")
+List<Object[]> getStockCountByWarehouse();
+
+/**
+* 전체 재고 아이템 수 (중복 제거)
+*/
+@Query("SELECT COUNT(DISTINCT s.item.id) FROM Stock s")
+long countDistinctItems();
+ 
+ 
  // === 기타 메서드들 ===
  
  List<Stock> findByItem(Item item);
