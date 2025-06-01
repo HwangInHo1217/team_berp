@@ -164,6 +164,18 @@ public class ClientServiceImpl implements ClientService {
         return repo.existsByCompanyNameAndCompanyIdNotAndUseYn(companyName, excludeId, "Y");
     }
 
-  
+   
+
+    //repository에서 사업장 유형 선택, 모두 찾기
+    @Override
+    public List<Company> getAllcompanies() {
+    	return repo.findAll();
+    }
+    
+    @Override
+    public Employee getEmployeeById(Long employeeId) {
+        return employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new RuntimeException("직원 정보가 없습니다. id: " + employeeId));
+    }
 
 }
