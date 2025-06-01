@@ -34,4 +34,8 @@ public interface ClientService {
  
     //회사 타입 불러오기
     List<Company> getAllcompanies();
+    
+    public boolean existsBizNumDuplicate(String companyNo, Long excludeId);
+    
+    boolean existsNameDuplicate(String companyName, Long excludeId);
 }

@@ -5,7 +5,6 @@ import lombok.Data;
 
 @Data
 public class StockRequestDTO {
-    
     private Long itemId;
     private Long warehouseId;
     private Integer quantity;
