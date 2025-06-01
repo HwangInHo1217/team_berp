@@ -1,3 +1,5 @@
+<!-- order-register-modal.html (통합 리팩토링 버전) -->
+<!-- order-register-modal.html -->
 <div th:fragment="registerModal">
   <div class="modal fade" id="registerModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -11,29 +13,24 @@
             <!-- 기본정보 -->
             <div class="row g-3 mb-4">
               <div class="col-md-6">
-                <label class="form-label">고객사</label>
-                <select id="companySelect" name="companyId" class="form-select" required>
-                  <option value="">-- 선택 --</option>
-                  <option th:each="c : ${companies}"
-                          th:value="${c.companyId}"
-                          th:text="${c.companyName}"></option>
-                </select>
+                <label for="companySelect" class="form-label">고객사</label>
+                <select id="companySelect" name="companyId" class="form-select" required></select>
               </div>
               <div class="col-md-6">
                 <label class="form-label">주문일자</label>
                 <input type="date" name="orderDate" class="form-control" required />
               </div>
               <div class="col-md-6">
-                <label class="form-label">담당자</label>
-                <input type="text" id="empName" class="form-control" readonly />
+                <label for="empName" class="form-label">담당자</label>
+                <input type="text" id="empName" name="empName" class="form-control" readonly />
               </div>
               <div class="col-md-6">
-                <label class="form-label">거래처담당자</label>
-                <input type="text" id="companyEmpName" class="form-control" readonly />
+                <label for="companyEmpName" class="form-label">거래처 담당자</label>
+                <input type="text" id="companyEmpName" name="companyEmpName" class="form-control" required />
               </div>
               <div class="col-12">
                 <label class="form-label">비고</label>
-                <textarea name="note" class="form-control"></textarea>
+                <textarea name="remark" class="form-control"></textarea>
               </div>
             </div>
 
@@ -49,6 +46,7 @@
                     <th>품목</th>
                     <th>단위</th>
                     <th>단가</th>
+                     
                     <th>수량</th>
                     <th>합계</th>
                     <th>삭제</th>
@@ -63,7 +61,7 @@
             <input type="hidden" name="itemType" value="product" />
           </div>
           <div class="modal-footer">
-            <span class="me-auto fw-bold">총합계: <span id="totalAmount">0.00</span></span>
+            <span class="me-auto fw-bold">총합계: <span id="totalAmount">0.00</span> 원</span>
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
             <button type="button" id="saveOrder" class="btn btn-primary">저장</button>
           </div>
@@ -72,3 +70,5 @@
     </div>
   </div>
 </div>
+
+

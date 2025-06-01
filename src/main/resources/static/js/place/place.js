@@ -85,17 +85,24 @@ function openplaceDetailModal(data) {
 
 
 	  // 폼 제출 전 name 속성 동적 세팅
-     function prepareFormBeforeSubmit() {
-       document.querySelectorAll('.item-row').forEach((row, idx) => {
-         row.querySelector('.item-type').setAttribute('name', `lineItems[${idx}].itemType`);
-         row.querySelector('.item-name').setAttribute('name', `lineItems[${idx}].itemId`);
-         row.querySelector('.item-code').setAttribute('name', `lineItems[${idx}].itemCode`);
-         row.querySelector('.item-unit').setAttribute('name', `lineItems[${idx}].unit`);
-         row.querySelector('.unit-price').setAttribute('name', `lineItems[${idx}].unitPrice`);
-         row.querySelector('.unit-qty').setAttribute('name', `lineItems[${idx}].unitQty`);
-         row.querySelector('.unit-price-all').setAttribute('name', `lineItems[${idx}].unitPriceAll`);
-       });
-     }
+	  function prepareFormBeforeSubmit() {
+	    document.querySelectorAll('.item-row').forEach((row, idx) => {
+	      row.querySelector('.item-type').setAttribute('name', `lineItems[${idx}].itemType`);
+	      row.querySelector('.item-name').setAttribute('name', `lineItems[${idx}].itemId`);
+	      row.querySelector('.item-code').setAttribute('name', `lineItems[${idx}].itemCode`);
+	      row.querySelector('.item-unit').setAttribute('name', `lineItems[${idx}].unit`);
+	      row.querySelector('.unit-price').setAttribute('name', `lineItems[${idx}].unitPrice`);
+	      row.querySelector('.unit-qty').setAttribute('name', `lineItems[${idx}].unitQty`);
+
+	      // 쉼표 제거한 숫자만 전송되도록 처리
+	      const priceAllInput = row.querySelector('.unit-price-all');
+	      const rawValue = priceAllInput.value.replace(/,/g, '');
+	      priceAllInput.value = rawValue;
+
+	      priceAllInput.setAttribute('name', `lineItems[${idx}].unitPriceAll`);
+	    });
+	  }
+
 		
 	//품목 선택 
 	//품목 리스트 행 하나씩 추가 - 기존 행의 input, select 값 초기화
@@ -138,6 +145,35 @@ function openplaceDetailModal(data) {
 
 	     // 선택된 값 초기화
 	     select.value = "";
+	   }
+
+	   function fillEmployeeDetails() {
+	     const employeeId = document.getElementById("employeeSelect").value;
+
+	     if (!employeeId) {
+	       // 아무 것도 선택 안 했을 때 초기화
+	       document.getElementById("empEmail").value = "";
+	       document.getElementById("empHp").value = "";
+	       return;
+	     }
+
+	     // 서버에 employeeId로 담당자 정보 요청 (예: /employee/info/{id})
+	     fetch(`/place/employee/${employeeId}`)
+	       .then(response => {
+	         if (!response.ok) {
+	           throw new Error("서버 응답 실패");
+	         }
+	         return response.json();
+	       })
+	       .then(data => {
+	         // 서버에서 받은 데이터로 입력 필드 채우기
+	         document.getElementById("empEmail").value = data.empEmail || "";
+	         document.getElementById("empHp").value = data.empHp || "";
+	       })
+	       .catch(error => {
+	         console.error("담당자 정보 로딩 실패:", error);
+	         alert("담당자 정보를 불러오는 데 실패했습니다.");
+	       });
 	   }
 
 	   //품목 관련 처리
@@ -184,7 +220,6 @@ function openplaceDetailModal(data) {
 	     calculateTotals();
 	   }
 
-	
 	//수량 입력시 단가 합산
 	//단가(unitPrice)와 수량(unitQty)으로 총액(unitPriceAll)계산
 	//총합 업데이트 함수도 호출(calculateTotals())
@@ -197,16 +232,16 @@ function openplaceDetailModal(data) {
 
 	  // 총합 계산
 	  function calculateTotals() {
-	    let totalQty = 0, totalAmount = 0;
+	    let orderQty = 0, totalAmount = 0;
 
 	    document.querySelectorAll('.item-row').forEach(row => {
 	      const qty = parseFloat(row.querySelector('.unit-qty').value) || 0;
 		  const amt = parseFloat(row.querySelector('.unit-price-all').value.replace(/,/g, '')) || 0;
-		   totalQty += qty;
+		   orderQty += qty;
 	      totalAmount += amt;
 	    });
 
-	    document.getElementById('totalQty').textContent = totalQty;
+	    document.getElementById('orderQty').textContent = orderQty;
 	    document.getElementById('amount').textContent = totalAmount.toLocaleString();
 	  }
 	  

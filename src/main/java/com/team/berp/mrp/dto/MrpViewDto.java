@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MrpViewDto {
+	private Long mrpId;			// MRP 번호
     private String itemCode;    // 품목코드
     private String itemName;    // 품목명
     private String itemType;    // 품목유형

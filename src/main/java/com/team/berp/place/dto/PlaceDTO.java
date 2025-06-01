@@ -19,6 +19,8 @@ public class PlaceDTO {
     private String note; // 비고 (선택사항)
     private Integer orderQty;  // 총 품목 개수
     private List<OrderLineItemDTO> lineItems;
+    private String orderNum;
+
 
     @Data
     public static class OrderLineItemDTO {
@@ -39,6 +41,7 @@ public class PlaceDTO {
 
     
     // ↓ 출력용으로 쓸 수 있는 추가 필드들 (선택)
+    private Long employeeId;
     private String employeeName;    // 담당자 이름
     private String employeeTel;     // 담당자 번호
     private String employeeEmail;   // 담당자 이메일
