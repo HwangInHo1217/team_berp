@@ -89,17 +89,12 @@ public interface ClientRepository extends JpaRepository<Company, Long> {
     
     // ■ 회사명 단독 중복 체크용 JPA 메서드
     boolean existsByCompanyNameAndUseYn(String companyName, String useYn);
-    boolean existsByCompanyNameAndCompanyIdNotAndUseYn(String companyName,
-                                                      Long companyId,
-                                                      String useYn);
-
-    // 유형+회사명(논리삭제 제외)
-    Page<Company> findByCompanyTypeAndCompanyNameContainingAndUseYn(CompanyType companyType, String name, String useYn, Pageable pageable);
-
-    // 유형+대표자명(논리삭제 제외)
-    Page<Company> findByCompanyTypeAndPresidentNmContainingAndUseYn(CompanyType companyType, String ceo, String useYn, Pageable pageable);
-
-    //사업장 유형 선택, supplier or customer
+    boolean existsByCompanyNameAndCompanyIdNotAndUseYn(
+        String companyName,
+        Long companyId,
+        String useYn
+    );
+    
+  //사업장 유형 선택, supplier or customer
     List<Company> findByCompanyType(CompanyType Type);
-
 }

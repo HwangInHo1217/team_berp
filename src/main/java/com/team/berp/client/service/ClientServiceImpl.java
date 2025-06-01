@@ -5,6 +5,8 @@ import com.team.berp.client.repository.ClientRepository;
 import com.team.berp.domain.Company;
 import com.team.berp.domain.Company.CompanyType;
 import com.team.berp.domain.Employee;
+import com.team.berp.employee.repository.EmployeeRepository;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,7 +19,8 @@ import java.util.List;
 public class ClientServiceImpl implements ClientService {
 
     private final ClientRepository repo;
-
+    private final EmployeeRepository employeeRepository;
+    
     @Override
     public Long register(ClientViewDto dto, Employee employee) {
         ClientViewDto.validateMandatoryAddress(dto);
@@ -144,11 +147,31 @@ public class ClientServiceImpl implements ClientService {
         return repo.existsByCompanyNameAndCompanyNoAndCompanyIdNotAndUseYn(companyName, companyNo, excludeId, "Y");
     }
 
-    
-    //repository에서 사업장 유형 선택, 모두 찾기
+    @Override
+    public boolean existsBizNumDuplicate(String companyNo, Long excludeId) {
+        if (excludeId == null) {
+            return repo.existsByCompanyNoAndUseYn(companyNo, "Y");
+        }
+        return repo.existsByCompanyNoAndCompanyIdNotAndUseYn(companyNo, excludeId, "Y");
+    }
 
     @Override
+    public boolean existsNameDuplicate(String companyName, Long excludeId) {
+        if (excludeId == null) {
+            return repo.existsByCompanyNameAndUseYn(companyName, "Y");
+        }
+        return repo.existsByCompanyNameAndCompanyIdNotAndUseYn(companyName, excludeId, "Y");
+    }
+
+    //repository에서 사업장 유형 선택, 모두 찾기
+    @Override
     public List<Company> getAllcompanies() {
-        return repo.findAll();
+    	return repo.findAll();
+    }
+    
+    @Override
+    public Employee getEmployeeById(Long employeeId) {
+        return employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new RuntimeException("직원 정보가 없습니다. id: " + employeeId));
     }
 }

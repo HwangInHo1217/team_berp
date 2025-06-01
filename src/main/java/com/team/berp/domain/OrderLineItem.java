@@ -36,4 +36,8 @@ public class OrderLineItem {
 
     @Column(name = "unit_price_all")
     private Long unitPriceall;
+    
+    @Column
+    private String unit;
+
 }
