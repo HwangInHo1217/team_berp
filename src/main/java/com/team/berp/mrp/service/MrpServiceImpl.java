@@ -1,17 +1,19 @@
+// File: /Team_BERP/src/main/java/com/team/berp/mrp/service/MrpServiceImpl.java
 package com.team.berp.mrp.service;
 
 import com.team.berp.domain.Item;
 import com.team.berp.domain.Mrp;
 import com.team.berp.domain.Stock;
+import com.team.berp.mrp.dto.MrpDetailDto;
+import com.team.berp.mrp.dto.MrpViewDto;
 import com.team.berp.mrp.dto.ExtendedBomListViewResponse;
 import com.team.berp.mrp.dto.ExtendedBomListViewResponse.ExtendedComponent;
-import com.team.berp.mrp.dto.MrpViewDto;
-import com.team.berp.bom.dto.BomListViewResponse;
 import com.team.berp.mrp.repository.EntityMrpRepository;
 import com.team.berp.mrp.repository.EntityProdPlanRepository;
 import com.team.berp.mrp.repository.EntityItemRepository;
 import com.team.berp.mrp.repository.EntityStockRepository;
 import com.team.berp.bom.repository.BomRepository;
+import com.team.berp.bom.dto.BomListViewResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
@@ -39,7 +41,6 @@ public class MrpServiceImpl implements MrpService {
         Pageable pageable = PageRequest.of(page - 1, size, Sort.by(dir, sortKey));
         Page<Mrp> mrpPage = mrpRepository.findAll(pageable);
 
-        // 재고 캐시
         List<Stock> allStocks = stockRepository.findAll();
 
         List<MrpViewDto> dtoList = mrpPage.getContent().stream().map(mrp -> {
@@ -58,11 +59,11 @@ public class MrpServiceImpl implements MrpService {
             int required = Optional.ofNullable(mrp.getRequiredQty()).orElse(0);
             int shortage = Math.max(required - stockQty, 0);
 
-            // NEW ▶ 납기 요청일, MRP 상태
             String dueDate   = mrp.getDueDate() != null ? mrp.getDueDate().toString() : "";
             String mrpStatus = mrp.getStatus() != null  ? mrp.getStatus().toString() : "";
 
             return new MrpViewDto(
+                mrp.getMrpId(),
                 item.getCode(),
                 item.getName(),
                 item.getType().toString(),
@@ -70,7 +71,7 @@ public class MrpServiceImpl implements MrpService {
                 Optional.ofNullable(mrp.getBaseDate()).map(Object::toString).orElse(""),
                 required,
                 stockQty,
-                0,             // 확정수량
+                0,
                 shortage,
                 mrp.getSource(),
                 Optional.ofNullable(mrp.getLeadTime()).orElse(0),
@@ -78,7 +79,7 @@ public class MrpServiceImpl implements MrpService {
                 custName,
                 spec,
                 prodQty,
-                0,             // orderQty (필요 시 구현)
+                0,
                 dueDate,
                 mrpStatus
             );
@@ -88,12 +89,11 @@ public class MrpServiceImpl implements MrpService {
     }
 
     @Override
-    public List<BomListViewResponse> findBomByItemCode(String itemCode) {
+    public List<ExtendedBomListViewResponse> findBomByItemCode(String itemCode) {
         if (itemCode == null || itemCode.isEmpty()) {
             return Collections.emptyList();
         }
 
-        // 1) 부모 품목 조회
         Item parent = itemRepository.findAll().stream()
             .filter(i -> itemCode.equals(i.getCode()))
             .findFirst().orElse(null);
@@ -101,12 +101,10 @@ public class MrpServiceImpl implements MrpService {
             return Collections.emptyList();
         }
 
-        // 2) BOM 자재 목록, 전체 재고 캐시
         List<com.team.berp.domain.Bom> bomList = bomRepository.findByParentItem(parent);
         List<Stock> allStocks = stockRepository.findAll();
         LocalDate today = LocalDate.now();
 
-        // 3) ExtendedComponent 생성
         List<ExtendedComponent> extComps = bomList.stream().map(bom -> {
             Item child = bom.getChildItem();
             int requiredQty       = bom.getQty();
@@ -115,13 +113,17 @@ public class MrpServiceImpl implements MrpService {
                              s.getItem().getCode().equals(child.getCode()))
                 .mapToInt(s -> Optional.ofNullable(s.getQuantity()).orElse(0))
                 .sum();
+
             int shortageQty       = Math.max(requiredQty - stockQty, 0);
             int safetyStock       = Optional.ofNullable(child.getSafetyStock()).orElse(0);
-            int purchaseQty       = shortageQty + safetyStock;
+            int remainingAfterUse = stockQty - requiredQty;
+            int purchaseQty       = (remainingAfterUse >= safetyStock)
+                                     ? 0
+                                     : (safetyStock - remainingAfterUse);
             int purchaseLeadTime  = Optional.ofNullable(child.getPurchaseLeadTime()).orElse(0);
             String expectedDate   = today.plusDays(purchaseLeadTime).toString();
 
-            // 기존 Component 로 기본 필드 채우기
+            // build base Component
             BomListViewResponse.Component base = new BomListViewResponse.Component(
                 child.getCode(),
                 child.getName(),
@@ -145,14 +147,85 @@ public class MrpServiceImpl implements MrpService {
             );
         }).collect(Collectors.toList());
 
-        // 4) Wrapper DTO 에 담아서 반환 (부모 타입으로)
-        ExtendedBomListViewResponse wrapper =
-            new ExtendedBomListViewResponse(
-                parent.getCode(),
-                parent.getName(),
-                extComps
-            );
+        ExtendedBomListViewResponse wrapper = new ExtendedBomListViewResponse(
+            parent.getCode(),
+            parent.getName(),
+            extComps
+        );
 
-        return Collections.<BomListViewResponse>singletonList(wrapper);
+        return Collections.singletonList(wrapper);
+    }
+
+    @Override
+    public MrpDetailDto findMrpDetailById(Long mrpId) {
+        Mrp mrp = mrpRepository.findById(mrpId).orElse(null);
+        if (mrp == null) {
+            return null;
+        }
+        Item item = mrp.getItem();
+        LocalDate today = LocalDate.now();
+
+        Long id            = mrp.getMrpId();
+        String createDate  = mrp.getBaseDate() != null ? mrp.getBaseDate().toString() : "";
+        String dueDate     = mrp.getDueDate()  != null ? mrp.getDueDate().toString() : "";
+        String planType    = mrp.getSource()   != null ? mrp.getSource() : "";
+        String status      = mrp.getStatus()   != null ? mrp.getStatus().toString() : "";
+        String ownerName   = ""; // 담당자/부서
+
+        String itemCode    = item.getCode();
+        String itemName    = item.getName();
+        String itemType    = item.getType().toString();
+        String unit        = item.getUnit();
+        String spec        = item.getSpec();
+        int safetyStock    = Optional.ofNullable(item.getSafetyStock()).orElse(0);
+
+        List<Stock> allStocks = stockRepository.findAll();
+        int stockQty = allStocks.stream()
+            .filter(s -> s.getItem() != null && s.getItem().getCode().equals(itemCode))
+            .mapToInt(s -> Optional.ofNullable(s.getQuantity()).orElse(0))
+            .sum();
+        String location = ""; // 재고 위치
+
+        int requiredQty       = Optional.ofNullable(mrp.getRequiredQty()).orElse(0);
+        int shortageQty       = Math.max(requiredQty - stockQty, 0);
+        int purchaseLeadTime  = Optional.ofNullable(item.getPurchaseLeadTime()).orElse(0);
+        int productionLeadTime = Optional.ofNullable(mrp.getLeadTime()).orElse(0);
+        String orderableDate  = today.plusDays(Math.min(purchaseLeadTime, productionLeadTime)).toString();
+
+        List<com.team.berp.domain.Bom> bomList = bomRepository.findByParentItem(item);
+        List<MrpDetailDto.MrpBomComponent> bomComponents = bomList.stream().map(bom -> {
+            Item child = bom.getChildItem();
+            int perParentQty      = bom.getQty();
+            int totalQty          = perParentQty * requiredQty;
+            int childStockQty     = allStocks.stream()
+                .filter(s -> s.getItem() != null && s.getItem().getCode().equals(child.getCode()))
+                .mapToInt(s -> Optional.ofNullable(s.getQuantity()).orElse(0))
+                .sum();
+            int childShortageQty  = Math.max(totalQty - childStockQty, 0);
+            int childLeadTime     = Optional.ofNullable(child.getPurchaseLeadTime()).orElse(0);
+            String supplier       = ""; // 공급처
+
+            return new MrpDetailDto.MrpBomComponent(
+                child.getCode(),
+                child.getName(),
+                perParentQty,
+                totalQty,
+                childStockQty,
+                childShortageQty,
+                childLeadTime,
+                supplier
+            );
+        }).collect(Collectors.toList());
+
+        List<MrpDetailDto.MrpPurchaseOrder> purchaseOrders = new ArrayList<>();
+        List<MrpDetailDto.MrpWorkOrder> workOrders         = new ArrayList<>();
+        List<MrpDetailDto.MrpHistory> history               = new ArrayList<>();
+
+        return new MrpDetailDto(
+            id, createDate, dueDate, planType, status, ownerName,
+            itemCode, itemName, itemType, unit, spec, safetyStock, stockQty, location,
+            requiredQty, shortageQty, purchaseLeadTime, productionLeadTime, orderableDate,
+            bomComponents, purchaseOrders, workOrders, history
+        );
     }
 }

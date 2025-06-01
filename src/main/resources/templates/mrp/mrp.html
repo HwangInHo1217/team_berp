@@ -10,10 +10,10 @@
 </head>
 <body class="d-flex flex-column" style="min-height:100vh;">
   <!-- 헤더 -->
-  <div th:replace="~{layouts/header :: header}"></div>
+  <div th:replace="layouts/header :: header"></div>
   <div class="d-flex flex-grow-1">
     <!-- 사이드바 -->
-    <div th:replace="~{layouts/sidebar :: sidebar}"></div>
+    <div th:replace="layouts/sidebar :: sidebar"></div>
     <main class="p-4 flex-fill">
       <div class="container">
 
@@ -110,17 +110,19 @@
           <b>품목리스트</b> - 일자 기간 내 주문받은 품목 리스트<br>
           <b>자재리스트</b> - 품목리스트에 조회된 데이터들의 BOM 정보에 의해 계산된 투입 자재 리스트
         </div>
+
       </div>
     </main>
   </div>
 
-  <!-- 모달 -->
-  <div th:replace="~{mrp/mrp-detail-modal :: mrp-detail-modal}"></div>
+  <!-- ↓ 여기: Fragment를 불러올 때는 반드시 “~{…}”나 작은따옴표를 제거하고 절대경로(논리 이름)만 남겨야 합니다. -->
+  <div th:replace="mrp/mrp-detail-modal :: mrp-detail-modal"></div>
+
   <!-- 푸터 -->
-  <div th:replace="~{layouts/footer :: footer}"></div>
+  <div th:replace="layouts/footer :: footer"></div>
 
   <!-- 외부 JS -->
-  <script src="/js/mrp/mrp.js"></script>
+  <script src="/js/mrp/mrp.js?v=1"></script>
 
   <!-- 페이지별 추가 스크립트 -->
   <script>
@@ -158,7 +160,15 @@
       }
       window.location.href = `/purchase-order?items=${codes.join(',')}`;
     });
-  </script>
 
+    // 모달이 사라질 때 포커스를 다른 곳으로 이동
+    document.getElementById('mrpDetailModal')?.addEventListener('hide.bs.modal', () => {
+      const active = document.activeElement;
+      if (active && active.closest('#mrpDetailModal')) {
+        active.blur();
+      }
+      document.getElementById('selectAll')?.focus();
+    });
+  </script>
 </body>
 </html>

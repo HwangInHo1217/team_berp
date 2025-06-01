@@ -14,17 +14,22 @@ let mrpModalInstance = null;
 
 // 최초 로딩
 window.onload = function() {
+    // ■ selectAll 체크박스 리스너 (한 번만 aggregate 호출)
     document.getElementById('selectAll')?.addEventListener('change', function() {
         const checked = this.checked;
         document.querySelectorAll('.mrp-checkbox').forEach(cb => {
             cb.checked = checked;
-            onMrpCheckboxChange(cb);
         });
+        // 체크 상태를 모두 바꾼 뒤에, 한 번만 전체 로드
+        onMrpCheckboxChange();
     });
+
+    // ■ bomSelectAll 체크박스(하단) 리스너 그대로 유지
     document.getElementById('bomSelectAll')?.addEventListener('change', function() {
         const checked = this.checked;
         document.querySelectorAll('.bom-checkbox').forEach(cb => cb.checked = checked);
     });
+
     document.getElementById('btn-create-plan')?.addEventListener('click', () => {
         const codes = Array.from(document.querySelectorAll('.bom-checkbox:checked'))
                            .map(cb => cb.dataset.code);
@@ -38,13 +43,21 @@ window.onload = function() {
         window.location.href = `/purchase-order?items=${codes.join(',')}`;
     });
 
+    // 엔터키 → calculateMrp() 호출
+    document.getElementById("itemSearch")?.addEventListener("keypress", e => {
+        if (e.key === "Enter") calculateMrp();
+    });
+    document.getElementById("custSearch")?.addEventListener("keypress", e => {
+        if (e.key === "Enter") calculateMrp();
+    });
+
     loadMrpList(1);
 };
 
 // 정렬
 function sortMrp(key) {
     if (currentSortKey === key) {
-        currentSortDir = currentSortDir === "asc" ? "desc" : "asc";
+        currentSortDir = (currentSortDir === "asc" ? "desc" : "asc");
     } else {
         currentSortKey = key;
         currentSortDir = "asc";
@@ -92,7 +105,7 @@ function renderMrpList(data, page) {
         const rowNumber = data.totalElements - ((page - 1) * pageSize + idx);
         const tr = document.createElement("tr");
         tr.innerHTML = `
-            <td><input type="checkbox" class="mrp-checkbox" data-code="${mrp.itemCode}" onchange="onMrpCheckboxChange(this)"></td>
+            <td><input type="checkbox" class="mrp-checkbox" data-code="${mrp.itemCode}" onchange="onMrpCheckboxChange()"></td>
             <td class="col-no">${rowNumber}</td>
             <td>${mrp.itemCode ?? '-'}</td>
             <td>${mrp.itemName ?? '-'}</td>
@@ -108,25 +121,63 @@ function renderMrpList(data, page) {
             <td>${mrp.mrpStatus ?? '-'}</td>
             <td><button class="btn btn-info btn-sm" onclick="showMrpDetailModalByIndex(${idx})">상세</button></td>
         `;
+        // 행 클릭 시 체크박스 토글 + aggregate 호출
         tr.addEventListener('click', e => {
             if (e.target.type === 'checkbox' || e.target.tagName === 'BUTTON') return;
             const cb = tr.querySelector('.mrp-checkbox');
             cb.checked = !cb.checked;
-            onMrpCheckboxChange(cb);
+            onMrpCheckboxChange();
         });
         tbody.appendChild(tr);
     });
 
+    // 처음 렌더 시, 아래 BOM은 비워 두기
     renderBomList([]);
 }
 
-function onMrpCheckboxChange(checkbox) {
-    const code = checkbox.dataset.code;
-    if (checkbox.checked) {
-        loadBomList(code);
-    } else {
+/**
+ * ■ onMrpCheckboxChange
+ * - 페이지 내에서 체크된 '.mrp-checkbox:checked' 요소 전체를 모아서
+ *   loadAllBomLists(codes) 를 호출합니다.
+ * - 만약 체크된 것이 하나도 없으면, 빈 리스트를 보여 줍니다.
+ */
+function onMrpCheckboxChange() {
+    const checkedBoxes = Array.from(document.querySelectorAll('.mrp-checkbox:checked'));
+    if (!checkedBoxes.length) {
         renderBomList([]);
+        return;
     }
+    const codes = checkedBoxes.map(cb => cb.dataset.code);
+    loadAllBomLists(codes);
+}
+
+/**
+ * ■ loadAllBomLists
+ * codes 배열로 받은 각각의 itemCode에 대해 fetch를 병렬로 수행한 뒤,
+ * 결과(각 코드의 BomListViewResponse.Component[])를 합쳐서(renderBomList) 호출
+ */
+function loadAllBomLists(codes) {
+    const fetchPromises = codes.map(code =>
+        fetch(`/api/mrp/bom/${code}`)
+            .then(res => {
+                if (!res.ok) throw new Error(`BOM 로드 실패(${code}): ${res.status}`);
+                return res.json();
+            })
+            .catch(err => {
+                console.error(err);
+                return [];
+            })
+    );
+
+    Promise.all(fetchPromises)
+        .then(results => {
+            const combined = results.flat();
+            renderBomList(combined);
+        })
+        .catch(err => {
+            console.error("여러 BOM 합치기 실패:", err);
+            renderBomList([]);
+        });
 }
 
 function renderPagination(currentPage, totalPages) {
@@ -157,27 +208,8 @@ function renderPagination(currentPage, totalPages) {
 function showMrpDetailModalByIndex(idx) {
     currentModalIdx = idx;
     showMrpDetailModal(currentMrpList[idx], true);
-    loadBomList(currentMrpList[idx].itemCode);
-}
-
-function loadBomList(itemCode) {
-    if (!itemCode) {
-        renderBomList([]);
-        return;
-    }
-    fetch(`/api/mrp/bom/${itemCode}`)
-        .then(res => {
-            if (!res.ok) throw new Error(`BOM 로드 실패: ${res.status}`);
-            return res.json();
-        })
-        .then(bomList => {
-            if (Array.isArray(bomList)) renderBomList(bomList);
-            else renderBomList([]);
-        })
-        .catch(err => {
-            console.error(err);
-            renderBomList([]);
-        });
+    // 상세 모달에서도 해당 항목 하나의 BOM만 보여주기 위해 아래 호출 유지
+    loadAllBomLists([ currentMrpList[idx].itemCode ]);
 }
 
 function renderBomList(bomList) {
@@ -222,29 +254,30 @@ function showMrpDetailModal(mrp, openModal) {
     }
 
     // A. 기본 정보
-    document.getElementById("mrpDetailId").textContent         = mrp.mrpId          ?? '-';
-    document.getElementById("mrpDetailCreateDate").textContent = mrp.baseDate       || '-';
-    document.getElementById("mrpDetailDueDate").textContent    = mrp.dueDate        || '-';
-    document.getElementById("mrpDetailPlanType").textContent   = mrp.source         || '-';
-    document.getElementById("mrpDetailStatus").textContent     = mrp.mrpStatus      || '-';
-    document.getElementById("mrpDetailOwner").textContent      = mrp.ownerName      || '-';
+    document.getElementById("mrpDetailId").textContent         = mrp.mrpId        ?? '-';
+    document.getElementById("mrpDetailCreateDate").textContent = mrp.baseDate     || '-';
+    document.getElementById("mrpDetailDueDate").textContent    = mrp.dueDate      || '-';
+    document.getElementById("mrpDetailPlanType").textContent   = mrp.source       || '-';
+    document.getElementById("mrpDetailStatus").textContent     = mrp.mrpStatus    || '-';
+    document.getElementById("mrpDetailOwner").textContent      = mrp.ownerName    || '-';
 
     // B. 품목 정보
-    document.getElementById("mrpDetailItemCode").textContent    = mrp.itemCode       || '-';
-    document.getElementById("mrpDetailItemName").textContent    = mrp.itemName       || '-';
-    document.getElementById("mrpDetailItemType").textContent    = mrp.itemType       || '-';
-    document.getElementById("mrpDetailUnit").textContent        = mrp.unit           || '-';
-    document.getElementById("mrpDetailSpec").textContent        = mrp.spec           || '-';
-    document.getElementById("mrpDetailSafetyStock").textContent = mrp.safetyStock    ?? '0';
-    document.getElementById("mrpDetailStock").textContent       = mrp.stockQty       ?? '0';
-    document.getElementById("mrpDetailLocation").textContent    = mrp.location       || '-';
+    document.getElementById("mrpDetailItemCode").textContent    = mrp.itemCode    || '-';
+    document.getElementById("mrpDetailItemName").textContent    = mrp.itemName    || '-';
+    document.getElementById("mrpDetailItemType").textContent    = mrp.itemType    || '-';
+    document.getElementById("mrpDetailUnit").textContent        = mrp.unit        || '-';
+    document.getElementById("mrpDetailSpec").textContent        = mrp.spec        || '-';
+    document.getElementById("mrpDetailSafetyStock").textContent = mrp.safetyStock ?? '0';
+    document.getElementById("mrpDetailStock").textContent       = mrp.stockQty    ?? '0';
+    document.getElementById("mrpDetailLocation").textContent    = mrp.location    || '-';
 
     // C. 수량·리드타임
-    document.getElementById("mrpDetailRequiredQty").textContent     = mrp.requiredQty    ?? '0';
-    document.getElementById("mrpDetailShortQty").textContent        = mrp.shortageQty    ?? '0';
-    document.getElementById("mrpDetailPurchaseLeadTime").textContent= mrp.purchaseLeadTime ?? '0';
+    document.getElementById("mrpDetailRequiredQty").textContent     = mrp.requiredQty       ?? '0';
+    document.getElementById("mrpDetailShortQty").textContent        = mrp.shortageQty       ?? '0';
+    document.getElementById("mrpDetailPurchaseLeadTime").textContent= mrp.purchaseLeadTime  ?? '0';
     document.getElementById("mrpDetailProductionLeadTime").textContent = mrp.productionLeadTime ?? '0';
-    document.getElementById("mrpDetailStartDate").textContent       = mrp.startDate      || '-';
+    // id="mrpDetailOrderableDate"로 변경된 부분
+    document.getElementById("mrpDetailOrderableDate").textContent   = mrp.orderableDate    || '-';
 
     // D. BOM 구성
     const bomBody = document.getElementById("mrpDetailBomBody");
@@ -322,7 +355,8 @@ function moveModal(offset) {
     if (newIdx < 0 || newIdx >= currentMrpList.length) return;
     currentModalIdx = newIdx;
     showMrpDetailModal(currentMrpList[newIdx], true);
-    loadBomList(currentMrpList[newIdx].itemCode);
+    // 모달 내부 BOM도 Aggregate 방식으로 불러옴
+    loadAllBomLists([ currentMrpList[newIdx].itemCode ]);
 }
 
 // 버튼 연결
