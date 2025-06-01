@@ -5,6 +5,8 @@ import com.team.berp.client.repository.ClientRepository;
 import com.team.berp.domain.Company;
 import com.team.berp.domain.Company.CompanyType;
 import com.team.berp.domain.Employee;
+import com.team.berp.employee.repository.EmployeeRepository;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,7 +19,8 @@ import java.util.List;
 public class ClientServiceImpl implements ClientService {
 
     private final ClientRepository repo;
-
+    private final EmployeeRepository employeeRepository;
+    
     @Override
     public Long register(ClientViewDto dto, Employee employee) {
         ClientViewDto.validateMandatoryAddress(dto);
@@ -152,6 +155,7 @@ public class ClientServiceImpl implements ClientService {
         return repo.existsByCompanyNoAndCompanyIdNotAndUseYn(companyNo, excludeId, "Y");
     }
 
+
     @Override
     public boolean existsNameDuplicate(String companyName, Long excludeId) {
         if (excludeId == null) {
@@ -160,8 +164,6 @@ public class ClientServiceImpl implements ClientService {
         return repo.existsByCompanyNameAndCompanyIdNotAndUseYn(companyName, excludeId, "Y");
     }
 
-    @Override
-    public List<Company> getAllcompanies() {
-        return repo.findAll();
-    }
+  
+
 }

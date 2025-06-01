@@ -38,23 +38,29 @@
          </div>
           </div>
 
-          <!-- 2. 담당자 정보 -->
-          <div class="row mb-3">
-            <div class="col-md-4">
-              <label class="form-label">담당자명</label>
-              <input type="text" class="form-control" name="employee.name" required>
-            </div>
-            <div class="col-md-4">
-              <label class="form-label">이메일</label>
-              <input type="email" class="form-control" name="employee.email">
-            </div>
-            <div class="col-md-4">
-              <label class="form-label">전화번호</label>
-              <input type="text" class="form-control" name="employee.phone">
-            </div>
+   		<!-- 2. 담당자 정보 -->
+            <div class="row mb-3">
+			  <div class="col-md-4">
+			    <label for="employeeSelect" class="form-label">담당자명</label>
+			    <select id="employeeSelect" name="employeeId" class="form-control" onchange="fillEmployeeDetails()">
+			      <option value="">-- 담당자 선택 --</option>
+			      <option th:each="emp : ${employees}"
+			          th:value="${emp.employeeId}"
+			          th:text="${emp.empName}">
+			      </option>
+			      <!-- 담당자 옵션은 JS에서 동적으로 채움 -->
+			    </select>
+			  </div>
+			<div class="col-md-4">
+		    <label for="managerEmail" class="form-label">이메일</label>
+		    <input type="email" id="empEmail" name="empEmail" class="form-control" readonly>
+		  </div>
+		  <div class="col-md-4">
+		    <label for="managerNum" class="form-label">전화번호</label>
+		    <input type="text" id="empHp" name="empHp" class="form-control" readonly>
+		  </div>
           </div>
 
-          <!-- 3. 품목 목록 -->
           <!-- 3. 품목 목록 -->
 			<div>
 			  <table class="table table-bordered" id="itemTable">
@@ -85,26 +91,8 @@
 	    <td>
 	      <select class="form-select item-name" onchange="fillItemDetails(this)" required>
 	        <option value="">-- 품목 선택 --</option>
-	       <!--
-	        <option th:each="c : ${companies}"
-                     th:value="${c.companyId}"
-                     th:data-type="${c.companyType}"
-                     th:text="${c.companyName}"
-                     hidden>
-             </option>
-	         --> 
 	      </select>
 	    </td>
-      <!-- 
-     	<td><input type="text" class="form-control item-code" name="itemCode" readonly></td>
-	    <td><input type="number" class="form-control unit-qty" name="unitQty" min="1" value="1" required></td>
-	    <td><input type="text" class="form-control item-unit" name="unit" readonly></td>
-	    <td><input type="text" class="form-control unit-price" name="unitPrice" readonly></td>
-	    <td><input type="text" class="form-control unit-price-all" name="unitPriceAll" readonly></td>
-	    <td class="text-center">
-	      <button type="button" class="btn btn-danger btn-sm" onclick="removeItemRow(this)">삭제</button>
-	    </td>
-       -->
        <td><input type="text" class="form-control item-code" readonly></td>
         <td><input type="number" class="form-control unit-qty" min="1" value="1" required></td>
         <td><input type="text" class="form-control item-unit" readonly></td>
@@ -112,7 +100,6 @@
         <td><input type="text" class="form-control unit-price-all" readonly></td>
         <td><button type="button" onclick="removeItemRow(this)" class="btn btn-danger btn-sm">삭제</button></td>
 	  </tr>
-  
 	    </tbody>
 	  </table>
 	  <button type="button" class="btn btn-secondary btn-sm" onclick="addItemRow()">품목 추가</button>
@@ -120,7 +107,7 @@
 
           <!-- 4. 합계 -->
           <div class="mt-3 text-end">
-            <strong>총 수량:</strong> <span id="totalQty">0</span>
+            <strong>총 수량:</strong> <span id="orderQty">0</span>
             &nbsp;&nbsp;
             <strong>총 금액:</strong> <span id="amount">0</span> 원
           </div>
