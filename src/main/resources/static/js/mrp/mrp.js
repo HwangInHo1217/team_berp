@@ -14,6 +14,13 @@ let mrpModalInstance = null;
 
 // 최초 로딩
 window.onload = function() {
+	// → 오늘 날짜(YYYY-MM-DD)를 “기간(From)” input에 자동으로 채워 놓기
+	    const today = new Date().toISOString().substr(0, 10);
+	    const startDateInput = document.getElementById("startDate");
+	    if (startDateInput) {
+	        startDateInput.value = today;
+	    }
+	
     // ■ selectAll 체크박스 리스너 (한 번만 aggregate 호출)
     document.getElementById('selectAll')?.addEventListener('change', function() {
         const checked = this.checked;

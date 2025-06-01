@@ -1,4 +1,4 @@
-// File: /Team_BERP/src/main/java/com/team/berp/mrp/dto/ExtendedBomListViewResponse.java
+// File: src/main/java/com/team/berp/mrp/dto/ExtendedBomListViewResponse.java
 package com.team.berp.mrp.dto;
 
 import com.team.berp.bom.dto.BomListViewResponse;
@@ -7,11 +7,6 @@ import lombok.Data;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * 기존 BomListViewResponse 를 건드리지 않고,
- * components 필드만 ExtendedComponent 로 보관한 뒤,
- * getComponents() 호출 시 부모 시그니처에 맞춰 꺼내줍니다.
- */
 @Data
 public class ExtendedBomListViewResponse extends BomListViewResponse {
 
@@ -76,6 +71,16 @@ public class ExtendedBomListViewResponse extends BomListViewResponse {
             this.purchaseQty      = purchaseQty;
             this.purchaseLeadTime = purchaseLeadTime;
             this.expectedDate     = expectedDate;
+        }
+
+        // 👉 JSON으로 내려줄 때, 자바 필드명이 childCode / childName 인데
+        // 프론트에서는 subItemCode, subItemName 으로 접근하기 때문에
+        // 여기에 getter를 하나 더 만들어 줍니다.
+        public String getSubItemCode() {
+            return getChildCode();
+        }
+        public String getSubItemName() {
+            return getChildName();
         }
     }
 }
