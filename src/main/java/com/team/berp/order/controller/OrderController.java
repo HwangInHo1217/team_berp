@@ -1,14 +1,6 @@
 package com.team.berp.order.controller;
 
-import com.team.berp.domain.CompanyOrder;
-import com.team.berp.domain.Company;
-import com.team.berp.domain.Item;
-import com.team.berp.order.dto.OrderDto;
-import com.team.berp.order.dto.OrderSummaryDto;
-import com.team.berp.order.repository.Order_CompanyOrderRepository;
-import com.team.berp.order.repository.Order_CompanyRepository;
-import com.team.berp.order.repository.Order_ItemRepository;
-import com.team.berp.order.service.OrderService;
+import java.time.LocalDate;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,9 +8,16 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
-import java.time.LocalDate;
+import com.team.berp.domain.Company.CompanyType;
+import com.team.berp.order.dto.OrderSummaryDto;
+import com.team.berp.order.repository.Order_CompanyOrderRepository;
+import com.team.berp.order.repository.Order_CompanyRepository;
+import com.team.berp.order.repository.Order_ItemRepository;
+import com.team.berp.order.service.OrderService;
 
 @Controller
 @RequestMapping("/order")
@@ -59,10 +58,10 @@ public class OrderController {
         @PageableDefault(size = 10) Pageable pageable,
         Model model
     ) {
-    	Page<OrderSummaryDto> page = orderService.findOrderSummaries(companyId, itemId, fromDate, toDate, pageable);
+    	
 
-        model.addAttribute("page",      page);
-        model.addAttribute("companies", companyRepo.findAll());
+        
+        model.addAttribute("companies", companyRepo.findByCompanyType(CompanyType.CUSTOMER));
         model.addAttribute("items",     itemRepo.findAll());
         return "order/order";
     }

@@ -41,7 +41,7 @@
           <button type="submit" class="btn btn-outline-secondary">검색</button>
           <button type="button" class="btn btn-outline-success ms-auto" onclick="window.location.href='?export=excel'">엑셀 다운로드</button>
           <button type="button" id="deleteSelected" class="btn btn-danger">삭제</button>
-          <button type="button" id="openRegisterModal" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#registerModal">+ 주문등록</button>
+        <button type="button" id="openRegisterModal" class="btn btn-primary">+ 주문등록</button>
         </form>
 
         <!-- 주문 테이블 -->
@@ -60,30 +60,11 @@
                 <th>담당자</th>
                 <th>상세</th>
                 <th>수정</th>
+                <th>출고등록</th>
               </tr>
             </thead>
             <tbody id="orderTableBody">
-              <tr th:each="order, stat : ${page.content}">
-                <td><input type="checkbox" class="selectBox" th:value="${order.orderId}" /></td>
-                <td th:text="${stat.index + 1 + page.number * page.size}"></td>
-                <td th:text="${order.orderDate}"></td>
-                <td th:text="${order.orderNum}"></td>
-                <td th:text="${order.companyName}"></td>
-                <td th:text="${order.orderQty}"></td>
-                <td th:text="${order.amount}"></td>
-                <td th:text="${order.companyEmpName}"></td>
-                <td th:text="${order.empName}"></td>
-                <td>
-                  <button class="btn btn-info btn-sm detailBtn"
-                          th:data-id="${order.orderId}"
-                          data-bs-toggle="modal" data-bs-target="#detailModal">상세</button>
-                </td>
-                <td>
-                  <button class="btn btn-warning btn-sm editBtn"
-                          th:data-id="${order.orderId}"
-                          data-bs-toggle="modal" data-bs-target="#fixedModal">수정</button>
-                </td>
-              </tr>
+              
             </tbody>
           </table>
         </div>
@@ -91,29 +72,22 @@
         <!-- 페이징 -->
         <nav class="mt-4">
           <ul class="pagination justify-content-center">
-            <li class="page-item" th:classappend="${page.hasPrevious()} ? '' : 'disabled'">
-              <a class="page-link" th:href="@{/orders(page=${page.number-1},companyId=${param.companyId},itemId=${param.itemId},fromDate=${param.fromDate},toDate=${param.toDate})}">이전</a>
-            </li>
-            <li class="page-item" th:each="i : ${#numbers.sequence(0, page.totalPages-1)}"
-                th:classappend="${i == page.number} ? 'active'">
-              <a class="page-link" th:href="@{/orders(page=${i},companyId=${param.companyId},itemId=${param.itemId},fromDate=${param.fromDate},toDate=${param.toDate})}"
-                 th:text="${i+1}"></a>
-            </li>
-            <li class="page-item" th:classappend="${page.hasNext()} ? '' : 'disabled'">
-              <a class="page-link" th:href="@{/orders(page=${page.number+1},companyId=${param.companyId},itemId=${param.itemId},fromDate=${param.fromDate},toDate=${param.toDate})}">다음</a>
-            </li>
+            
           </ul>
         </nav>
       </div>
     </main>
   </div>
-
+	
   <!-- 모달 프래그먼트 삽입 -->
   <div th:insert="~{/order/order-register-modal :: registerModal}"></div>
   <div th:insert="~{/order/order-detail-modal :: detailModal}"></div>
   <div th:insert="~{/order/order-fixed-modal :: fixedModal}"></div>
-  <div th:replace="~{/layouts/footer :: footer}"></div>
+  <div th:insert="~{/order/order-shipment-modal :: shipmentModal}"></div>
 
+
+  <div th:replace="~{/layouts/footer :: footer}"></div>
+	
 
 	<!-- jQuery (order.js가 jQuery에 의존하므로 꼭 필요합니다) -->
   <script
