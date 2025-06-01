@@ -91,4 +91,6 @@ public interface ClientRepository extends JpaRepository<Company, Long> {
         Long companyId,
         String useYn
     );
+
 }
+

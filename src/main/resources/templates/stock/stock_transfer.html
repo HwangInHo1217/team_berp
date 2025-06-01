@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<!-- 창고이동 모달 Fragment -->
+<div th:fragment="transfer_modal" class="modal fade" id="stockTransferModal" 
+     tabindex="-1" aria-labelledby="stockTransferModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="stockTransferModalLabel">
+                    <i class="fas fa-exchange-alt me-2"></i>창고 이동
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="stockTransferForm">
+                    <!-- 재고 정보 -->
+                    <div class="alert alert-info">
+                        <strong>이동할 재고:</strong> <span id="transferStockInfo">-</span><br>
+                        <strong>현재 수량:</strong> <span id="transferCurrentQty">0</span>개
+                    </div>
+                    
+                    <!-- 출발 창고 (읽기 전용) -->
+                    <div class="mb-3">
+                        <label for="fromWarehouse" class="form-label">출발 창고</label>
+                        <input type="text" class="form-control" id="fromWarehouse" readonly>
+                    </div>
+                    
+                    <!-- 도착 창고 -->
+                    <div class="mb-3">
+                        <label for="toWarehouse" class="form-label">도착 창고 <span class="text-danger">*</span></label>
+                        <select class="form-select" id="toWarehouse" required>
+                            <option value="">도착 창고를 선택하세요</option>
+                        </select>
+                    </div>
+                    
+                    <!-- 이동 수량 -->
+                    <div class="mb-3">
+                        <label for="transferQty" class="form-label">이동 수량 <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="transferQty" min="1" required>
+                        <div class="form-text">현재고: <span id="availableQty">0</span>개</div>
+                    </div>
+                    
+                    <!-- 이동 사유 -->
+                    <div class="mb-3">
+                        <label for="transferReason" class="form-label">이동 사유</label>
+                        <select class="form-select" id="transferReason">
+                            <option value="">사유를 선택하세요</option>
+                            <option value="재고 조정">재고 조정</option>
+                            <option value="창고 정리">창고 정리</option>
+                            <option value="생산 계획">생산 계획</option>
+                            <option value="기타">기타</option>
+                        </select>
+                    </div>
+                    
+                    <!-- 비고 -->
+                    <div class="mb-3">
+                        <label for="transferComment" class="form-label">비고</label>
+                        <textarea class="form-control" id="transferComment" rows="3" 
+                                  placeholder="추가 설명이나 특이사항을 입력하세요"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                <button type="button" class="btn btn-primary" id="confirmTransfer">
+                    <i class="fas fa-exchange-alt me-2"></i>이동 실행
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+</html>
