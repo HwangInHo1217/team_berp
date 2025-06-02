@@ -487,7 +487,7 @@ public class StockBusinessService {
         validationSvc.checkQty(stock, req.getQuantity());
         updateSvc.subQty(stock, req.getQuantity());
         
-        logSvc.createLog(LogType.DISPOSE, item, whs, req.getQuantity(), 
+        logSvc.createLog(LogType.TRANSFER, item, whs, req.getQuantity(), 
                         req.getComment() != null ? req.getComment() : "폐기 처리");
     }
     
@@ -505,7 +505,7 @@ public class StockBusinessService {
             updateSvc.createStock(req, item, whs);
         }
         
-        logSvc.createLog(LogType.RETURN_IN, item, whs, req.getQuantity(), 
+        logSvc.createLog(LogType.TRANSFER, item, whs, req.getQuantity(), 
                         req.getComment() != null ? req.getComment() : "반품입고 처리");
     }
     

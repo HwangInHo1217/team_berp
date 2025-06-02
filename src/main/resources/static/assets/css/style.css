@@ -51,3 +51,25 @@ input::placeholder {
   max-width: 60px;
   text-align: center !important;
 }
+
+/* ================================================================
+   DL(row) 영역: dt / dd 간격 좁히기
+   ============================================================== */
+
+/* dt 오른쪽에만 연한 세로 경계선(구분선) */
+dl.row dt.border-end {
+  border-right: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* dt와 dd 모두, padding을 최소화하여 한 줄에 더 많은 정보가 담기도록 설정 */
+dl.row dt,
+dl.row dd {
+  padding: 0.2rem 0.3rem;   /* 상하 0.2rem, 좌우 0.3rem */
+  margin-bottom: 0;         /* dd 기본 마진 없앰 */
+}
+
+/* 테이블(Cell)에도 border가 생기도록 */
+.table-bordered th,
+.table-bordered td {
+  border: 1px solid #dee2e6;
+}

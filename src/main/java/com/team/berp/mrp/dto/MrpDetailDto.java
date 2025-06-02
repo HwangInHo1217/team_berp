@@ -18,7 +18,6 @@ public class MrpDetailDto {
     private String dueDate;         // 필요 일자
     private String planType;        // 계획 타입 (예: PRODUCTION)
     private String status;          // MRP 상태 (예: PLANNED, RELEASED, CLOSED)
-    private String ownerName;       // 담당자/부서
 
     // ───────────────────────────────────────────
     // B. 품목 정보
@@ -53,7 +52,6 @@ public class MrpDetailDto {
         private int    stockQty;        // 가용 재고
         private int    shortageQty;     // 부족 수량
         private int    leadTime;        // 리드 타임(구매)
-        private String supplier;        // 공급처
     }
 
     // ───────────────────────────────────────────

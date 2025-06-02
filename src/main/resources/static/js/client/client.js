@@ -1,3 +1,5 @@
+// File: src/main/resources/static/js/clients/client-management.js
+
 document.addEventListener('DOMContentLoaded', () => {
   let currentType       = '';
   let currentPage       = 0;
@@ -15,6 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const detailModalEl   = document.getElementById('clientDetailModal');
   const searchInput     = document.getElementById('searchKeyword');
   const filterSelect    = document.getElementById('filterType');
+  const sortSelect      = document.getElementById('sortType'); // 정렬 기준 select
 
   // ■ 하이픈 제거
   const stripHyphens = s => (s||'').replace(/-/g,'');
@@ -86,7 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderTable(list) {
     const tb = document.getElementById('client-table');
     if (!list.length) {
-      tb.innerHTML = '<tr><td colspan="10">데이터가 없습니다.</td></tr>';
+      tb.innerHTML = '<tr><td colspan="10" class="text-center">데이터가 없습니다.</td></tr>';
       return;
     }
     tb.innerHTML = list.map(r => {
@@ -124,7 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const { id, next } = b.dataset;
         if (!confirm(next==='N'?'정지하시겠습니까?':'복구하시겠습니까?')) return;
         fetch(`/api/clients/${id}/status?useYn=${next}`, { method:'PATCH' })
-          .then(r => r.ok && loadClients(currentType,currentPage,currentKeyword,currentSearchType,currentSortType));
+          .then(r => r.ok && loadClients(currentType, currentPage, currentKeyword, currentSearchType, currentSortType));
       };
     });
     // 상세
@@ -164,7 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (!confirm('정말 삭제하시겠습니까?')) return;
         fetch(`/api/clients/${id}`, { method:'DELETE' })
-          .then(r => r.ok && loadClients(currentType,currentPage,currentKeyword,currentSearchType,currentSortType));
+          .then(r => r.ok && loadClients(currentType, currentPage, currentKeyword, currentSearchType, currentSortType));
       };
     });
   }
@@ -254,7 +257,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ■ 검색 폼(submit) 이벤트 바인딩
     document.getElementById('searchForm').addEventListener('submit', e => {
       e.preventDefault();
-      searchClients(); 
+      searchClients();
     });
 
   // 검색 & 필터
@@ -262,26 +265,41 @@ document.addEventListener('DOMContentLoaded', () => {
     currentSearchType = document.getElementById('searchType').value;
     currentKeyword    = searchInput.value.trim();
     if (currentSearchType === 'biznum') currentKeyword = stripHyphens(currentKeyword);
-    currentSortType   = document.getElementById('sortType').value;
+    // (정렬 기준은 select#sortType 의 현재값)
+    currentSortType   = document.getElementById('sortType').value; 
     currentPage       = 0;
-    loadClients(currentType,0,currentKeyword,currentSearchType,currentSortType);
+    loadClients(currentType, 0, currentKeyword, currentSearchType, currentSortType);
   }
-  
-  // 폼(submit) 이벤트 바인딩
-    const searchForm = document.getElementById('searchForm');
-    searchForm.addEventListener('submit', e => {
+
+  // (1) 검색(Form) → 엔터 혹은 버튼 클릭 시
+  const searchForm = document.getElementById('searchForm');
+  searchForm.addEventListener('submit', e => {
+    e.preventDefault();
+    searchClients();
+  });
+
+  searchInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
       e.preventDefault();
       searchClients();
-    });
-  
-  searchInput.addEventListener('keydown', e => {
-    if (e.key === 'Enter') { e.preventDefault(); searchClients(); }
+    }
   });
+
+  // (2) “유형(filterType)” 변경 즉시 호출
   filterSelect.addEventListener('change', () => {
     currentType = filterSelect.value;
     currentPage = 0;
-    loadClients(currentType,0,currentKeyword,currentSearchType,currentSortType);
+    loadClients(currentType, 0, currentKeyword, currentSearchType, currentSortType);
   });
+
+  // ─────────────────────────────────────────────────────────────────────
+  // ** 새로 추가: “정렬 기준(select#sortType) 변경 즉시 호출” **
+  sortSelect.addEventListener('change', () => {
+    currentSortType = sortSelect.value;
+    currentPage = 0;
+    loadClients(currentType, 0, currentKeyword, currentSearchType, currentSortType);
+  });
+  // ─────────────────────────────────────────────────────────────────────
 
   // bulk delete
   window.deleteChecked = () => {
@@ -290,7 +308,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!confirm(`${ids.length}개 삭제하시겠습니까?`)) return;
     Promise.all(ids.map(id =>
       fetch(`/api/clients/${id}`,{method:'DELETE'})
-    )).then(() => loadClients(currentType,currentPage,currentKeyword,currentSearchType,currentSortType));
+    )).then(() => loadClients(currentType, currentPage, currentKeyword, currentSearchType, currentSortType));
   };
   document.getElementById('all-check').addEventListener('change', function(){
     document.querySelectorAll('.row-check').forEach(c=>c.checked = this.checked);
@@ -386,7 +404,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   if (r.ok) {
                     alert(isEdit ? '수정 완료!' : '등록 완료!');
                     bootstrap.Modal.getInstance(registerModalEl).hide();
-                    loadClients(currentType,currentPage,currentKeyword,currentSearchType,currentSortType);
+                    loadClients(currentType, currentPage, currentKeyword, currentSearchType, currentSortType);
                   } else {
                     r.text().then(txt=>alert('실패: '+txt));
                   }
@@ -404,7 +422,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('modalSubmitBtn').innerText           = '등록';
     document.getElementById('duplicateWarning').classList.add('d-none');
   });
-	
+
   // 최초 로드
   loadClients();
 });
