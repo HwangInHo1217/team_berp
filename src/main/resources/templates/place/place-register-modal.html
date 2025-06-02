@@ -38,29 +38,26 @@
          </div>
           </div>
 
-   		<!-- 2. 담당자 정보 -->
             <div class="row mb-3">
+			  <!-- 2. 담당자 명 -->
 			  <div class="col-md-4">
-			    <label for="employeeSelect" class="form-label">담당자명</label>
-			    <select id="employeeSelect" name="employeeId" class="form-control" onchange="fillEmployeeDetails()">
-			      <option value="">-- 담당자 선택 --</option>
-			      <option th:each="emp : ${employees}"
-			          th:value="${emp.employeeId}"
-			          th:text="${emp.empName}">
-			      </option>
-			      <!-- 담당자 옵션은 JS에서 동적으로 채움 -->
-			    </select>
+			    <label for="empName" class="form-label">담당자 명</label>
+			    <input type="text" id="empName" name="empName" class="form-control" readonly>
 			  </div>
-			<div class="col-md-4">
-		    <label for="managerEmail" class="form-label">이메일</label>
-		    <input type="email" id="empEmail" name="empEmail" class="form-control" readonly>
-		  </div>
-		  <div class="col-md-4">
-		    <label for="managerNum" class="form-label">전화번호</label>
-		    <input type="text" id="empHp" name="empHp" class="form-control" readonly>
-		  </div>
-          </div>
-
+			
+			  <!-- 3. 이메일 -->
+			  <div class="col-md-4">
+			    <label for="empEmail" class="form-label">이메일</label>
+			    <input type="email" id="empEmail" name="empEmail" class="form-control" readonly>
+			  </div>
+			
+			  <!-- 4. 전화번호 -->
+			  <div class="col-md-4 ">
+			    <label for="empHp" class="form-label">전화번호</label>
+			    <input type="text" id="empHp" name="empHp" class="form-control" readonly>
+			  </div>
+			</div>
+			
           <!-- 3. 품목 목록 -->
 			<div>
 			  <table class="table table-bordered" id="itemTable">
@@ -122,7 +119,7 @@
         </div>
           
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" onclick="placeReset()">초기화</button>
+          <button type="button" id="submitBtn" class="btn btn-secondary" onclick="placeReset()">초기화</button>
           <button type="button" class="btn btn-primary" onclick="placeSubmit()">등록</button>
         </div>
       </form>

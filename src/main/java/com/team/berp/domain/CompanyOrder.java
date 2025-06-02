@@ -61,7 +61,4 @@ public class CompanyOrder {
     @Column(name = "order_num")
     private String orderNum;
     
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "employee_id")
-    private Employee employee;
 }

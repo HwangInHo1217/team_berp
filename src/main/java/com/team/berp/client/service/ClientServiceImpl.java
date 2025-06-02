@@ -172,10 +172,4 @@ public class ClientServiceImpl implements ClientService {
     	return repo.findAll();
     }
     
-    @Override
-    public Employee getEmployeeById(Long employeeId) {
-        return employeeRepository.findById(employeeId)
-                .orElseThrow(() -> new RuntimeException("직원 정보가 없습니다. id: " + employeeId));
-    }
-
 }
