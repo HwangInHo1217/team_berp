@@ -1228,74 +1228,89 @@ const StockActions = {
         }, { once: true });
     },
     
-    renderHistory(logs) {
-        const tbody = document.getElementById('historyTableBody');
-        if (!tbody) return;
-        
-        tbody.innerHTML = '';
-        
-        if (logs.length === 0) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="4" class="text-center text-muted py-4">
-                        <i class="fas fa-inbox fa-2x mb-2 text-secondary"></i><br>
-                        재고 변동 이력이 없습니다.
-                    </td>
-                </tr>
-            `;
-            return;
-        }
-        
-        logs.forEach(log => {
-            const logTypeDisplay = this.getLogTypeDisplay(log.logType);
-            const quantityDisplay = this.getQuantityDisplay(log.logType, log.quantity);
-            
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td class="text-nowrap">
-                    <small>${StockUtils.formatDateTime(log.logDatetime)}</small>
-                </td>
-                <td class="text-center">
-                    <span class="badge bg-${logTypeDisplay.color} rounded-pill">
-                        ${logTypeDisplay.label}
-                    </span>
-                </td>
-                <td class="text-end">
-                    <strong class="${quantityDisplay.class}">
-                        ${quantityDisplay.text}
-                    </strong>
-                </td>
-                <td>
-                    <small class="text-muted">
-                        ${StockUtils.escapeHtml(log.comment || log.reason || '-')}
-                    </small>
-                </td>
-            `;
-            tbody.appendChild(row);
-        });
-    },
-    
-    getLogTypeDisplay(logType) {
-        const types = {
-            'IN': { label: '입고', color: 'success' },
-            'OUT': { label: '출고', color: 'danger' },
-            'TRANSFER_IN': { label: '이동입고', color: 'info' },
-            'TRANSFER_OUT': { label: '이동출고', color: 'warning' },
-            'DISPOSE': { label: '폐기', color: 'dark' },
-            'RETURN_IN': { label: '반품입고', color: 'secondary' }
-        };
-        
-        return types[logType] || { label: logType, color: 'secondary' };
-    },
-    
-    getQuantityDisplay(logType, quantity) {
-        const isDecrease = ['OUT', 'TRANSFER_OUT', 'DISPOSE'].includes(logType);
-        
-        return {
-            text: `${isDecrease ? '-' : '+'}${StockUtils.formatNumber(quantity)}`,
-            class: isDecrease ? 'text-danger' : 'text-success'
-        };
-    },
+	renderHistory(logs) {
+	    const tbody = document.getElementById('historyTableBody');
+	    if (!tbody) return;
+	    
+	    tbody.innerHTML = '';
+	    
+	    if (logs.length === 0) {
+	        tbody.innerHTML = `
+	            <tr>
+	                <td colspan="4" class="text-center text-muted py-4">
+	                    <i class="fas fa-inbox fa-2x mb-2 text-secondary"></i><br>
+	                    재고 변동 이력이 없습니다.
+	                </td>
+	            </tr>
+	        `;
+	        return;
+	    }
+	    
+	    logs.forEach(log => {
+	        const logTypeDisplay = this.getLogTypeDisplay(log.logType);
+	        const quantityDisplay = this.getQuantityDisplay(log.logType, log.quantity);
+	        
+	        // 상태 표시 추가
+	        const statusBadge = this.getStatusBadge(log.logStatus);
+	        
+	        const row = document.createElement('tr');
+	        row.innerHTML = `
+	            <td class="text-nowrap">
+	                <small>${StockUtils.formatDateTime(log.logDatetime)}</small>
+	            </td>
+	            <td class="text-center">
+	                <span class="badge bg-${logTypeDisplay.color} rounded-pill">
+	                    ${logTypeDisplay.label}
+	                </span>
+	                ${statusBadge ? `<br><small>${statusBadge}</small>` : ''}
+	            </td>
+	            <td class="text-end">
+	                <strong class="${quantityDisplay.class}">
+	                    ${quantityDisplay.text}
+	                </strong>
+	            </td>
+	            <td>
+	                <small class="text-muted">
+	                    ${StockUtils.escapeHtml(log.comment || log.reason || '-')}
+	                </small>
+	            </td>
+	        `;
+	        tbody.appendChild(row);
+	    });
+	},
+	
+	
+	// 상태 배지 표시 메서드 (수정됨)
+	getStatusBadge(logStatus) {
+	    if (!logStatus) return '';
+	    
+	    const statusMap = {
+	        'PENDING': '<span class="badge bg-warning text-dark">대기</span>',
+	        'CONFIRMED': '<span class="badge bg-success">확정</span>'
+	    };
+	    
+	    return statusMap[logStatus] || '';
+	},
+
+	getLogTypeDisplay(logType) {
+	    const types = {
+	        'IN': { label: '입고', color: 'success' },
+	        'OUT': { label: '출고', color: 'danger' },
+	        'TRANSFER': { label: '창고이동', color: 'info' }
+	    };
+	    
+	    return types[logType] || { label: logType, color: 'secondary' };
+	},
+	
+	
+	getQuantityDisplay(logType, quantity) {
+	    const isDecrease = ['OUT', 'TRANSFER_OUT', 'DISPOSE'].includes(logType);
+	    
+	    return {
+	        text: `${isDecrease ? '-' : '+'}${StockUtils.formatNumber(quantity)}`,
+	        class: isDecrease ? 'text-danger' : 'text-success'
+	    };
+	},
     
     openBulkOutModal() {
         const selectedItems = document.querySelectorAll('.stock-checkbox:checked');

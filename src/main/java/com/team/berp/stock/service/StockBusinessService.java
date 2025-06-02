@@ -446,45 +446,7 @@ public class StockBusinessService {
                         req.getComment() != null ? req.getComment() : "출고 처리");
     }
     
-    /**
-     * 재고 폐기 처리
-     */
-    @Transactional
-    public void dispose(StockRequestDTO req) {
-        validationSvc.validate(req);
-        Item item = getItem(req.getItemId());
-        Warehouse whs = getWarehouse(req.getWarehouseId());
-        
-        Stock stock = stockRepo.findByItemAndWarehouse(item, whs)
-                .orElseThrow(() -> new RuntimeException("폐기할 재고가 없습니다."));
-        
-        validationSvc.checkQty(stock, req.getQuantity());
-        updateSvc.subQty(stock, req.getQuantity());
-        
-        logSvc.createLog(LogType.DISPOSE, item, whs, req.getQuantity(), 
-                        req.getComment() != null ? req.getComment() : "폐기 처리");
-    }
-    
-    /**
-     * 반품 입고 처리
-     */
-    @Transactional
-    public void returnIn(StockRequestDTO req) {
-        validationSvc.validate(req);
-        Item item = getItem(req.getItemId());
-        Warehouse whs = getWarehouse(req.getWarehouseId());
-        
-        Optional<Stock> stock = stockRepo.findByItemAndWarehouse(item, whs);
-        
-        if (stock.isPresent()) {
-            updateSvc.addQty(stock.get(), req.getQuantity());
-        } else {
-            updateSvc.createStock(req, item, whs);
-        }
-        
-        logSvc.createLog(LogType.RETURN_IN, item, whs, req.getQuantity(), 
-                        req.getComment() != null ? req.getComment() : "반품입고 처리");
-    }
+    // ===== 폐기 및 반품입고 메서드 제거됨 =====
     
     // === 내부 헬퍼 메서드들 ===
     
@@ -668,7 +630,7 @@ public class StockBusinessService {
     }
     
     /**
-     * 🆕 긴급출고 처리 (거래처 정보 포함) - 새로 추가된 기능만
+     * 🆕 긴급출고 처리 (거래처 정보 포함)
      */
     @Transactional
     public void quickOut(QuickOutRequestDTO req) {
@@ -709,7 +671,7 @@ public class StockBusinessService {
     }
     
     /**
-     * 🆕 긴급출고 코멘트 생성 (새로 추가된 기능만)
+     * 🆕 긴급출고 코멘트 생성
      */
     private String createQuickOutComment(QuickOutRequestDTO req, Company company) {
         StringBuilder comment = new StringBuilder();
@@ -732,10 +694,9 @@ public class StockBusinessService {
         
         return comment.toString();
     }
-  
     
     /**
-     * 🆕 긴급출고 요청 유효성 검증 (새로 추가된 기능만)
+     * 🆕 긴급출고 요청 유효성 검증
      */
     private void validateQuickOutRequest(QuickOutRequestDTO req) {
         if (req.getItemId() == null) {
@@ -756,11 +717,10 @@ public class StockBusinessService {
     }
     
     /**
-     * 🆕 거래처 조회 (새로 추가된 기능만)
+     * 🆕 거래처 조회
      */
     private Company getCompany(Long companyId) {
         return clientRepo.findById(companyId)
                 .orElseThrow(() -> new RuntimeException("거래처를 찾을 수 없습니다."));
     }
-    
-}
+ }
