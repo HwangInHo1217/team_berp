@@ -490,12 +490,14 @@ const StockSearch = {
 
 // ===== StockModal (기존과 동일) =====
 const StockModal = {
+	
     modalInstance: null,
     currentStockId: null,
     currentWarehouseId: null,
     currentQuantity: null,
     currentItemName: null,
     currentItemType: null,
+	currentWarehouseName: null,
     
     elementsMap: {
         itemCode: 'detailItemCode',
@@ -618,44 +620,56 @@ const StockModal = {
         }
     },
 
-    fetchStockDetail(stockId) {
-        fetch(`/api/stocks/${stockId}/detail`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error(`서버 응답 오류 (${response.status})`);
-                }
-                return response.json();
-            })
-            .then(stockDetail => {
-                console.log("상세 데이터:", stockDetail);
-                
-                this.currentStockId = stockDetail.stockId;
-                this.currentWarehouseId = stockDetail.warehouseId;
-                this.currentQuantity = stockDetail.quantity;
-                this.currentItemName = stockDetail.itemName;
-                this.currentItemType = stockDetail.itemType;
-                
-                const displayData = {
-                    itemCode: stockDetail.itemCode,
-                    itemName: stockDetail.itemName,
-                    itemType: stockDetail.itemType === 'raw' ? '자재' : '완제품',
-                    unit: stockDetail.itemUnit || stockDetail.unit || 'EA',
-                    warehouse: stockDetail.warehouseName,
-                    qty: StockUtils.formatNumber(stockDetail.quantity),
-                    stockStatus: this.getDetailStatusBadge(stockDetail),
-                    firstStocked: StockUtils.formatDate(stockDetail.firstStockedDate),
-                    lastIn: StockUtils.formatDate(stockDetail.actualLastInAt || stockDetail.lastInDate),
-                    lastStocked: StockUtils.formatDate(stockDetail.lastStockedDate),
-                    lastOut: StockUtils.formatDate(stockDetail.actualLastOutAt || stockDetail.lastOutDate)
-                };
-                
-                this.fillModalData(displayData);
-                this.modalInstance.show();
-            })
-            .catch(error => {
-                StockUtils.handleApiError(error, '재고 상세 정보를 가져오는데 실패했습니다.');
-            });
-    },
+	fetchStockDetail(stockId) {
+	    fetch(`/api/stocks/${stockId}/detail`)
+	        .then(response => {
+	            if (!response.ok) {
+	                throw new Error(`서버 응답 오류 (${response.status})`);
+	            }
+	            return response.json();
+	        })
+	        .then(stockDetail => {
+	            console.log("상세 데이터:", stockDetail);
+	            
+	            // 🔧 모든 필요한 정보를 저장
+	            this.currentStockId = stockDetail.stockId;
+	            this.currentWarehouseId = stockDetail.warehouseId;
+	            this.currentQuantity = stockDetail.quantity;
+	            this.currentItemName = stockDetail.itemName;
+	            this.currentItemType = stockDetail.itemType;
+	            this.currentWarehouseName = stockDetail.warehouseName; // 🆕 창고명 저장
+	            
+				
+				// 🔍 여기에 디버깅 로그 추가!
+				console.log('🔍 StockModal 데이터 저장 완료:');
+				console.log('  - currentStockId:', this.currentStockId);
+				console.log('  - currentWarehouseId:', this.currentWarehouseId);
+				console.log('  - currentWarehouseName:', this.currentWarehouseName);
+				console.log('  - currentQuantity:', this.currentQuantity);
+				console.log('  - currentItemName:', this.currentItemName);
+				console.log('  - currentItemType:', this.currentItemType);
+
+	            const displayData = {
+	                itemCode: stockDetail.itemCode,
+	                itemName: stockDetail.itemName,
+	                itemType: stockDetail.itemType === 'raw' ? '자재' : '완제품',
+	                unit: stockDetail.itemUnit || stockDetail.unit || 'EA',
+	                warehouse: stockDetail.warehouseName,
+	                qty: StockUtils.formatNumber(stockDetail.quantity),
+	                stockStatus: this.getDetailStatusBadge(stockDetail),
+	                firstStocked: StockUtils.formatDate(stockDetail.firstStockedDate),
+	                lastIn: StockUtils.formatDate(stockDetail.actualLastInAt || stockDetail.lastInDate),
+	                lastStocked: StockUtils.formatDate(stockDetail.lastStockedDate),
+	                lastOut: StockUtils.formatDate(stockDetail.actualLastOutAt || stockDetail.lastOutDate)
+	            };
+	            
+	            this.fillModalData(displayData);
+	            this.modalInstance.show();
+	        })
+	        .catch(error => {
+	            StockUtils.handleApiError(error, '재고 상세 정보를 가져오는데 실패했습니다.');
+	        });
+	},
 
     fillModalData(data) {
         for (const key in this.elementsMap) {
@@ -885,23 +899,45 @@ const StockModal = {
         return true;
     },
 
-    openTransferModalFromDetail() {
-        if (this.currentStockId && this.currentWarehouseId && 
-            this.currentQuantity !== undefined && this.currentItemType) {
-            
-            this.openTransferModal(
-                this.currentStockId, 
-                this.currentWarehouseId, 
-                this.currentQuantity, 
-                this.currentItemName,
-                this.currentItemType
-            );
-        } else {
-            StockUtils.showError('재고 정보가 부족하여 창고 이동을 진행할 수 없습니다.');
-        }
-    }
-};
+	    // 🔧 수정된 openTransferModalFromDetail 메서드
+	    openTransferModalFromDetail() {
+	        console.log('🔄 상세 모달에서 창고이동 요청');
+	        console.log('📦 전달할 데이터:', {
+	            stockId: this.currentStockId,
+	            warehouseId: this.currentWarehouseId,
+	            warehouseName: this.currentWarehouseName,
+	            quantity: this.currentQuantity,
+	            itemName: this.currentItemName,
+	            itemType: this.currentItemType
+	        });
 
+	        if (this.currentStockId && this.currentWarehouseId && 
+	            this.currentQuantity !== undefined && this.currentItemType) {
+	            
+	            // StockTransfer 모듈의 메서드 호출 (통일된 처리)
+	            StockTransfer.openTransferModalWithData({
+	                stockId: this.currentStockId,
+	                warehouseId: this.currentWarehouseId,
+	                warehouseName: this.currentWarehouseName,
+	                quantity: this.currentQuantity,
+	                itemName: this.currentItemName,
+	                itemType: this.currentItemType
+	            });
+	            
+	        } else {
+	            console.error('❌ 필수 데이터 누락:', {
+	                stockId: this.currentStockId,
+	                warehouseId: this.currentWarehouseId,
+	                quantity: this.currentQuantity,
+	                itemType: this.currentItemType,
+	                warehouseName: this.currentWarehouseName
+	            });
+	            StockUtils.showError('재고 정보가 부족하여 창고 이동을 진행할 수 없습니다.');
+	        }
+	    }
+		
+	};
+	
 // ===== StockActions (긴급출고 시 거래처 선택 추가) =====
 const StockActions = {
     init() {
@@ -1830,39 +1866,26 @@ const StockTransfer = {
         }
     },
     
-    openTransferModal() {
-        const selectedItems = document.querySelectorAll('.stock-checkbox:checked');
-        
-        if (selectedItems.length === 0) {
-            StockUtils.showWarning('창고 이동할 재고를 선택해주세요.');
-            return;
-        }
-        
-        if (selectedItems.length > 1) {
-            StockUtils.showWarning('창고 이동은 한 번에 하나의 재고만 처리할 수 있습니다.');
-            return;
-        }
-        
-        const stockId = selectedItems[0].dataset.stockId;
-        console.log('🔄 창고이동 요청 - stockId:', stockId);
-        
-        let transferModal = document.getElementById('stockTransferModal');
-        
-        if (!transferModal) {
-            console.warn('⚠️ stockTransferModal이 없어서 동적 생성합니다.');
-            this.createTransferModalDynamically();
-            transferModal = document.getElementById('stockTransferModal');
-        }
-        
-        if (!transferModal) {
-            StockUtils.showError('창고이동 모달을 생성할 수 없습니다. 페이지를 새로고침해주세요.');
-            console.error('❌ 모달 생성 실패!');
-            return;
-        }
-        
-        console.log('✅ 모달 확인됨, 재고 정보 로딩 시작');
-        this.loadStockForTransfer(stockId);
-    },
+	// 🔧 기존 메서드는 유지하되, 새로운 메서드도 활용
+	openTransferModal() {
+	    const selectedItems = document.querySelectorAll('.stock-checkbox:checked');
+	    
+	    if (selectedItems.length === 0) {
+	        StockUtils.showWarning('창고 이동할 재고를 선택해주세요.');
+	        return;
+	    }
+	    
+	    if (selectedItems.length > 1) {
+	        StockUtils.showWarning('창고 이동은 한 번에 하나의 재고만 처리할 수 있습니다.');
+	        return;
+	    }
+	    
+	    const stockId = selectedItems[0].dataset.stockId;
+	    console.log('🔄 목록에서 창고이동 요청 - stockId:', stockId);
+	    
+	    // 기존 방식: API 호출해서 데이터 가져오기
+	    this.loadStockForTransfer(stockId);
+	},
 
     createTransferModalDynamically() {
         const modalHtml = `
@@ -2179,7 +2202,45 @@ const StockTransfer = {
         }
 
         return true;
-    }
+    },
+	
+	// 🆕 데이터 객체로 모달 열기 (통일된 처리)
+	openTransferModalWithData(stockData) {
+	    console.log('🔄 창고이동 모달 열기 - 받은 데이터:', stockData);
+	    
+	    // 가짜 재고 객체 생성 (기존 구조와 호환)
+	    this.selectedStock = {
+	        stockId: stockData.stockId,
+	        itemId: stockData.stockId, // 또는 별도의 itemId가 있다면 사용
+	        itemCode: stockData.itemCode || 'Unknown',
+	        itemName: stockData.itemName,
+	        itemType: stockData.itemType,
+	        warehouseId: stockData.warehouseId,
+	        warehouseName: stockData.warehouseName,
+	        quantity: stockData.quantity
+	    };
+
+	    // 모달이 없으면 생성
+	    let transferModal = document.getElementById('stockTransferModal');
+	    if (!transferModal) {
+	        console.warn('⚠️ Transfer Modal이 없어서 동적 생성합니다.');
+	        this.createTransferModalDynamically();
+	    }
+
+	    // 모달 데이터 채우기
+	    this.fillTransferModal(this.selectedStock);
+	    
+	    // 창고 목록 로딩
+	    this.loadWarehousesForTransfer(stockData.warehouseId, stockData.itemType);
+	    
+	    // 모달 표시
+	    const modal = new bootstrap.Modal(document.getElementById('stockTransferModal'));
+	    modal.show();
+	},
+	
+	
+	
+	
 };
 
 // ===== 재고 통계 및 요약 =====
@@ -2257,3 +2318,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }, 500);
 });
+
+setTimeout(() => {
+    console.log('🔍 StockModal에서 관리하는 현재 데이터:');
+    console.log('  - currentStockId:', StockModal.currentStockId);
+    console.log('  - currentWarehouseId:', StockModal.currentWarehouseId);
+    console.log('  - currentWarehouseName:', StockModal.currentWarehouseName);
+    console.log('  - currentQuantity:', StockModal.currentQuantity);
+    console.log('  - currentItemName:', StockModal.currentItemName);
+    console.log('  - currentItemType:', StockModal.currentItemType);
+}, 1000); // 1초 후 실행
