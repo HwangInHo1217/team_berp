@@ -18,7 +18,7 @@ public class InventoryLogService {
     
     private final InventoryLogRepository logRepo;
     
-    // 재고 변동 로그 생성
+    // 재고 변동 로그 생성 (DB 제약 조건에 맞게 수정)
     @Transactional
     public void createLog(LogType logType, Item item, Warehouse whs, Integer qty, String comment) {
         InventoryLog log = new InventoryLog();
@@ -29,10 +29,45 @@ public class InventoryLogService {
         log.setLogDatetime(LocalDateTime.now());
         log.setComment(comment);
         
-        // 입고일 때만 상태 설정
-        if (logType == LogType.IN) {
-            log.setLogStatus(LogStatus.CONFIRMED);
+        // DB 제약 조건에 맞게 logStatus 설정
+        switch (logType) {
+            case IN:
+                // 입고는 기본적으로 CONFIRMED로 설정 (필요시 PENDING으로 변경 가능)
+                log.setLogStatus(LogStatus.CONFIRMED);
+                break;
+            case OUT:
+                // 출고는 반드시 CONFIRMED만 가능
+                log.setLogStatus(LogStatus.CONFIRMED);
+                break;
+            case TRANSFER:
+                // 창고이동은 반드시 CONFIRMED만 가능
+                log.setLogStatus(LogStatus.CONFIRMED);
+                break;
+            default:
+                // 기타 타입도 CONFIRMED로 설정
+                log.setLogStatus(LogStatus.CONFIRMED);
+                break;
         }
+        
+        logRepo.save(log);
+    }
+    
+    // 🆕 입고 로그 생성 (상태 지정 가능한 오버로드 메서드 추가)
+    @Transactional
+    public void createInLog(Item item, Warehouse whs, Integer qty, String comment, LogStatus status) {
+        // 입고 타입만 PENDING 또는 CONFIRMED 상태 허용
+        if (status != LogStatus.PENDING && status != LogStatus.CONFIRMED) {
+            throw new IllegalArgumentException("입고 로그는 PENDING 또는 CONFIRMED 상태만 가능합니다.");
+        }
+        
+        InventoryLog log = new InventoryLog();
+        log.setLogType(LogType.IN);
+        log.setItem(item);
+        log.setWarehouse(whs);
+        log.setQuantity(qty);
+        log.setLogDatetime(LocalDateTime.now());
+        log.setComment(comment);
+        log.setLogStatus(status);
         
         logRepo.save(log);
     }

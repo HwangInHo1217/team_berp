@@ -2,9 +2,13 @@ package com.team.berp.stock.service;
 
 import com.team.berp.domain.Stock;
 import com.team.berp.stock.dto.StockRequestDTO;
+
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 
 @Service
+@RequiredArgsConstructor
 public class StockValidationService {
 
     // 재고 요청 기본 검증
