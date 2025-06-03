@@ -243,10 +243,18 @@ List<Object[]> getStockCountByWarehouse();
 @Query("SELECT COUNT(DISTINCT s.item.id) FROM Stock s")
 long countDistinctItems();
  
- 
+
+
  // === 기타 메서드들 ===
  
  List<Stock> findByItem(Item item);
  List<Stock> findByWarehouse(Warehouse warehouse);
  List<Stock> findByLotNumber(String lotNumber);
+ 
+ 
+ 
+ 
+ 
+ 
+ 
 }
