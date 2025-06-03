@@ -35,7 +35,7 @@ public interface ItemRepository extends JpaRepository<Item, Long>{
     
  
 
-   
+    
 
     // ✅ 3. 이름 검색 + 제품 + 사용여부
     Page<Item> findByNameContainingAndTypeAndUse(String name, String type, String use, Pageable pageable);

@@ -104,10 +104,11 @@
 										<!-- JS에서 채워주는 부분이라서 지움 -->
 									</select>
 								</div>
+								<!-- versionCode 입력란 대신, 숨겨진 input + 표시용 텍스트 -->
 								<div class="mb-3">
-									<label class="form-label">버전 코드 (예: V1, V-PORK)</label> <input
-										type="text" class="form-control" name="version_code"
-										id="versionCodeInput" required />
+									<label class="form-label">버전 코드</label> <input type="text"
+										class="form-control" id="versionCodeInput" name="version_code"
+										readonly placeholder="자동 생성 대기 중..." />
 								</div>
 								<!-- 🔽 설명 -->
 								<div class="mb-3">
@@ -280,55 +281,56 @@
 
 						<div class="modal-body">
 							<div class="container-fluid">
-								<div class="row gx-4">
+								<div class="row gx-4 design1"
+									style="display: flex; flex-direction: column;">
 									<div class="col-md-3">
 										<!-- 품목 리스트 -->
-										<div class="card mb-3">
-											<div class="card-header text-center fw-bold">품목 리스트</div>
-											<div class="card-body card-body-scrollable p-2">
-												<table
-													class="table table-sm table-bordered text-center table-fixed">
-													<thead class="table-light">
-														<tr>
-															<th>No</th>
-															<th>코드</th>
-															<th>명</th>
-															<th>규격</th>
-															<th>단위</th>
-														</tr>
-													</thead>
-													<tbody id="bomProductList">
-														<!-- JS에서 채워주는 부분이라서 지움 -->
-													</tbody>
-												</table>
-											</div>
-										</div>
+										<!-- 										<div class="card mb-3"> -->
+										<!-- 											<div class="card-header text-center fw-bold" style="width: 100%">품목 리스트</div> -->
+										<!-- 											<div class="card-body card-body-scrollable p-2"> -->
+										<!-- 												<table -->
+										<!-- 													class="table table-sm table-bordered text-center table-fixed"> -->
+										<!-- 													<thead class="table-light"> -->
+										<!-- 														<tr> -->
+										<!-- 															<th>No</th> -->
+										<!-- 															<th>코드</th> -->
+										<!-- 															<th>명</th> -->
+										<!-- 															<th>규격</th> -->
+										<!-- 															<th>단위</th> -->
+										<!-- 														</tr> -->
+										<!-- 													</thead> -->
+										<!-- 													<tbody id="bomProductList"> -->
+										<!-- 														JS에서 채워주는 부분이라서 지움 -->
+										<!-- 													</tbody> -->
+										<!-- 												</table> -->
+										<!-- 											</div> -->
+										<!-- 										</div> -->
 
 										<!-- 자재 리스트 -->
-										<div class="card mb-4">
-											<div class="card-header text-center fw-bold">자재 리스트</div>
-											<div class="card-body card-body-scrollable p-2">
-												<table
-													class="table table-sm table-bordered text-center table-fixed">
-													<thead class="table-light">
-														<tr>
-															<th>No</th>
-															<th>코드</th>
-															<th>명</th>
-															<th>규격</th>
-															<th>단위</th>
-														</tr>
-													</thead>
-													<tbody id="bomMaterialList">
-														<!-- JS에서 채워주는 부분이라서 지움 -->
-													</tbody>
-												</table>
-											</div>
-										</div>
+										<!-- 										<div class="card mb-4"> -->
+										<!-- 											<div class="card-header text-center fw-bold">자재 리스트</div> -->
+										<!-- 											<div class="card-body card-body-scrollable p-2"> -->
+										<!-- 												<table -->
+										<!-- 													class="table table-sm table-bordered text-center table-fixed"> -->
+										<!-- 													<thead class="table-light"> -->
+										<!-- 														<tr> -->
+										<!-- 															<th>No</th> -->
+										<!-- 															<th>코드</th> -->
+										<!-- 															<th>명</th> -->
+										<!-- 															<th>규격</th> -->
+										<!-- 															<th>단위</th> -->
+										<!-- 														</tr> -->
+										<!-- 													</thead> -->
+										<!-- 													<tbody id="bomMaterialList"> -->
+										<!-- 														JS에서 채워주는 부분이라서 지움 -->
+										<!-- 													</tbody> -->
+										<!-- 												</table> -->
+										<!-- 											</div> -->
+										<!-- 										</div> -->
 									</div>
 
 									<!-- BOM 트리 구조 -->
-									<div class="col-md-9">
+									<div class="col-md-9" style="width: 100%">
 										<div class="card mb-4">
 											<div class="card-header fw-bold">BOM 트리 구조</div>
 											<div class="card-body">

@@ -3,11 +3,13 @@ package com.team.berp.place.service;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
 import com.team.berp.client.repository.ClientRepository;
+import com.team.berp.domain.Company;
 import com.team.berp.domain.CompanyOrder;
 import com.team.berp.domain.Employee;
 import com.team.berp.domain.Item;
@@ -66,13 +68,7 @@ public class PlaceServiceImpl implements PlaceService{ //실제 구현
          //비고 코멘트 세팅 (필드 추가되면 Entity에도 추가해야 함)
          order.setNote(dto.getNote()); // Entity에 comment 필드가 있으면
 
-         // employeeId 처리 추가
-         if (dto.getEmployeeId() != null) {
-             Employee employee = employeeRepository.findById(dto.getEmployeeId())
-                                    .orElseThrow(() -> new RuntimeException("해당 직원이 존재하지 않습니다."));
-             order.setEmployee(employee);
-         }
-         
+       
          //주문번호 생성 및 세팅
          String orderNum = generateOrderNum();
          order.setOrderNum(orderNum);
@@ -144,5 +140,12 @@ public class PlaceServiceImpl implements PlaceService{ //실제 구현
         String randomPart = UUID.randomUUID().toString().substring(0, 4);
         return "PO-" + datePart + "-" + randomPart;
     }
+    
+    @Override
+    public Optional<Employee> getEmployeeByCompanyId(Long companyId) {
+        return companyRepository.findById(companyId) // 1) companyRepository.findById(...)로 Company 엔티티 가져옴
+                .map(Company::getEmployee); // 2) Company.getEmployee()가 반환하는 Optional<Employee>
+    }
+
  
 }

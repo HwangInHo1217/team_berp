@@ -21,8 +21,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.team.berp.bom.dto.AddBomRequestDTO;
 import com.team.berp.bom.dto.BomEditResponseDTO;
 import com.team.berp.bom.dto.BomListResponseDTO;
-import com.team.berp.bom.dto.BomListViewResponse;
 import com.team.berp.bom.dto.BomProductItemDTO;
+import com.team.berp.bom.dto.BomTreeDTO;
 import com.team.berp.bom.dto.BomVersionResponseDTO;
 import com.team.berp.bom.dto.ItemSelectionDTO;
 import com.team.berp.bom.dto.UpdateBomRequestDTO;
@@ -37,15 +37,26 @@ public class BomApiController {
 	private final BomService bomService;
 
 	// ✅ 등록
-	@PostMapping
-	public ResponseEntity<?> registerBom(@RequestBody AddBomRequestDTO dto) {
-	    try {
-	        bomService.registerBomWithVersion(dto);
-	        return ResponseEntity.ok(Map.of("result", "success")); // ✅ 바디 포함
-	    } catch (IllegalArgumentException e) {
-	        return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
-	    }
-	}
+    // 수정: 자동 생성된 versionId, versionCode를 함께 반환
+    @PostMapping
+    public ResponseEntity<?> registerBom(@RequestBody AddBomRequestDTO dto) {
+        try {
+            BomVersionResponseDTO respDto = bomService.registerBomWithVersion(dto);
+            return ResponseEntity.ok(Map.of(
+                "versionId", respDto.getId(),
+                "versionCode", respDto.getVersionCode(),
+                "useYn", respDto.getUseYn()
+            ));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+    @GetMapping("/tree/{parentId}")
+    public ResponseEntity<BomTreeDTO> getBomTree(@PathVariable("parentId") Long parentId) {
+        BomTreeDTO tree = bomService.getBomTreeByParent(parentId);
+        return ResponseEntity.ok(tree);
+    }
+
 
 /*
 	// ✅ 상세 조회
@@ -110,4 +121,3 @@ public class BomApiController {
         return ResponseEntity.ok(response);
     }
 }
-

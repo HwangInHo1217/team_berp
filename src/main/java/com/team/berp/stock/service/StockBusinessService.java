@@ -482,7 +482,9 @@ public class StockBusinessService {
                         req.getComment() != null ? req.getComment() : "출고 처리");
     }
     
+
     // === 내부 헬퍼 메서드들 ===
+
     
     /**
      * 창고 이동 요청 유효성 검사
@@ -492,6 +494,7 @@ public class StockBusinessService {
             throw new IllegalArgumentException("출발 창고가 선택되지 않았습니다.");
         }
         
+
         if (req.getToWarehouseId() == null) {
             throw new IllegalArgumentException("도착 창고가 선택되지 않았습니다.");
         }
@@ -549,6 +552,7 @@ public class StockBusinessService {
             case "OTHER" -> "기타";
             default -> reasonCode; // 그대로 표시
         };
+
     }
     
     private boolean isEmpty(String str) {
