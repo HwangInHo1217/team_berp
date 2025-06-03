@@ -13,5 +13,5 @@ public interface EntityItemRepository extends JpaRepository<Item, Long> {
     // 예: findAll(), findById(), save(), deleteById() 등
 
     // 추가로, 필요한 경우 쿼리 메서드 정의 가능 (예: findByItemName(String name))
-	
+	 Item findByCode(String code);
 }

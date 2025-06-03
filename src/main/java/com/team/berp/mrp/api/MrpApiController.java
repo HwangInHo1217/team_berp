@@ -26,11 +26,10 @@ public class MrpApiController {
             @RequestParam(name="sortDir",  defaultValue="desc") String sortDir,
             @RequestParam(name="startDate", required=false)     String startDate,
             @RequestParam(name="endDate",   required=false)     String endDate,
-            @RequestParam(name="itemSearch",required=false)     String itemSearch,
-            @RequestParam(name="custSearch",required=false)     String custSearch
+            @RequestParam(name="itemSearch",required=false)     String itemSearch
     ) {
         Page<MrpViewDto> result = mrpService.findMrpList(
-            page, size, sortKey, sortDir, startDate, endDate, itemSearch, custSearch
+            page, size, sortKey, sortDir, startDate, endDate, itemSearch
         );
         Map<String,Object> response = new HashMap<>();
         response.put("content",       result.getContent());

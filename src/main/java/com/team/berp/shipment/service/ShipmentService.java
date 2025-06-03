@@ -112,8 +112,8 @@ public class ShipmentService {
 			return new ShipmentInfoDTO(log.getId(), log.getLogDatetime(), companyName, log.getItem().getCode(),
 					log.getItem().getName(), log.getQuantity(), log.getItem().getUnit(),
 					log.getWarehouse().getWarehouseName(),
-					log.getOrderLineItem().getCompanyOrder().getEmployee() != null
-							? log.getOrderLineItem().getCompanyOrder().getEmployee().getEmpName()
+					log.getOrderLineItem().getCompanyOrder().getCompany().getEmployee() != null
+							? log.getOrderLineItem().getCompanyOrder().getCompany().getEmployee().getEmpName()
 							: "",
 					log.getComment());
 		}).collect(Collectors.toList());

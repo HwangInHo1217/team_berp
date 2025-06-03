@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -19,12 +19,89 @@
     <!-- 메인 콘텐츠 -->
     <main class="p-4 flex-fill">
       <h1>대시보드</h1>
-      <p>현재 시스템의 개요 또는 주요 통계를 보여줍니다.</p>
+
+      <div class="row mt-4">
+        <!-- ────────────────────────────────────────────────────────────
+             A. 최신 입고 5건
+             ──────────────────────────────────────────────────────────── -->
+        <div class="col-md-6 mb-4">
+          <!-- (1) 제목과 “더보기” 버튼을 한 줄에 배치하기 위해 d-flex 사용 -->
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h4 class="m-0">최근 입고 기록</h4>
+            <!-- (2) “더보기” 버튼: 실제 입고 목록 페이지로 이동 -->
+            <a href="/inbound/list" class="btn btn-sm btn-outline-primary">더보기 +</a>
+          </div>
+
+          <table class="table table-sm table-bordered">
+            <thead class="table-light">
+              <tr>
+                <th style="width: 40px;">#</th>
+                <th>품목코드</th>
+                <th>수량</th>
+                <th>창고</th>
+                <th>로그 시간</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="log, stat : ${inLogs}">
+                <!-- 순번 -->
+                <td th:text="${stat.count}"></td>
+                <!-- ✔ 엔티티 필드명은 .code -->
+                <td th:text="${log.item.code}"></td>
+                <td th:text="${log.quantity}"></td>
+                <td th:text="${log.warehouse.warehouseName}"></td>
+                <!-- ✔ #temporals.format 으로 날짜 포맷팅 -->
+                <td th:text="${#temporals.format(log.logDatetime, 'yyyy-MM-dd HH:mm:ss')}"></td>
+              </tr>
+              <!-- 데이터가 없을 경우 빈 메시지 -->
+              <tr th:if="${#lists.isEmpty(inLogs)}">
+                <td colspan="5" class="text-center">입고 기록이 없습니다.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ────────────────────────────────────────────────────────────
+             B. 최신 출고 5건
+             ──────────────────────────────────────────────────────────── -->
+        <div class="col-md-6 mb-4">
+          <!-- (1) 제목과 “더보기” 버튼을 한 줄에 배치하기 위해 d-flex 사용 -->
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h4 class="m-0">최근 출고 기록</h4>
+            <!-- (2) “더보기” 버튼: 실제 출고(Shipment) 목록 페이지로 이동 -->
+            <a href="/shipment" class="btn btn-sm btn-outline-primary">더보기 +</a>
+          </div>
+
+          <table class="table table-sm table-bordered">
+            <thead class="table-light">
+              <tr>
+                <th style="width: 40px;">#</th>
+                <th>품목코드</th>
+                <th>수량</th>
+                <th>창고</th>
+                <th>로그 시간</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="log, stat : ${outLogs}">
+                <td th:text="${stat.count}"></td>
+                <td th:text="${log.item.code}"></td>
+                <td th:text="${log.quantity}"></td>
+                <td th:text="${log.warehouse.warehouseName}"></td>
+                <td th:text="${#temporals.format(log.logDatetime, 'yyyy-MM-dd HH:mm:ss')}"></td>
+              </tr>
+              <!-- 데이터가 없을 경우 빈 메시지 -->
+              <tr th:if="${#lists.isEmpty(outLogs)}">
+                <td colspan="5" class="text-center">출고 기록이 없습니다.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </main>
   </div>
 
   <!-- 공통 푸터 -->
   <div th:replace="~{/layouts/footer :: footer}"></div>
-
 </body>
 </html>
