@@ -17,10 +17,23 @@ public class IndexController {
 
     private final Index_DashboardService indexDashboardService;
 
-    @GetMapping("/")
-    public String getIndex(Model model) {
+    /**
+     * “/” 또는 “/login” 으로 접근하면 로그인 화면을 보여준다.
+     */
+    @GetMapping({"/", "/login"})
+    public String showLogin() {
+        // src/main/resources/templates/login.html 을 렌더링
+        return "login";
+    }
+
+    /**
+     * 로그인 성공 후(클라이언트에서 redirect) 이동할 경로.
+     * 실제로는 index.html(대시보드)을 model에 inLogs/outLogs를 담아 렌더한다.
+     */
+    @GetMapping("/index")
+    public String showIndex(Model model) {
         // 최신 IN 로그 5개
-        List<InventoryLog> inLogs = indexDashboardService.getLatestInLogs(5);
+        List<InventoryLog> inLogs  = indexDashboardService.getLatestInLogs(5);
         // 최신 OUT 로그 5개
         List<InventoryLog> outLogs = indexDashboardService.getLatestOutLogs(5);
 
