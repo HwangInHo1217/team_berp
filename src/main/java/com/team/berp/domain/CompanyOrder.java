@@ -56,12 +56,9 @@ public class CompanyOrder {
     private String note;
 
     @Column
-    private Long orderQty;
+    private Integer orderQty;
     
     @Column(name = "order_num")
     private String orderNum;
     
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "employee_id")
-    private Employee employee;
 }

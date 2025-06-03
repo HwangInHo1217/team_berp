@@ -1,4 +1,4 @@
-<!-- ===== stock_detail_modal.html (ADJUST 버튼 제거) ===== -->
+<!-- ===== stock_detail_modal.html (LOT 제거 버전) ===== -->
 <div class="modal fade" id="stockDetailModal" tabindex="-1" aria-hidden="true" th:fragment="stock_modal">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -28,8 +28,7 @@
                             <dd class="col-sm-8" id="detailWarehouse">-</dd>
                             <dt class="col-sm-4">현재고</dt>
                             <dd class="col-sm-8"><strong class="text-primary" id="detailQty">-</strong></dd>
-                            <dt class="col-sm-4">LOT번호</dt>
-                            <dd class="col-sm-8" id="detailLotNumber">-</dd>
+                            <!-- LOT번호 행 제거 -->
                             <dt class="col-sm-4">재고상태</dt>
                             <dd class="col-sm-8" id="detailStockStatus">-</dd>
                         </dl>
@@ -59,7 +58,10 @@
                 <button type="button" class="btn btn-info" onclick="StockActions.showHistory(StockModal.currentStockId)">
                     <i class="fas fa-history"></i> 이력조회
                 </button>
-                <button type="button" class="btn btn-warning" onclick="StockActions.quickOut(StockModal.currentStockId, parseInt(document.getElementById('detailQty')?.textContent.replace(/,/g, '') || 0))">
+                <button type="button" class="btn btn-warning" onclick="StockModal.openTransferModalFromDetail()">
+                    <i class="fas fa-exchange-alt"></i> 창고이동
+                </button>
+                <button type="button" class="btn btn-danger" onclick="StockActions.quickOut(StockModal.currentStockId, parseInt(document.getElementById('detailQty')?.textContent.replace(/,/g, '') || 0))">
                     <i class="fas fa-minus-circle"></i> 출고
                 </button>
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
@@ -67,31 +69,3 @@
         </div>
     </div>
 </div>
-
-
-
-<!-- 🔄 선택적: 상세보기 모달에 창고이동 버튼 추가 -->
-<script>
-// 상세보기 모달 footer에 버튼 추가하는 스크립트
-document.addEventListener('DOMContentLoaded', function() {
-    const stockDetailModal = document.getElementById('stockDetailModal');
-    if (stockDetailModal) {
-        const modalFooter = stockDetailModal.querySelector('.modal-footer');
-        if (modalFooter && !document.getElementById('detailTransferBtn')) {
-            const transferBtn = document.createElement('button');
-            transferBtn.type = 'button';
-            transferBtn.className = 'btn btn-warning me-2';
-            transferBtn.id = 'detailTransferBtn';
-            transferBtn.innerHTML = '<i class="fas fa-exchange-alt me-2"></i>창고이동';
-            
-            transferBtn.addEventListener('click', () => {
-                if (StockModal.currentStockId && StockModal.currentWarehouseId && StockModal.currentQuantity !== undefined) {
-                    StockModal.openTransferModalFromDetail();
-                }
-            });
-            
-            modalFooter.insertBefore(transferBtn, modalFooter.firstChild);
-        }
-    }
-});
-</script>

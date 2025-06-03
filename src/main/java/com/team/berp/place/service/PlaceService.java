@@ -1,11 +1,10 @@
 package com.team.berp.place.service;
 
 import java.util.List;
+import java.util.Optional;
 
-import org.springframework.beans.factory.annotation.Autowired;
-
-import com.team.berp.domain.Company;
 import com.team.berp.domain.CompanyOrder;
+import com.team.berp.domain.Employee;
 import com.team.berp.domain.Item;
 import com.team.berp.domain.ItemType;
 import com.team.berp.place.dto.PlaceDTO;
@@ -24,4 +23,8 @@ public interface PlaceService {
 	List<CompanyOrder> getAllOrders();
 	List<Item> findByType(ItemType type);
 	
+	/* 회사 ID를 기준으로 Company 테이블을 조회하고,
+     * 거기서 연결된 Employee(Optional)를 반환*/
+	Optional<Employee> getEmployeeByCompanyId(Long companyId);
+
 }

@@ -25,7 +25,7 @@ public class OrderDetailResponse {
     private String companyEmpName;         // 거래처 담당자명
     private String orderType = "CUSTOMER"; // 주문 타입
     private String itemType = "product";   // 품목 타입
-    private Long orderQty;                 // 전체 수량
+    private Integer orderQty;                 // 전체 수량
     private Long amount;                   // 전체 금액
     private String remark;                 // 비고
     private Long warehouseId;              // (선택) 전체 창고 ID
@@ -40,8 +40,12 @@ public class OrderDetailResponse {
         private String itemName;           // 품목 이름 ✅ 추가
         private String unit;               // 단위 ✅ 추가
         private Long unitPrice;            // 단가
-        private Long unitQty;              // 수량
+        private Integer unitQty;              // 수량
         private Long unitPriceAll;         // 금액
         private Long warehouseId;          // 창고 ID
+        // → “이미 출고가 CONFIRMED 되어 있으면 true”
+        private boolean alreadyShipped;
     }
 }
+
+

@@ -7,6 +7,7 @@ import com.team.berp.domain.CompanyOrder;
 import com.team.berp.domain.Employee;
 import com.team.berp.domain.Item;
 import com.team.berp.domain.ItemType;
+import com.team.berp.employee.dto.EmployeeDto;
 import com.team.berp.employee.repository.EmployeeRepository;
 import com.team.berp.item.service.ItemService;
 import com.team.berp.place.dto.PlaceDTO;
@@ -68,17 +69,25 @@ public class PlaceController {
         return placeService.findByType(itemType);
     }
 
-    
-    //직원 아이디로 상세 정보 조회
-    @GetMapping("/employee/{employeeId}")
+//    @GetMapping("/employees")
+//    @ResponseBody
+//    public ResponseEntity<EmployeeDto> getEmployeeByCompanyId(@RequestParam("companyId") Long companyId) {
+//        return placeService.getEmployeeByCompanyId(companyId)
+//            .map(employee -> ResponseEntity.ok(new EmployeeDto(employee.getEmployeeId(), employee.getEmpName())))
+//            .orElse(ResponseEntity.notFound().build());
+//    }
+
+    @GetMapping("/employees/byCompany")
     @ResponseBody
-    public ResponseEntity<Employee> getEmployeeById(@PathVariable("employeeId") Long employeeId) {
-        return employeeRepository.findById(employeeId)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<EmployeeDto> getEmployeeByCompanyId(@RequestParam("companyId") Long companyId) {
+    	System.out.println("📌 컨트롤러 진입: companyId = " + companyId); // 로그 확인용
+    	return placeService.getEmployeeByCompanyId(companyId)
+            .map(EmployeeDto::fromEntity) // Employee → EmployeeDto 변환
+            .map(ResponseEntity::ok)      // EmployeeDto → ResponseEntity.ok(...)
+            .orElse(ResponseEntity.notFound().build());
     }
 
-    
+
     @PostMapping("/add")
     public String placeAdd(@ModelAttribute PlaceDTO dto) {
     	placeService.registerOrder(dto);

@@ -7,5 +7,5 @@ public class OrderItemRequest {
     private Long itemId;
     private String unit;
     private Long unitPrice;
-    private Long unitQty;
+    private Integer unitQty;
 }

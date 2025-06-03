@@ -1,4 +1,4 @@
-<!-- ===== stock_view.html (수정된 버전 - 중복 모달 제거) ===== -->
+<!-- ===== stock_view.html (LOT 컬럼 제거 버전) ===== -->
 <div class="container" th:fragment="stock_view">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2><i class="fas fa-warehouse me-2"></i>재고 관리</h2>
@@ -86,7 +86,7 @@
         </div>
     </div>
 
-    <!-- 재고 현황 테이블 -->
+    <!-- 재고 현황 테이블 (LOT 컬럼 제거) -->
     <div class="table-responsive">
         <table class="table table-hover" id="stockTable">
             <thead class="table-light">
@@ -95,25 +95,25 @@
                         <input type="checkbox" id="selectAll" />
                     </th>
                     <th width="4%">순번</th>
-                    <th width="9%" class="sortable" data-sort="itemCode">
+                    <th width="10%" class="sortable" data-sort="itemCode">
                         품목코드 <i class="fas fa-sort"></i>
                     </th>
-                    <th width="13%" class="sortable" data-sort="itemName">
+                    <th width="15%" class="sortable" data-sort="itemName">
                         품목명 <i class="fas fa-sort"></i>
                     </th>
-                    <th width="7%">품목유형</th>
-                    <th width="9%" class="sortable" data-sort="warehouseName">
+                    <th width="8%">품목유형</th>
+                    <th width="12%" class="sortable" data-sort="warehouseName">
                         창고 <i class="fas fa-sort"></i>
                     </th>
-                    <th width="7%" class="sortable" data-sort="quantity">
+                    <th width="8%" class="sortable" data-sort="quantity">
                         재고수량 <i class="fas fa-sort"></i>
                     </th>
-                    <th width="4%">단위</th>
-                    <th width="8%">LOT번호</th>
-                    <th width="8%">최종입고일</th>
-                    <th width="8%">최종출고일</th>
-                    <th width="5%">상태</th>
-                    <th width="5%">액션</th>
+                    <th width="5%">단위</th>
+                    <!-- LOT번호 컬럼 제거 -->
+                    <th width="10%">최종입고일</th>
+                    <th width="10%">최종출고일</th>
+                    <th width="8%">상태</th>
+                    <th width="6%">액션</th>
                 </tr>
             </thead>
             <tbody id="stockTableBody">
@@ -135,7 +135,7 @@
     </div>
 </div>
 
-<!-- 🔥 중복 모달 제거! Fragment로만 사용 -->
+<!-- Fragment로 모달들 포함 -->
 <!-- 창고 이동 모달 -->
 <div th:replace="~{stock/stock_transfer :: transfer_modal}"></div>
 

@@ -8,6 +8,17 @@ function openplaceAddModal() {
   document.getElementById('submitBtn').textContent = '등록';
 }
 
+//초기 품목 행 클리어 함수
+function resetItemRows() {
+  const container = document.getElementById('itemListContainer');
+  const firstRow = container.querySelector('.item-row');
+
+  container.innerHTML = '';
+  container.appendChild(firstRow.cloneNode(true));
+  container.querySelectorAll('input, select').forEach(el => el.value = '');
+}
+
+
 //상세 모달 오픈 - 발주 상세정보를 표시하는 모달을 여는 함수
 //data로 전달된 값들을 모달 내 span 요소에 출력
 function openplaceDetailModal(data) {
@@ -22,7 +33,7 @@ function openplaceDetailModal(data) {
   document.getElementById('placeDetailQty').textContent = data.quantity;
   document.getElementById('placeDetailUnit').textContent = data.unit;
   document.getElementById('placeDetailWarehouse').textContent = data.warehouse;
-  document.getElementById('placeDetailManager').textContent = data.manager;
+  document.getElementById('placeDetailEmployee').textContent = data.employee;
   document.getElementById('placeDetailNote').textContent = data.note || '';
 
   modal.show();
@@ -39,7 +50,7 @@ function openplaceDetailModal(data) {
      }
 
   // 수정 모드
-  function openplaceEditModal(data) {
+ /* function openplaceEditModal(data) {
     document.getElementById('placeDate').value = data.date;
     document.getElementById('placeNum').value = data.placeNum;
     document.getElementById('customerId').value = data.customer_id;
@@ -48,9 +59,9 @@ function openplaceDetailModal(data) {
     document.getElementById('quantity').value = data.quantity;
     document.getElementById('unit').value = data.unit;
     document.getElementById('warehouseId').value = data.warehouse_id;
-    document.getElementById('manager').value = data.manager;
-    document.getElementById('managerEmail').value = data.manager_email;
-    document.getElementById('managerNum').value = data.manager_num;
+    document.getElementById('employeeid').value = data.manager;
+    document.getElementById('employeeEmail').value = data.manager_email;
+    document.getElementById('employeeHp').value = data.manager_num;
     document.getElementById('note').value = data.note;
 
     document.getElementById('placeForm').action = `/place/update/${data.id}`;
@@ -58,7 +69,59 @@ function openplaceDetailModal(data) {
 
     const modal = new bootstrap.Modal(document.getElementById('placeRegisterModal'));
     modal.show();
+  } */
+  
+  async function openplaceEditModal(data) {
+    const form = document.getElementById('placeForm');
+
+    form.querySelector('input[name="orderDate"]').value = data.date;
+    document.getElementById('orderType').value = data.companyType;
+    filterCompanies();
+    document.getElementById('companySelect').value = data.companyId;
+
+    document.getElementById('employeeSelect').value = data.employeeId;
+    document.getElementById('empEmail').value = data.managerEmail || '';
+    document.getElementById('empHp').value = data.managerNum || '';
+
+    form.querySelector('textarea[name="note"]').value = data.note || '';
+
+    const container = document.getElementById('itemListContainer');
+    container.innerHTML = '';
+
+    for (let item of data.lineItems) {
+      addItemRow();
+    }
+    const rows = container.querySelectorAll('.item-row');
+
+    for (let i = 0; i < data.lineItems.length; i++) {
+      const item = data.lineItems[i];
+      const row = rows[i];
+
+      const itemTypeSelect = row.querySelector('.item-type');
+      itemTypeSelect.value = item.itemType;
+      await loadItems(itemTypeSelect);
+
+      const itemNameSelect = row.querySelector('.item-name');
+      itemNameSelect.value = item.itemId;
+
+      row.querySelector('.item-code').value = item.itemCode;
+      row.querySelector('.item-unit').value = item.unit;
+      row.querySelector('.unit-price').value = item.unitPrice;
+      row.querySelector('.unit-qty').value = item.unitQty;
+
+      calculateItemTotal(row);
+    }
+
+    calculateTotals();
+
+    form.action = `/place/update/${data.id}`;
+    document.getElementById('submitBtn').textContent = '수정';
+
+    const modal = new bootstrap.Modal(document.getElementById('placeRegisterModal'));
+    modal.show();
   }
+
+
 
   //발주 등록 초기화 - 사용자에게 확인 후 등록 입력 폼을 초기화
   function placeReset(){
@@ -147,17 +210,24 @@ function openplaceDetailModal(data) {
 	     select.value = "";
 	   }
 
-	   function fillEmployeeDetails() {
+	   //select요소로 employeeSelect에서 select요소로 선택된 담당자의 Id를 가져와서
+	   // /place/employee{employee}라는 경로로 Get 요청을 보냄
+	   // 서버에서는 해당 ID에 해당하는 담당자의 상세 정보를 JSON 형태로 응답
+	   // 받은 응답을 기반으로 empEmail, empHp, empName을 채움
+	   /*function fillEmployeeDetails() {
 	     const employeeId = document.getElementById("employeeSelect").value;
+	     const employeeSelect = document.getElementById("employeeSelect");
+
+	     const selectedOption = employeeSelect.selectedOptions[0];
+	     const empName = selectedOption ? selectedOption.textContent : "";
 
 	     if (!employeeId) {
-	       // 아무 것도 선택 안 했을 때 초기화
+	       document.getElementById("empName").value = "";
 	       document.getElementById("empEmail").value = "";
 	       document.getElementById("empHp").value = "";
 	       return;
 	     }
 
-	     // 서버에 employeeId로 담당자 정보 요청 (예: /employee/info/{id})
 	     fetch(`/place/employee/${employeeId}`)
 	       .then(response => {
 	         if (!response.ok) {
@@ -166,7 +236,7 @@ function openplaceDetailModal(data) {
 	         return response.json();
 	       })
 	       .then(data => {
-	         // 서버에서 받은 데이터로 입력 필드 채우기
+	         document.getElementById("empName").value = empName;
 	         document.getElementById("empEmail").value = data.empEmail || "";
 	         document.getElementById("empHp").value = data.empHp || "";
 	       })
@@ -174,14 +244,51 @@ function openplaceDetailModal(data) {
 	         console.error("담당자 정보 로딩 실패:", error);
 	         alert("담당자 정보를 불러오는 데 실패했습니다.");
 	       });
-	   }
+	   }*/
+
+	   //사업장 선택시 자동으로 담당자 정보 채우기
+	   //company_name이라는 Id를 가진 select 요소에서 선택한 회사 Id를 기준으로, /place/employees?companyId=xx로 Ajax 요청보냄
+	   //서버에서는 해당 회사의 담당자를 반환함. 그 중 data.name값을 employeeName input에 채워 넣음
+	  
+	    document.getElementById('companySelect').addEventListener('change', function () {
+	     const companyId = this.value;
+
+	     if (companyId) {
+	       fetch(`/place/employees/byCompany?companyId=${companyId}`)
+	         .then(response => response.json())
+	         .then(data => {
+	           if (data) {
+	             document.getElementById('empName').value = data.empName || '';
+	             document.getElementById('empEmail').value = data.empEmail || '';
+	             document.getElementById('empHp').value = data.empHp || '';
+	           } else {
+	             // 데이터 없을 경우 초기화
+	             document.getElementById('empName').value = '';
+	             document.getElementById('empEmail').value = '';
+	             document.getElementById('empHp').value = '';
+	           }
+	         })
+	         .catch(error => {
+	           console.error('담당자 정보를 불러오는 중 오류 발생:', error);
+	           document.getElementById('empName').value = '';
+	           document.getElementById('empEmail').value = '';
+	           document.getElementById('empHp').value = '';
+	         });
+	     } else {
+	       document.getElementById('empName').value = '';
+	       document.getElementById('empEmail').value = '';
+	       document.getElementById('empHp').value = '';
+	     }
+	   });
+
+
 
 	   //품목 관련 처리
 	   //품목명 동적 로딩(Ajax)
 	   //품목 유형(자재, 완제품)을 선택하면 ajax로 해당 품목 목록을 받아와 select에 반영
 	   //서버로 /api~~ 요청
 	   // 품목 유형 선택 시 해당 품목명 목록 불러오기 (Ajax)
-	     function loadItems(select) {
+	    /* function loadItems(select) {
 	       const itemType = select.value;
 	       const row = select.closest('tr');
 	       const itemSelect = row.querySelector('.item-name');
@@ -202,7 +309,39 @@ function openplaceDetailModal(data) {
 	             itemSelect.appendChild(option);
 	           });
 	         });
-	     }
+	     } */
+		 
+		 function loadItems(select) {
+		   return new Promise((resolve, reject) => {
+		     const itemType = select.value;
+		     const row = select.closest('tr');
+		     const itemSelect = row.querySelector('.item-name');
+
+		     itemSelect.innerHTML = '<option value="">-- 품목 선택 --</option>';
+		     if (!itemType) {
+		       resolve();
+		       return;
+		     }
+
+		     fetch(`/place/items?type=${itemType}`)
+		       .then(res => res.json())
+		       .then(items => {
+		         items.forEach(item => {
+		           const option = document.createElement('option');
+		           option.value = item.id;
+		           option.textContent = item.name;
+		           option.dataset.code = item.code;
+		           option.dataset.unit = item.unit;
+		           option.dataset.price = item.itemPrice;
+		           itemSelect.appendChild(option);
+		         });
+		         resolve();
+		       })
+		       .catch(err => reject(err));
+		   });
+		 }
+
+		 
 	
 	 //단위 설정이 누락되지 않도록 보완
 	 // 품목명 선택 시 코드, 단위, 단가 자동 입력
