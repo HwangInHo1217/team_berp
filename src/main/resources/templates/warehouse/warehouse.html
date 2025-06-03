@@ -48,6 +48,29 @@
             top: 0;
             z-index: 10;
         }
+        
+        /* 검색 액션 버튼 (검색, 전체 버튼)만 너비 확장 */
+.search-action-btn {
+    min-width: 80px; /* 기본보다 넓게 */
+    padding: 0.375rem 1rem; /* 좌우 패딩 증가 */
+    font-weight: 500;
+    white-space: nowrap; /* 텍스트 줄바꿈 방지 */
+}
+
+/* 검색 버튼 호버 효과 */
+.search-action-btn.btn-outline-secondary:hover {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: white;
+}
+
+/* 전체 버튼 호버 효과 */
+.search-action-btn.btn-outline-info:hover {
+    background-color: #0dcaf0;
+    border-color: #0dcaf0;
+    color: white;
+}
+        
     </style>
 
 
