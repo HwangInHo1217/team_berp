@@ -259,7 +259,7 @@ public class StockBusinessService {
     }
     
     /**
-     * 창고간 재고 이동 처리 (품목 유형별 창고 제한 포함)
+     * 창고간 재고 이동 처리 (수정된 버전 - TRANSFER 로그 사용)
      */
     @Transactional
     public void transferStock(StockTransferRequestDTO req) {
@@ -278,25 +278,47 @@ public class StockBusinessService {
         validateWarehouseTypeCompatibility(item, toWhs);
         
         // 4. 출발지 재고 확인 및 차감
-        Stock fromStock = stockRepo.findByItemAndWarehouse(item, fromWhs)
-                .orElseThrow(() -> new RuntimeException("출발지에 해당 재고가 없습니다."));
+        Stock fromStock;
+        if (req.getFromStockId() != null) {
+            fromStock = stockRepo.findById(req.getFromStockId())
+                    .orElseThrow(() -> new RuntimeException("출발지 재고를 찾을 수 없습니다."));
+        } else {
+            List<Stock> stockList = stockRepo.findByItem(item).stream()
+                    .filter(stock -> stock.getWarehouse().getId().equals(fromWhs.getId()))
+                    .toList();
+            
+            if (stockList.isEmpty()) {
+                throw new RuntimeException("출발지에 해당 재고가 없습니다.");
+            } else if (stockList.size() > 1) {
+                fromStock = stockList.stream()
+                        .max((s1, s2) -> Integer.compare(s1.getQuantity(), s2.getQuantity()))
+                        .orElseThrow(() -> new RuntimeException("출발지 재고 선택 중 오류가 발생했습니다."));
+                System.out.println("⚠️ 중복 재고 발견, 수량이 많은 재고 선택: " + fromStock.getQuantity() + "개");
+            } else {
+                fromStock = stockList.get(0);
+            }
+        }
         
         validationSvc.checkQty(fromStock, req.getQuantity());
-        
         System.out.println("✅ 출발지 재고 확인 완료: " + fromStock.getQuantity() + "개");
         
         // 5. 출발지 재고 차감
         updateSvc.subQty(fromStock, req.getQuantity());
         
         // 6. 도착지 재고 증가 (없으면 생성)
-        Optional<Stock> toStockOpt = stockRepo.findByItemAndWarehouse(item, toWhs);
+        List<Stock> toStockList = stockRepo.findByItem(item).stream()
+                .filter(stock -> stock.getWarehouse().getId().equals(toWhs.getId()))
+                .toList();
         
-        if (toStockOpt.isPresent()) {
-            // 기존 재고가 있으면 수량 추가
-            updateSvc.addQty(toStockOpt.get(), req.getQuantity());
-            System.out.println("✅ 기존 재고에 추가: " + toStockOpt.get().getQuantity());
+        if (!toStockList.isEmpty()) {
+            Stock toStock = toStockList.get(0);
+            updateSvc.addQty(toStock, req.getQuantity());
+            System.out.println("✅ 기존 재고에 추가: " + toStock.getQuantity());
+            
+            if (toStockList.size() > 1) {
+                System.out.println("⚠️ 도착지에 중복 재고 발견, 첫 번째 재고에만 추가");
+            }
         } else {
-            // 새 재고 생성 (LOT 번호 제외)
             StockRequestDTO newStockReq = new StockRequestDTO();
             newStockReq.setItemId(req.getItemId());
             newStockReq.setWarehouseId(req.getToWarehouseId());
@@ -307,24 +329,21 @@ public class StockBusinessService {
             System.out.println("✅ 새로운 재고 생성 완료");
         }
         
-        // 7. 이동 로그 기록
+        // 🔧 7. TRANSFER 로그 기록 (수정됨 - 하나의 TRANSFER 로그로 통합)
         String reasonText = getReasonText(req.getReason());
-        String comment = String.format("[창고이동] %s → %s, 사유: %s", 
+        String comment = String.format("[창고이동] %s → %s (수량: %d개), 사유: %s", 
                                       fromWhs.getWarehouseName(), 
                                       toWhs.getWarehouseName(),
+                                      req.getQuantity(),
                                       reasonText);
         
         if (req.getComment() != null && !req.getComment().trim().isEmpty()) {
             comment += ", 비고: " + req.getComment();
         }
         
-        // 출발지 출고 로그
-        logSvc.createLog(LogType.OUT, item, fromWhs, req.getQuantity(), 
-                        comment + " (출고)");
-        
-        // 도착지 입고 로그  
-        logSvc.createLog(LogType.IN, item, toWhs, req.getQuantity(), 
-                        comment + " (입고)");
+        // 🔧 TRANSFER 로그 하나만 기록 (기존 createLog 메서드 사용)
+        // LogType.TRANSFER를 사용하여 창고이동 로그로 기록
+        logSvc.createLog(LogType.TRANSFER, item, fromWhs, req.getQuantity(), comment);
         
         System.out.println("✅ 창고 이동 완료!");
     }
@@ -407,7 +426,7 @@ public class StockBusinessService {
     }
     
     /**
-     * 재고 입고 처리
+     * 재고 입고 처리 (중복 재고 문제 해결)
      */
     @Transactional
     public void stockIn(StockRequestDTO req) {
@@ -415,11 +434,16 @@ public class StockBusinessService {
         Item item = getItem(req.getItemId());
         Warehouse whs = getWarehouse(req.getWarehouseId());
         
-        Optional<Stock> stock = stockRepo.findByItemAndWarehouse(item, whs);
+        // 🔧 중복 재고 문제 해결
+        List<Stock> stockList = stockRepo.findByItem(item).stream()
+                .filter(stock -> stock.getWarehouse().getId().equals(whs.getId()))
+                .toList();
         
-        if (stock.isPresent()) {
-            updateSvc.addQty(stock.get(), req.getQuantity());
+        if (!stockList.isEmpty()) {
+            // 기존 재고가 있으면 첫 번째 재고에 추가
+            updateSvc.addQty(stockList.get(0), req.getQuantity());
         } else {
+            // 새 재고 생성
             updateSvc.createStock(req, item, whs);
         }
         
@@ -428,7 +452,7 @@ public class StockBusinessService {
     }
     
     /**
-     * 재고 출고 처리
+     * 재고 출고 처리 (중복 재고 문제 해결)
      */
     @Transactional
     public void stockOut(StockRequestDTO req) {
@@ -436,8 +460,20 @@ public class StockBusinessService {
         Item item = getItem(req.getItemId());
         Warehouse whs = getWarehouse(req.getWarehouseId());
         
-        Stock stock = stockRepo.findByItemAndWarehouse(item, whs)
-                .orElseThrow(() -> new RuntimeException("출고할 재고가 없습니다."));
+        // 🔧 중복 재고 문제 해결
+        List<Stock> stockList = stockRepo.findByItem(item).stream()
+                .filter(stock -> stock.getWarehouse().getId().equals(whs.getId()))
+                .toList();
+        
+        if (stockList.isEmpty()) {
+            throw new RuntimeException("출고할 재고가 없습니다.");
+        }
+        
+        // 수량이 충분한 재고 찾기
+        Stock stock = stockList.stream()
+                .filter(s -> s.getQuantity() >= req.getQuantity())
+                .findFirst()
+                .orElse(stockList.get(0)); // 수량이 부족해도 첫 번째 재고로 시도
         
         validationSvc.checkQty(stock, req.getQuantity());
         updateSvc.subQty(stock, req.getQuantity());
@@ -445,8 +481,6 @@ public class StockBusinessService {
         logSvc.createLog(LogType.OUT, item, whs, req.getQuantity(), 
                         req.getComment() != null ? req.getComment() : "출고 처리");
     }
-    
-    // ===== 폐기 및 반품입고 메서드 제거됨 =====
     
     // === 내부 헬퍼 메서드들 ===
     
@@ -564,7 +598,6 @@ public class StockBusinessService {
                                        Company.CompanyType.BOTH.equals(company.getCompanyType());
                     
                     System.out.println("🔍 회사 검토: " + company.getCompanyName() + 
-                                     ", 활성: " + isActive + 
                                      ", 고객사: " + isCustomer + 
                                      ", 타입: " + company.getCompanyType());
                     
@@ -646,13 +679,24 @@ public class StockBusinessService {
             
             // 거래처 정보 조회 (선택사항)
             Company company = null;
-            if (req.getCompanyId() != null) {
+            if (req.getCompanyId() != null && req.getCompanyId() > 0) {
                 company = getCompany(req.getCompanyId());
             }
             
-            // 재고 확인 및 차감
-            Stock stock = stockRepo.findByItemAndWarehouse(item, whs)
-                    .orElseThrow(() -> new RuntimeException("출고할 재고가 없습니다."));
+            // 🔧 재고 확인 및 차감 (중복 재고 문제 해결)
+            List<Stock> stockList = stockRepo.findByItem(item).stream()
+                    .filter(stock -> stock.getWarehouse().getId().equals(whs.getId()))
+                    .toList();
+            
+            if (stockList.isEmpty()) {
+                throw new RuntimeException("출고할 재고가 없습니다.");
+            }
+            
+            // 수량이 충분한 재고 찾기
+            Stock stock = stockList.stream()
+                    .filter(s -> s.getQuantity() >= req.getQuantity())
+                    .findFirst()
+                    .orElse(stockList.get(0)); // 수량이 부족해도 첫 번째 재고로 시도
             
             validationSvc.checkQty(stock, req.getQuantity());
             updateSvc.subQty(stock, req.getQuantity());
@@ -723,4 +767,4 @@ public class StockBusinessService {
         return clientRepo.findById(companyId)
                 .orElseThrow(() -> new RuntimeException("거래처를 찾을 수 없습니다."));
     }
- }
+}

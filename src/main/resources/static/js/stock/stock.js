@@ -493,12 +493,14 @@ const StockModal = {
 	
     modalInstance: null,
     currentStockId: null,
+	currentItemId: null,      // 🆕 추가!
     currentWarehouseId: null,
     currentQuantity: null,
     currentItemName: null,
     currentItemType: null,
 	currentWarehouseName: null,
-    
+	currentItemCode: null,
+	
     elementsMap: {
         itemCode: 'detailItemCode',
         itemType: 'detailItemType',
@@ -631,24 +633,31 @@ const StockModal = {
 	        .then(stockDetail => {
 	            console.log("상세 데이터:", stockDetail);
 	            
-	            // 🔧 모든 필요한 정보를 저장
-	            this.currentStockId = stockDetail.stockId;
-	            this.currentWarehouseId = stockDetail.warehouseId;
-	            this.currentQuantity = stockDetail.quantity;
-	            this.currentItemName = stockDetail.itemName;
-	            this.currentItemType = stockDetail.itemType;
-	            this.currentWarehouseName = stockDetail.warehouseName; // 🆕 창고명 저장
-	            
+				// 🔧 모든 필요한 정보를 저장 (itemId 중심으로)
+				this.currentStockId = stockDetail.stockId;
+				this.currentItemId = stockDetail.itemId || stockDetail.stockId; // ⚠️ fallback 처리
+				this.currentWarehouseId = stockDetail.warehouseId;
+				this.currentQuantity = stockDetail.quantity;
+				this.currentItemName = stockDetail.itemName;
+				this.currentItemType = stockDetail.itemType;
+				this.currentWarehouseName = stockDetail.warehouseName;
+				this.currentItemCode = stockDetail.itemCode;
 				
 				// 🔍 여기에 디버깅 로그 추가!
-				console.log('🔍 StockModal 데이터 저장 완료:');
+				console.log('📋 StockModal 데이터 저장 완료:');
 				console.log('  - currentStockId:', this.currentStockId);
+				console.log('  - currentItemId:', this.currentItemId);     // 🆕 추가!
 				console.log('  - currentWarehouseId:', this.currentWarehouseId);
 				console.log('  - currentWarehouseName:', this.currentWarehouseName);
 				console.log('  - currentQuantity:', this.currentQuantity);
 				console.log('  - currentItemName:', this.currentItemName);
 				console.log('  - currentItemType:', this.currentItemType);
-
+				console.log('  currentItemCode:', this.currentItemCode);
+				// ⚠️ itemId 검증
+				if (!this.currentItemId || this.currentItemId === this.currentStockId) {
+				    console.warn('⚠️ itemId가 stockId와 같거나 없습니다. 서버 응답을 확인하세요.');
+				    console.warn('서버 데이터의 itemId 필드:', stockDetail.itemId);
+				}
 	            const displayData = {
 	                itemCode: stockDetail.itemCode,
 	                itemName: stockDetail.itemName,
@@ -902,35 +911,82 @@ const StockModal = {
 	    // 🔧 수정된 openTransferModalFromDetail 메서드
 	    openTransferModalFromDetail() {
 	        console.log('🔄 상세 모달에서 창고이동 요청');
-	        console.log('📦 전달할 데이터:', {
-	            stockId: this.currentStockId,
-	            warehouseId: this.currentWarehouseId,
-	            warehouseName: this.currentWarehouseName,
-	            quantity: this.currentQuantity,
-	            itemName: this.currentItemName,
-	            itemType: this.currentItemType
-	        });
+			// 🔍 현재 저장된 데이터 상태 확인
+			console.log('📦 현재 저장된 데이터:');
+			console.log('  currentStockId:', this.currentStockId);
+			console.log('  currentItemId:', this.currentItemId);
+			console.log('  currentWarehouseId:', this.currentWarehouseId);
+			console.log('  currentWarehouseName:', this.currentWarehouseName);
+			console.log('  currentQuantity:', this.currentQuantity);
+			console.log('  currentItemName:', this.currentItemName);
+			console.log('  currentItemType:', this.currentItemType);
+			console.log('  currentItemCode:', this.currentItemCode);
 
-	        if (this.currentStockId && this.currentWarehouseId && 
-	            this.currentQuantity !== undefined && this.currentItemType) {
+			// 🔧 수정된 유효성 검사
+			if (!this.currentStockId) {
+			    console.error('❌ currentStockId가 없습니다.');
+			    StockUtils.showError('재고 ID 정보가 없습니다.');
+			    return;
+			}
+
+			if (!this.currentItemId) {
+			    console.error('❌ currentItemId가 없습니다.');
+			    StockUtils.showError('품목 ID 정보가 없습니다.');
+			    return;
+			}
+
+			if (!this.currentWarehouseId) {
+			    console.error('❌ currentWarehouseId가 없습니다.');
+			    StockUtils.showError('창고 ID 정보가 없습니다.');
+			    return;
+			}
+
+			if (this.currentQuantity === undefined || this.currentQuantity === null) {
+			    console.error('❌ currentQuantity가 없습니다.');
+			    StockUtils.showError('재고 수량 정보가 없습니다.');
+			    return;
+			}
+
+			if (!this.currentItemType) {
+			    console.error('❌ currentItemType이 없습니다.');
+			    StockUtils.showError('품목 유형 정보가 없습니다.');
+			    return;
+			}
+
+			if (!this.currentItemCode) {
+			    console.error('❌ currentItemCode가 없습니다.');
+			    StockUtils.showError('품목 코드 정보가 없습니다.');
+			    return;
+			}
+			
+			 // ✅ 모든 유효성 검사 통과
+			 console.log('✅ 모든 데이터 검증 완료, StockTransfer 호출');
+
+			
+			if (this.currentStockId && this.currentWarehouseId && 
+			    this.currentQuantity !== undefined && this.currentItemType && this.currentItemCode) {
 	            
 	            // StockTransfer 모듈의 메서드 호출 (통일된 처리)
 	            StockTransfer.openTransferModalWithData({
 	                stockId: this.currentStockId,
+					itemId: this.currentItemId,
 	                warehouseId: this.currentWarehouseId,
 	                warehouseName: this.currentWarehouseName,
 	                quantity: this.currentQuantity,
 	                itemName: this.currentItemName,
-	                itemType: this.currentItemType
+	                itemType: this.currentItemType,
+					itemCode: this.currentItemCode
 	            });
 	            
 	        } else {
 	            console.error('❌ 필수 데이터 누락:', {
 	                stockId: this.currentStockId,
+					itemId: this.currentItemId,
 	                warehouseId: this.currentWarehouseId,
 	                quantity: this.currentQuantity,
 	                itemType: this.currentItemType,
-	                warehouseName: this.currentWarehouseName
+	                warehouseName: this.currentWarehouseName,
+					itemCode: this.currentItemCode
 	            });
 	            StockUtils.showError('재고 정보가 부족하여 창고 이동을 진행할 수 없습니다.');
 	        }
@@ -2121,7 +2177,7 @@ const StockTransfer = {
             }
         }
     },
-    
+	// StockTransfer.processTransfer 
     processTransfer() {
         const form = document.getElementById('stockTransferForm');
         if (!form.checkValidity()) {
@@ -2151,6 +2207,15 @@ const StockTransfer = {
             reason: document.getElementById('transferReason').value,
             comment: document.getElementById('transferComment').value
         };
+		
+		// 🔍 전송 전 디버깅 로그
+		console.log('🚀 창고이동 요청 데이터:');
+		console.log('  fromStockId:', data.fromStockId);
+		console.log('  fromWarehouseId:', data.fromWarehouseId);
+		console.log('  toWarehouseId:', data.toWarehouseId);
+		console.log('  itemId:', data.itemId);
+		console.log('  quantity:', data.quantity);
+
         
         const toWarehouseName = selectedOption?.text || '';
         const confirmMsg = `정말로 ${data.quantity}개를 ${toWarehouseName}로 이동하시겠습니까?`;
@@ -2162,8 +2227,15 @@ const StockTransfer = {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         })
-        .then(response => response.json())
+		.then(response => {
+		    console.log('서버 응답 상태:', response.status);
+		    if (!response.ok) {
+		        throw new Error(`서버 오류: ${response.status}`);
+		    }
+		    return response.json();
+		})
         .then(result => {
+			console.log('서버 응답:', result);
             if (result.status === 'success') {
                 StockUtils.showSuccess(result.message || '창고 이동이 완료되었습니다.');
                 bootstrap.Modal.getInstance(document.getElementById('stockTransferModal')).hide();
@@ -2211,7 +2283,7 @@ const StockTransfer = {
 	    // 가짜 재고 객체 생성 (기존 구조와 호환)
 	    this.selectedStock = {
 	        stockId: stockData.stockId,
-	        itemId: stockData.stockId, // 또는 별도의 itemId가 있다면 사용
+	        itemId: stockData.itemId || stockData.stockId, // 🔧 실제 itemId 사용 (fallback)
 	        itemCode: stockData.itemCode || 'Unknown',
 	        itemName: stockData.itemName,
 	        itemType: stockData.itemType,
@@ -2219,6 +2291,11 @@ const StockTransfer = {
 	        warehouseName: stockData.warehouseName,
 	        quantity: stockData.quantity
 	    };
+		// 🔍 디버깅 로그
+		console.log('📋 selectedStock 설정:');
+		console.log('  stockId:', this.selectedStock.stockId);
+		console.log('  itemId:', this.selectedStock.itemId);
+		console.log('  itemName:', this.selectedStock.itemName);
 
 	    // 모달이 없으면 생성
 	    let transferModal = document.getElementById('stockTransferModal');
