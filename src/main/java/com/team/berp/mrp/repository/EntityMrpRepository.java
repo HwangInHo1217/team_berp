@@ -1,14 +1,16 @@
 package com.team.berp.mrp.repository;
 
 import com.team.berp.domain.Mrp;
+
+import java.time.LocalDate;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.repository.query.Param;
 
-public interface EntityMrpRepository
-        extends JpaRepository<Mrp, Long>, JpaSpecificationExecutor<Mrp> {
+public interface EntityMrpRepository extends JpaRepository<Mrp, Long>, JpaSpecificationExecutor<Mrp> {
 
     /**
      * 가장 최근 주문의 주문수량(unit_qty)을 조회합니다.
@@ -48,4 +50,10 @@ public interface EntityMrpRepository
      */
     @Query("SELECT m FROM Mrp m JOIN m.item i ORDER BY i.name ASC")
     Page<Mrp> findAllOrderByItemNameAsc(Pageable pageable);
+    
+    Page<Mrp> findByBaseDateBetweenAndItem_CodeContainingIgnoreCaseOrBaseDateBetweenAndItem_NameContainingIgnoreCase(
+            LocalDate startDate1, LocalDate endDate1, String itemCode, 
+            LocalDate startDate2, LocalDate endDate2, String itemName, 
+            Pageable pageable
+        );
 }

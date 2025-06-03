@@ -8,7 +8,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "bom_version")
+@Table(
+	    name = "bom_version",
+	    uniqueConstraints = @UniqueConstraint(
+	        name = "uk_parent_version",
+	        columnNames = { "parent_item_id", "version_code" }
+	    ))
 @Getter @Setter
 @NoArgsConstructor
 @AllArgsConstructor
@@ -38,5 +43,9 @@ public class BomVersion {
     @OneToMany(mappedBy = "bomVersion", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Bom> bomList;
     
- 
+    // 편의 메서드: 컴포넌트 추가
+    public void addComponent(Bom comp) {
+        comp.setBomVersion(this);
+        this.bomList.add(comp);
+    }
 }

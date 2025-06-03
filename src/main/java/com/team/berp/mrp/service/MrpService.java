@@ -19,8 +19,7 @@ public interface MrpService {
         String sortDir,
         String startDate,
         String endDate,
-        String itemSearch,
-        String custSearch
+        String itemSearch  
     );
 
     /**

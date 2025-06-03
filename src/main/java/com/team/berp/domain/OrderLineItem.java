@@ -32,7 +32,7 @@ public class OrderLineItem {
     private Warehouse warehouse;
 
     @Column
-    private Long unitQty;
+    private Integer unitQty;
 
     @Column
     private Long unitPrice;

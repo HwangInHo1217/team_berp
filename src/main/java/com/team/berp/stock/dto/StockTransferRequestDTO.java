@@ -13,7 +13,7 @@ import lombok.Data;
 @Data
 public class StockTransferRequestDTO {
     
-    /** 출발 재고 ID (Stock 테이블의 PK) */
+    /** 출발 재고 ID (Stock 테이블의 PK) - 선택적 */
     private Long fromStockId;
     
     /** 출발 창고 ID */
@@ -22,7 +22,7 @@ public class StockTransferRequestDTO {
     /** 도착 창고 ID */  
     private Long toWarehouseId;
     
-    /** 품목 ID */
+    /** 품목 ID - 필수 */
     private Long itemId;
     
     /** 이동 수량 */
@@ -33,4 +33,16 @@ public class StockTransferRequestDTO {
     
     /** 상세 설명 */
     private String comment;
+    
+    /**
+     * 유효성 검증 메서드
+     */
+    public boolean isValid() {
+        return itemId != null && 
+               fromWarehouseId != null && 
+               toWarehouseId != null && 
+               quantity != null && 
+               quantity > 0 &&
+               !fromWarehouseId.equals(toWarehouseId);
+    }
 }
