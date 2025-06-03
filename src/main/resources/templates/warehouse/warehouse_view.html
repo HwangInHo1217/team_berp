@@ -57,7 +57,7 @@
           <th>구분</th>
           <th>설명</th>
           <th>사용여부</th>
-          <th>수정</th>
+          <th>액션</th>
         </tr>
       </thead>
       <tbody>
@@ -77,6 +77,14 @@
           <td th:text="${whs.description ?: ''}">설명</td>
           <td th:text="${whs.useYn}">Y</td>
           <td>
+             <!-- 🆕 재고보기 버튼 추가 (서버사이드 렌더링) -->
+            <button type="button" 
+              class="btn btn-sm btn-info me-1 stock-view-btn"
+              th:attr="data-whs=${@whsJson.toJson(whs)}"
+              title="재고 보기">
+              <i class="fas fa-boxes"></i>
+            </button>
+          
             <!-- 수정 버튼: JSON 데이터 바인딩 → JS edit-btn 처리 -->
             <button type="button" 
               class="btn btn-sm btn-warning edit-btn"
@@ -108,7 +116,7 @@
   <!-- 🧾 현재 페이지 정보 - JS 초기 렌더링 시 참조 -->
   <input type="hidden" id="currentPage" th:value="${currentPage}">
   <input type="hidden" id="totalPages" th:value="${totalPages}">
-  <input type="hidden" id="totalElements" th:value="${totalElements}">
   <input type="hidden" id="hasNext" th:value="${hasNext}">
   <input type="hidden" id="hasPrevious" th:value="${hasPrevious}">
+  <input type="hidden" id="totalElements" th:value="${totalElements}">
 </div>

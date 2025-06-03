@@ -1,5 +1,6 @@
 package com.team.berp.stock.service;
 
+import java.util.HashMap; 
 import java.util.Map;
 
 import org.springframework.data.domain.Page;
@@ -79,4 +80,60 @@ public class StockService {
     public Map<String, Object> getStockSummary() {
         return stockBiz.getStockSummary();
     }
+    
+    /**
+     * 특정 창고의 재고 요약 통계
+     * @param warehouseId 창고 ID
+     * @return 창고별 재고 통계 정보
+     */
+    public Map<String, Object> getWarehouseStockSummary(Long warehouseId) {
+        try {
+            System.out.println("📊 창고별 재고 요약 통계 조회 - warehouseId: " + warehouseId);
+            
+            Map<String, Object> summary = new HashMap<>();
+            
+            // 해당 창고의 총 재고 품목 수
+            long totalItems = stockRepo.countByWarehouse_Id(warehouseId);
+            
+            // 해당 창고의 재고 없는 품목 수
+            long outOfStockItems = stockRepo.countByWarehouse_IdAndQuantity(warehouseId, 0);
+            
+            // 해당 창고의 안전재고 미달 품목 수 (1~9개)
+            long belowSafetyItems = stockRepo.countByWarehouse_IdAndQuantityBetween(warehouseId, 1, 9);
+            
+            // 해당 창고의 정상 재고 품목 수
+            long normalStockItems = Math.max(0, totalItems - outOfStockItems - belowSafetyItems);
+            
+            // 해당 창고의 총 재고량
+            Long totalQuantity = stockRepo.sumQuantityByWarehouse_Id(warehouseId);
+            if (totalQuantity == null) totalQuantity = 0L;
+            
+            summary.put("totalItems", totalItems);
+            summary.put("outOfStock", outOfStockItems);
+            summary.put("belowSafety", belowSafetyItems);
+            summary.put("normalStock", normalStockItems);
+            summary.put("totalQuantity", totalQuantity);
+            
+            System.out.println("✅ 창고별 재고 요약: " + summary);
+            return summary;
+            
+        } catch (Exception e) {
+            System.err.println("❌ 창고별 재고 요약 통계 조회 실패: " + e.getMessage());
+            e.printStackTrace();
+            
+            // 실패시 기본값 반환
+            Map<String, Object> defaultSummary = new HashMap<>();
+            defaultSummary.put("totalItems", 0L);
+            defaultSummary.put("outOfStock", 0L);
+            defaultSummary.put("belowSafety", 0L);
+            defaultSummary.put("normalStock", 0L);
+            defaultSummary.put("totalQuantity", 0L);
+            
+            return defaultSummary;
+        }
+    }
+    
+    
+    
+    
 }
