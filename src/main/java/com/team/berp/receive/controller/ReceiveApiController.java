@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * 입고 관리 REST API 컨트롤러 - 개선된 버전 (빠른 데이터 로드)
+ * 입고 관리 REST API 컨트롤러 - 독립적 입고 상세 정보 개선
  */
 @RestController
 @RequestMapping("/api/receive")
@@ -203,6 +203,7 @@ public class ReceiveApiController {
                         orderMap.put("itemCode", oli.getItem().getCode());
                         orderMap.put("itemName", oli.getItem().getName());
                         orderMap.put("itemUnit", oli.getItem().getUnit());
+                        orderMap.put("itemType", oli.getItem().getType().name()); // 🔥 이 부분이 핵심!
                     }
                     
                     // 수량 정보
@@ -250,7 +251,7 @@ public class ReceiveApiController {
     }
 
     /**
-     * 입고 이력 조회 - GET /api/receive (최적화된 버전)
+     * 입고 이력 조회 - GET /api/receive (독립적 입고 정보 개선)
      */
     @GetMapping
     public ResponseEntity<?> getReceiveHistory(
@@ -310,7 +311,7 @@ public class ReceiveApiController {
                 logPage = inventoryLogRepo.findByLogTypeOrderByLogDatetimeDesc(LogType.IN, pageable);
             }
             
-            // 빠른 데이터 변환
+            // 빠른 데이터 변환 (독립적 입고 정보 개선)
             List<Map<String, Object>> receiveList = logPage.getContent().stream()
                 .map(log -> {
                     Map<String, Object> receiveMap = new HashMap<>();
@@ -339,7 +340,7 @@ public class ReceiveApiController {
                     
                     receiveMap.put("quantity", log.getQuantity());
                     
-                    // 입고 유형 및 회사 정보
+                    // 입고 유형 및 회사 정보 (독립적 입고 개선)
                     if (log.getOrderLineItem() != null) {
                         receiveMap.put("type", "발주 기반");
                         receiveMap.put("receiveType", "ORDER_BASED");
@@ -353,7 +354,10 @@ public class ReceiveApiController {
                     } else {
                         receiveMap.put("type", "독립적 입고");
                         receiveMap.put("receiveType", "INDEPENDENT");
-                        receiveMap.put("company", "-");
+                        
+                        // 🆕 독립적 입고에서 comment에서 회사 정보 추출
+                        String companyName = extractCompanyFromComment(log.getComment());
+                        receiveMap.put("company", companyName);
                     }
                     
                     // 상태 (입고 대기/입고 완료만)
@@ -394,6 +398,36 @@ public class ReceiveApiController {
     }
 
     /**
+     * 🆕 comment에서 회사명 추출 헬퍼 메서드
+     */
+    private String extractCompanyFromComment(String comment) {
+        if (comment == null || comment.isEmpty()) {
+            return "독립적 입고";
+        }
+        
+        try {
+            // "[독립적 입고] 공급업체: ABC회사" 형태에서 추출
+            if (comment.contains("공급업체:")) {
+                String[] parts = comment.split("공급업체:");
+                if (parts.length > 1) {
+                    String supplierPart = parts[1].trim();
+                    if (supplierPart.contains(",")) {
+                        return supplierPart.split(",")[0].trim();
+                    } else {
+                        return supplierPart.trim();
+                    }
+                }
+            }
+            
+            return "독립적 입고";
+            
+        } catch (Exception e) {
+            System.err.println("comment에서 회사명 추출 실패: " + e.getMessage());
+            return "독립적 입고";
+        }
+    }
+
+    /**
      * 입고 등록 - POST /api/receive
      */
     @PostMapping
@@ -429,7 +463,7 @@ public class ReceiveApiController {
     }
 
     /**
-     * 입고 상세 조회 - GET /api/receive/{logId}
+     * 입고 상세 조회 - GET /api/receive/{logId} (독립적 입고 정보 개선)
      */
     @GetMapping("/{logId}")
     public ResponseEntity<Map<String, Object>> getReceiveDetail(@PathVariable("logId") Long logId) {
@@ -462,7 +496,7 @@ public class ReceiveApiController {
             
             detail.put("quantity", log.getQuantity());
             
-            // 입고 유형 및 관련 정보
+            // 입고 유형 및 관련 정보 (독립적 입고 개선)
             if (log.getOrderLineItem() != null) {
                 detail.put("receiveType", "발주 기반");
                 
@@ -483,8 +517,13 @@ public class ReceiveApiController {
             } else {
                 detail.put("receiveType", "독립적 입고");
                 detail.put("orderNum", "-");
-                detail.put("company", "-");
-                detail.put("manager", "-");
+                
+                // 🆕 독립적 입고에서 comment에서 회사/담당자 정보 추출
+                String comment = log.getComment();
+                Map<String, String> extractedInfo = extractSupplierInfoFromComment(comment);
+                
+                detail.put("company", extractedInfo.get("company"));
+                detail.put("manager", extractedInfo.get("manager"));
             }
             
             detail.put("note", log.getComment() != null ? log.getComment() : "");
@@ -500,5 +539,55 @@ public class ReceiveApiController {
             System.err.println("❌ 입고 상세 조회 오류: " + e.getMessage());
             return ResponseEntity.internalServerError().build();
         }
+    }
+
+    /**
+     * 🆕 comment에서 공급업체와 담당자 정보 추출
+     */
+    private Map<String, String> extractSupplierInfoFromComment(String comment) {
+        Map<String, String> result = new HashMap<>();
+        result.put("company", "독립적 입고");
+        result.put("manager", "담당자 미지정");
+        
+        if (comment == null || comment.isEmpty()) {
+            return result;
+        }
+        
+        try {
+            // "[독립적 입고] 공급업체: ABC회사, 담당자: 홍길동" 형태에서 추출
+            if (comment.contains("공급업체:")) {
+                String[] parts = comment.split("공급업체:");
+                if (parts.length > 1) {
+                    String supplierPart = parts[1].trim();
+                    
+                    // 공급업체명 추출
+                    if (supplierPart.contains(",")) {
+                        String companyName = supplierPart.split(",")[0].trim();
+                        result.put("company", companyName);
+                        
+                        // 담당자 정보도 있는지 확인
+                        if (supplierPart.contains("담당자:")) {
+                            String[] managerParts = supplierPart.split("담당자:");
+                            if (managerParts.length > 1) {
+                                String managerName = managerParts[1].trim();
+                                // 추가 텍스트가 있으면 제거 (예: "홍길동 - 추가메모")
+                                if (managerName.contains("-")) {
+                                    managerName = managerName.split("-")[0].trim();
+                                }
+                                result.put("manager", managerName);
+                            }
+                        }
+                    } else {
+                        // 공급업체명만 있는 경우
+                        result.put("company", supplierPart);
+                    }
+                }
+            }
+            
+        } catch (Exception e) {
+            System.err.println("comment에서 공급업체 정보 추출 실패: " + e.getMessage());
+        }
+        
+        return result;
     }
 }
