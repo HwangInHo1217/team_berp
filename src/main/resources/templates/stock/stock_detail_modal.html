@@ -61,9 +61,7 @@
                 <button type="button" class="btn btn-warning" onclick="StockModal.openTransferModalFromDetail()">
                     <i class="fas fa-exchange-alt"></i> 창고이동
                 </button>
-                <button type="button" class="btn btn-danger" onclick="StockActions.quickOut(StockModal.currentStockId, parseInt(document.getElementById('detailQty')?.textContent.replace(/,/g, '') || 0))">
-                    <i class="fas fa-minus-circle"></i> 출고
-                </button>
+
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
             </div>
         </div>
