@@ -86,61 +86,7 @@
           </div>
         </form>
         <hr class="my-5" />
-<h4 class="mb-3">사업장 목록</h4>
-<div class="table-responsive">
-  <table class="table table-bordered table-hover align-middle text-center">
-    <thead class="table-secondary">
-      <tr>
-        <th>번호</th>
-        <th>사업장 명</th>
-        <th>대표자</th>
-        <th>사업자 번호</th>
-        <th>업태</th>
-        <th>종목</th>
-        <th>전화번호</th>
-        <th>수정</th>
-        <th>삭제</th>
-      </tr>
-    </thead>
-    <tbody>
-      <!-- 더미 데이터 or 추후 Thymeleaf 반복문 적용 -->
-      <tr th:each= "plant, stat : ${list}">
-          <td th:text="${stat.index + 1}"></td> <!-- 순서번호 1부터 시작 -->
-         <td th:text ="${plant.work_name}"></td>
-         <td th:text ="${plant.work_ceonm}"></td>
-         <td th:text ="${plant.work_no}"></td>
-         <td th:text ="${plant.work_cond}"></td>
-         <td th:text ="${plant.work_item}"></td>
-         <td th:text ="${plant.work_tel}"></td>
-         <td>
-         <!-- 
-         <button class="btn btn-sm btn-warning" onclick="openplantEditModal()")>수정</button>
-          -->         
-      <button class="btn btn-sm btn-warning"
-              th:data-work-name="${plant.work_name}"
-              th:data-work-ceonm="${plant.work_ceonm}"
-              th:data-work-no="${plant.work_no}"
-              th:data-work-cond="${plant.work_cond}"
-              th:data-work-item="${plant.work_item}"
-              th:data-work-tel="${plant.work_tel}"
-              th:data-work-fax="${plant.work_fax}"
-              th:data-work-addr="${plant.work_addr}"
-              th:data-work-mainadd="${plant.work_mainadd}"
-              th:data-work-detailadd="${plant.work_detailadd}"
-              th:data-work-manname="${plant.work_manname}"
-              th:data-work-manemail="${plant.work_manemail}"
-              th:data-work-mantel="${plant.work_mantel}"
-              onclick="handlePlantEdit(this)">
-        수정
-      </button>
 
-   </td>
-             <td>
-             <form th:action="@{/plant/delete}" method="post" onsubmit="return confirm('정말 삭제하시겠습니까?');">
-               <input type="hidden" name="work_id" th:value="${plant.work_id}" />
-               <button type="submit" class="btn btn-sm btn-danger">삭제</button>
-           </form>
-             </td>
       </tr>
     </tbody>
   </table>
