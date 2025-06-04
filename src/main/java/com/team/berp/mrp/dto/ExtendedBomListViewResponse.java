@@ -38,6 +38,7 @@ public class ExtendedBomListViewResponse extends BomListViewResponse {
      */
     @Data
     public static class ExtendedComponent extends BomListViewResponse.Component {
+        private int    totalQty;           // 총 필요 수량 (부모 부족수량 * perParentQty)
         private int    stockQty;           // 현재고
         private int    shortageQty;        // 부족수량
         private int    safetyStock;        // 안전재고
@@ -47,6 +48,7 @@ public class ExtendedBomListViewResponse extends BomListViewResponse {
 
         public ExtendedComponent(
                 BomListViewResponse.Component base,
+                int totalQty,
                 int stockQty,
                 int shortageQty,
                 int safetyStock,
@@ -65,12 +67,13 @@ public class ExtendedBomListViewResponse extends BomListViewResponse {
                 base.getUnitPrice(),
                 base.getRemark()
             );
-            this.stockQty         = stockQty;
-            this.shortageQty      = shortageQty;
-            this.safetyStock      = safetyStock;
-            this.purchaseQty      = purchaseQty;
-            this.purchaseLeadTime = purchaseLeadTime;
-            this.expectedDate     = expectedDate;
+            this.totalQty          = totalQty;
+            this.stockQty          = stockQty;
+            this.shortageQty       = shortageQty;
+            this.safetyStock       = safetyStock;
+            this.purchaseQty       = purchaseQty;
+            this.purchaseLeadTime  = purchaseLeadTime;
+            this.expectedDate      = expectedDate;
         }
 
         // 👉 JSON으로 내려줄 때, 자바 필드명이 childCode / childName 인데
