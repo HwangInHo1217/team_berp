@@ -25,27 +25,32 @@
     <div class="container py-4">
       <h2 class="mb-4">발주 관리</h2>
 
-      <!-- 🔍 검색 + 버튼 -->
-      <!-- 🔍 검색 + 버튼 -->
+<!-- 🔍 검색 + 버튼 -->
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-  <!-- 왼쪽: 검색창 + 검색 버튼 -->
+  <!-- 왼쪽: 검색창 + 검색 버튼 + 초기화 버튼 -->
   <div class="d-flex align-items-center gap-2">
-    <input type="text" class="form-control w-auto" placeholder="품목명" id="searchKeyword" />
+    <!-- ✅ 검색어 유지 -->
+    <input type="text" class="form-control w-auto" placeholder="품목명을 입력하세요" 
+           id="searchKeyword" th:value="${searchKeyword}" />
     <button class="btn btn-outline-secondary" onclick="searchOrders()">검색</button>
+    <button class="btn btn-outline-danger" onclick="clearSearch()">초기화</button>
+    
+    <!-- ✅ 검색 결과 표시 (선택사항) -->
+    <span th:if="${searchKeyword != null and !searchKeyword.isEmpty()}" 
+          class="badge bg-info">
+      '<span th:text="${searchKeyword}"></span>' 검색 결과
+    </span>
   </div>
 
   <!-- 오른쪽: 상세 / 수정 / 삭제 / 발주 등록 / 입고 이동 버튼 -->
-  <div class="d-flex align-items-center gap-2">
-    <button class="btn btn-info" onclick="openplaceDetailModal()" data-bs-toggle="modal" data-bs-target="#placeDetailModal">상세</button>
-    <button class="btn btn-warning" onclick="openplaceEditModal()" data-bs-toggle="modal" data-bs-target="#placeEditModal">수정</button>
-    <button class="btn btn-danger" onclick="deleteSelectedItems()">삭제</button>
-
-    <button class="btn btn-primary" onclick="openplaceAddModal()" data-bs-toggle="modal" data-bs-target="#placeRegisterModal">
-      + 발주 등록
-    </button>
-
+  <!-- 기존 코드 -->
+<div class="d-flex align-items-center gap-2">
+    <!-- onclick 속성 제거 -->
+    <button class="btn btn-info" id="detailBtn">상세</button>
+    <button class="btn btn-warning" id="editBtn">수정</button>
+    <button class="btn btn-primary" id="addBtn">+ 발주 등록</button>
     <button class="btn btn-primary" onclick="goToInboundPage()">입고 페이지로 이동</button>
-  </div>
+</div>
 </div>
 
 
@@ -57,7 +62,7 @@
               <th>순번</th>
               <th>발주일자</th>
               <th>거래처</th>
-              <th><input type="checkbox"/></th>
+              <th><input type="checkbox" id="checkAll"/></th>
               <th>주문번호</th>
               <th>품목코드</th>
               <th>품목명</th>
