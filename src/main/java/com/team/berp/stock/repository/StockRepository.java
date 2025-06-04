@@ -243,10 +243,55 @@ List<Object[]> getStockCountByWarehouse();
 @Query("SELECT COUNT(DISTINCT s.item.id) FROM Stock s")
 long countDistinctItems();
  
- 
+
+
  // === 기타 메서드들 ===
  
  List<Stock> findByItem(Item item);
  List<Stock> findByWarehouse(Warehouse warehouse);
  List<Stock> findByLotNumber(String lotNumber);
+ 
+ /**
+  * 특정 창고의 재고 품목 수 조회
+  */
+ long countByWarehouse_Id(Long warehouseId);
+
+ /**
+  * 특정 창고의 특정 수량인 재고 품목 수 조회 (재고 없는 품목용)
+  */
+ long countByWarehouse_IdAndQuantity(Long warehouseId, Integer quantity);
+
+ /**
+  * 특정 창고의 수량 범위별 재고 품목 수 조회 (안전재고 미달용)
+  */
+ long countByWarehouse_IdAndQuantityBetween(Long warehouseId, Integer minQty, Integer maxQty);
+
+ /**
+  * 특정 창고의 총 재고량 합계
+  */
+ @Query("SELECT SUM(s.quantity) FROM Stock s WHERE s.warehouse.id = :warehouseId")
+ Long sumQuantityByWarehouse_Id(@Param("warehouseId") Long warehouseId);
+
+ /**
+  * 특정 창고의 품목 유형별 재고 통계
+  */
+ @Query("SELECT s.item.type, COUNT(s), SUM(s.quantity) FROM Stock s " +
+        "WHERE s.warehouse.id = :warehouseId " +
+        "GROUP BY s.item.type")
+ List<Object[]> getStockStatsByItemType(@Param("warehouseId") Long warehouseId);
+
+ /**
+  * 특정 창고의 재고 상태별 통계
+  */
+ @Query("SELECT " +
+        "SUM(CASE WHEN s.quantity = 0 THEN 1 ELSE 0 END) as outOfStock, " +
+        "SUM(CASE WHEN s.quantity > 0 AND s.quantity < 10 THEN 1 ELSE 0 END) as belowSafety, " +
+        "SUM(CASE WHEN s.quantity >= 10 THEN 1 ELSE 0 END) as normalStock " +
+        "FROM Stock s WHERE s.warehouse.id = :warehouseId")
+ Object[] getStockStatusStats(@Param("warehouseId") Long warehouseId);
+ 
+ 
+ 
+ 
+ 
 }

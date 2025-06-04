@@ -1,3 +1,4 @@
+// File: /Team_BERP/src/main/java/com/team/berp/order/service/OrderService.java
 package com.team.berp.order.service;
 
 import java.time.LocalDate;
@@ -23,6 +24,7 @@ import com.team.berp.domain.OrderLineItem;
 import com.team.berp.domain.Stock;
 import com.team.berp.domain.Warehouse;
 import com.team.berp.inventory_log.repository.InventoryLogRepository;
+import com.team.berp.mrp.service.MrpService;
 import com.team.berp.order.dto.CreateOrderRequest;
 import com.team.berp.order.dto.ItemWarehouseResponse;
 import com.team.berp.order.dto.OrderDetailResponse;
@@ -37,11 +39,11 @@ import com.team.berp.order.repository.Order_StockRepository;
 import com.team.berp.order.repository.Order_WarehouseRepository;
 
 import lombok.RequiredArgsConstructor;
+
 @Service
 @RequiredArgsConstructor
 public class OrderService {
 
-    // 🔧 Repository 주입 (고객사, 주문, 품목, 창고, 주문 상세 등)
     private final Order_CompanyOrderRepository companyOrderRepository;
     private final Order_OrderLineItemRepository orderLineItemRepository;
     private final Order_CompanyRepository companyRepository;
@@ -50,19 +52,20 @@ public class OrderService {
     private final InventoryLogRepository inventoryLogRepository;
     private final Order_StockRepository stockRepository;
     private final Order_InventoryLogRepositroy order_InventoryLogRepositroy;
+
+    // ★ 추가: MrpService 주입
+    private final MrpService mrpService;
+
     // ✅ 주문번호 생성 로직: 날짜 + UUID 앞 4자리
     public String generateOrderNum() {
         String datePart = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         String randomPart = UUID.randomUUID().toString().substring(0, 4);
         return "ORD-" + datePart + "-" + randomPart;
     }
-    /**
-     * 주문 상세 화면 등에 쓰기 위해, OrderLineItem 목록을 DTO로 변환하면서
-     * “해당 주문상품이 이미 출고 완료된 상태인지”를 함께 계산해서 리턴
-     */
-   
 
-    // ✅ 주문 등록 처리 (주문 헤더 + 주문 상세)
+    /**
+     * 주문 등록 처리 (주문 헤더 + 주문 상세)
+     */
     @Transactional
     public void createOrder(CreateOrderRequest request) {
         Integer totalQty = 0;
@@ -107,7 +110,7 @@ public class OrderService {
                 .build();
 
             // 🔹 연관관계 설정 (order ↔ lineItem)
-            lineItem.setCompanyOrder(order);  // 🔥 주인 설정 (필수)
+            lineItem.setCompanyOrder(order);
 
             lineItems.add(lineItem);
         }
@@ -117,13 +120,18 @@ public class OrderService {
 
         // 🔹 저장 (cascade 설정되어 있으면 lineItems도 함께 저장됨)
         companyOrderRepository.save(order);
+
+        // ───────────────────────────────────────────────────────────────────
+        // 6) 주문 저장 직후 MRP 생성 로직 호출
+        mrpService.generateMrpForOrder(order.getOrderId());
+        // ───────────────────────────────────────────────────────────────────
     }
 
     // ✅ 단건 주문 조회 (상세보기용)
     @Transactional(readOnly = true)
     public OrderDetailResponse getOrderDetail(Long orderId) {
         return companyOrderRepository.findById(orderId)
-            .map(this::toDto)  // 조회 결과를 DTO로 변환
+            .map(this::toDto)
             .orElseThrow(() -> new IllegalArgumentException("주문을 찾을 수 없습니다."));
     }
 
@@ -139,7 +147,6 @@ public class OrderService {
         dto.setAmount(co.getAmount());
         dto.setCompanyId(co.getCompany().getCompanyId());
         dto.setCompanyName(co.getCompany().getCompanyName());
-       // dto.setEmpName();
         dto.setCompanyEmpName(co.getCompany().getEmployee().getEmpName());
 
         // 🔹 주문 상세 DTO 리스트 세팅
@@ -155,13 +162,13 @@ public class OrderService {
         OrderDetailResponse.LineItem li = new OrderDetailResponse.LineItem();
         li.setOrderLineItemId(oli.getOrderLineItemId());
         li.setItemId(oli.getItem().getId());
-        li.setItemName(oli.getItem().getName());   // ✅ 추가
-        li.setUnit(oli.getItem().getUnit());       // ✅ 추가
+        li.setItemName(oli.getItem().getName());
+        li.setUnit(oli.getItem().getUnit());
         li.setUnitQty(oli.getUnitQty());
         li.setUnitPrice(oli.getUnitPrice());
         li.setUnitPriceAll(oli.getUnitPriceall());
         li.setWarehouseId(oli.getWarehouse() != null ? oli.getWarehouse().getId() : null);
-        
+
         // 추가: inventory_log에 ‘OUT + CONFIRMED’ 로그가 있는지 체크
         boolean shipped = order_InventoryLogRepositroy.existsByOrderLineItem_OrderLineItemIdAndLogTypeAndLogStatus(
                 oli.getOrderLineItemId(),
@@ -169,7 +176,7 @@ public class OrderService {
                 LogStatus.CONFIRMED
             );
         li.setAlreadyShipped(shipped);
-        
+
         return li;
     }
 
@@ -212,17 +219,7 @@ public class OrderService {
         }
     }
 
-
-
-
-
-
     // ✅ 주문 목록 검색 + 페이징 처리 (조건: 고객사, 품목, 날짜)
-    /**
-     * ✅ 주문 목록 검색 + 페이징 처리 (조건: 고객사, 품목, 날짜)
-     *    → 리포지토리에서 우선 OrderSummaryDto만 조회한 뒤,
-     *       각 주문마다 allShipped 필드를 채워서 반환.
-     */
     @Transactional(readOnly = true)
     public Page<OrderSummaryDto> findOrderSummaries(
             Long companyId,
@@ -231,22 +228,19 @@ public class OrderService {
             LocalDate toDate,
             Pageable pageable
     ) {
-        // 1) 우선 기본 OrderSummaryDto 정보만 내려주는 쿼리 수행
+        // 1) 기본 OrderSummaryDto 정보만 내려주는 쿼리 수행
         Page<OrderSummaryDto> page = companyOrderRepository.findSummariesByFilters(
             companyId, itemId, fromDate, toDate, pageable
         );
 
-        // 2) 각 OrderSummaryDto 에 대해 allShipped 여부를 계산하여 세팅
-        //    → “한 주문(orderId)에 속한 모든 OrderLineItem에 대해
-        //       InventoryLog에 (LogType.OUT + LogStatus.CONFIRMED) 레코드가 존재하는지” 검사
+        // 2) 각 OrderSummaryDto에 allShipped 여부 계산
         page.forEach(dto -> {
             Long orderId = dto.getOrderId();
 
-            // 2-1) 해당 주문에 속한 모든 OrderLineItem을 조회
-            List<OrderLineItem> lineItems = orderLineItemRepository
-                .findByCompanyOrder_OrderId(orderId);
+            // 2-1) 해당 주문에 속한 모든 OrderLineItem 조회
+            List<OrderLineItem> lineItems = orderLineItemRepository.findByCompanyOrder_OrderId(orderId);
 
-            // 2-2) 그 중 하나라도 “OUT+CONFIRMED” 로그가 없으면 allShipped = false
+            // 2-2) 하나라도 “OUT+CONFIRMED” 로그가 없으면 allShipped = false
             boolean allShipped = true;
             for (OrderLineItem oli : lineItems) {
                 boolean hasConfirmedOut = order_InventoryLogRepositroy
@@ -261,63 +255,51 @@ public class OrderService {
                 }
             }
 
-            // 2-3) DTO 에 allShipped 값 세팅
+            // 2-3) DTO에 allShipped 값 세팅
             dto.setAllShipped(allShipped);
         });
 
         return page;
     }
 
-    
     /**
      * 주문서(orderId)에 속한 모든 품목(item)을 조회하고,
      * 각 아이템별로 “재고가 있는(>0)” 창고 정보를 Flat List<ItemWarehouseResponse> 형태로 반환.
-     *
-     * @param orderId 주문서 ID
-     * @return List<ItemWarehouseResponse> (Flat List). 재고가 하나도 없는 경우 빈 List 반환.
      */
     @Transactional(readOnly = true)
     public List<ItemWarehouseResponse> getShipmentInfoList(Long orderId) {
         // 1) 주문서에 속한 모든 OrderLineItem 조회
-        List<OrderLineItem> lineItems =
-            orderLineItemRepository.findByCompanyOrder_OrderId(orderId);
+        List<OrderLineItem> lineItems = orderLineItemRepository.findByCompanyOrder_OrderId(orderId);
 
         // 2) 각 OrderLineItem -> Stock 조회 -> ItemWarehouseResponse로 Flat Map
         return lineItems.stream()
             // 각 OrderLineItem(li)마다 “해당 품목(itemId)에 재고 > 0인 Stock 리스트”를 가져와서
-            // 그 안에서 다시 Stream<ItemWarehouseResponse> 로 바꾼 뒤, 모두 이어 붙인다(flatMap).
+            // 그 안에서 다시 Stream<ItemWarehouseResponse>로 바꾼 뒤, 모두 이어 붙인다(flatMap).
             .flatMap(li -> {
-                // 2-1) 품목 ID, 품목 이름 뽑기
-                Long   itemId   = li.getItem().getId();
+                Long itemId = li.getItem().getId();
                 String itemCode = li.getItem().getCode();
                 String itemName = li.getItem().getName();
-                Integer orderQty = li.getUnitQty();   //주문수량            
-                // 2-2) itemId에 해당하는 Stock 중 quantity>0인 것만 가져온다
+                Integer orderQty = li.getUnitQty();
+
                 List<Stock> stocks = stockRepository.findByItemIdAndQuantityGreaterThan(itemId, 0);
 
-                // 2-3) Stock -> ItemWarehouseResponse 매핑 람다
-                //      - stocks.stream() 타입은 Stream<Stock>
-                //      - map(...) 을 통해 Stream<ItemWarehouseResponse>를 리턴해야 한다.
                 Stream<ItemWarehouseResponse> itemWhStream = stocks.stream()
                     .map(stock -> {
-                    	Warehouse wh = stock.getWarehouse();
+                        Warehouse wh = stock.getWarehouse();
                         return new ItemWarehouseResponse(
-                            li.getOrderLineItemId(),       // 1) OrderLineItem PK
-                            itemId,                        // 2) Item PK
-                            itemCode,                      // 3) Item.code
-                            itemName,                      // 4) Item.name
-                            orderQty,                      // 5) 주문 수량(UnitQty)
-                            wh.getId(),           // 6) Warehouse PK
-                            wh.getWarehouseName(),         // 7) Warehouse 이름
-                         stock.getQuantity()            // 8) 해당 창고 재고 수량
+                            li.getOrderLineItemId(),
+                            itemId,
+                            itemCode,
+                            itemName,
+                            orderQty,
+                            wh.getId(),
+                            wh.getWarehouseName(),
+                            stock.getQuantity()
                         );
                     });
 
-                // 반드시 Stream<ItemWarehouseResponse>를 리턴해야 한다!
                 return itemWhStream;
             })
-            // 3) flatMap으로 모은 Stream<ItemWarehouseResponse>를 List로 모은다
             .collect(Collectors.toList());
     }
-
 }

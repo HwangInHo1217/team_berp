@@ -62,5 +62,35 @@ public interface InventoryLogRepository extends JpaRepository<InventoryLog, Long
 	void deleteByOrderLineItem_OrderLineItemIdIn(List<Long> orderLineItemIds);
 
 	boolean existsByOrderLineItem_OrderLineItemId(Long orderLineItemId);
+	
+	/**
+	 * 특정 날짜 범위 + 로그 타입으로 조회 (페이징)
+	 */
+	@Query("SELECT il FROM InventoryLog il " +
+	       "WHERE il.logType = :logType " +
+	       "AND il.logDatetime BETWEEN :startDate AND :endDate " +
+	       "ORDER BY il.logDatetime DESC")
+	Page<InventoryLog> findByLogTypeAndLogDatetimeBetweenOrderByLogDatetimeDesc(
+	    @Param("logType") LogType logType,
+	    @Param("startDate") LocalDateTime startDate,
+	    @Param("endDate") LocalDateTime endDate,
+	    Pageable pageable);
+
+	/**
+	 * 특정 날짜 범위 + 로그 타입으로 조회 (리스트)
+	 */
+	@Query("SELECT il FROM InventoryLog il " +
+	       "WHERE il.logType = :logType " +
+	       "AND il.logDatetime BETWEEN :startDate AND :endDate " +
+	       "ORDER BY il.logDatetime DESC")
+	List<InventoryLog> findByLogTypeAndLogDatetimeBetween(
+	    @Param("logType") LogType logType,
+	    @Param("startDate") LocalDateTime startDate,
+	    @Param("endDate") LocalDateTime endDate);
+	
+	
+	
+	
+	
 
 }
