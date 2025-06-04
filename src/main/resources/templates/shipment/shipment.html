@@ -4,8 +4,13 @@
   <meta charset="UTF-8" />
   <title>출고 관리</title>
   <!-- Bootstrap CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+  <script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+  ></script>
   <style>
     main {
       padding: 20px;
@@ -15,7 +20,6 @@
   </style>
 </head>
 <body class="d-flex flex-column" style="min-height: 100vh;">
-
   <!-- 상단 헤더 (Thymeleaf fragment) -->
   <div th:replace="~{/layouts/header :: header}"></div>
 
@@ -27,64 +31,234 @@
     <main>
       <h2 class="mb-4">출고 관리</h2>
 
-      <!-- ===== 검색바 ===== -->
-      <div class="row g-2 mb-3">
-        <div class="col-md-2">
-          <input type="text" class="form-control" placeholder="품목명" id="searchItemName">
-        </div>
-        <div class="col-md-2">
-          <input type="date" class="form-control" id="fromDate">
-        </div>
-        <div class="col-md-2">
-          <input type="date" class="form-control" id="toDate">
-        </div>
-        <div class="col-md-2">
-          <select class="form-select" id="warehouseFilter">
-            <option value="">전체 창고</option>
-            <!-- JS로 셀렉트 옵션 채우기 -->
-          </select>
-        </div>
-        <div class="col-md-2">
-          <button class="btn btn-outline-secondary w-100" id="btnSearch">검색</button>
-        </div>
-      </div>
+      <!-- =============================== -->
+      <!-- 탭 네비게이션 (고객사 출고 / 특별 출고) -->
+      <!-- =============================== -->
+      <ul class="nav nav-pills mb-3" id="shipmentTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button
+            class="nav-link active"
+            id="tab-customer-shipment"
+            data-bs-toggle="pill"
+            data-bs-target="#pane-customer-shipment"
+            type="button"
+            role="tab"
+            aria-controls="pane-customer-shipment"
+            aria-selected="true">
+            고객사 출고
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button
+            class="nav-link"
+            id="tab-transfer-shipment"
+            data-bs-toggle="pill"
+            data-bs-target="#pane-transfer-shipment"
+            type="button"
+            role="tab"
+            aria-controls="pane-transfer-shipment"
+            aria-selected="false">
+            특별 출고
+          </button>
+        </li>
+      </ul>
 
-      <!-- ===== 버튼들 ===== -->
-      <div class="mb-3 d-flex gap-2">
-        <button class="btn btn-success">엑셀 다운로드</button>
-        <button class="btn btn-danger">삭제</button>
-        <button class="btn btn-primary">+ 출고 등록</button>
-      </div>
+      <!-- =============================== -->
+      <!-- 탭 내용(pill panes)             -->
+      <!-- =============================== -->
+      <div class="tab-content" id="shipmentTabContent">
+        <!-- ─────────────────────────────────────────────── -->
+        <!-- 1) 고객사 출고 탭 패널                         -->
+        <!-- ─────────────────────────────────────────────── -->
+        <div
+          class="tab-pane fade show active"
+          id="pane-customer-shipment"
+          role="tabpanel"
+          aria-labelledby="tab-customer-shipment"
+        >
+          <!-- ===== 검색바(고객사 출고 전용) ===== -->
+          <div class="row g-2 mb-3">
+            <!-- 1) 검색 대상 셀렉트 -->
+            <div class="col-md-2">
+              <select class="form-select" id="searchField_Customer">
+                <option value="itemName">품목명</option>
+                <option value="itemCode">품목코드</option>
+                <option value="orderNum">주문번호</option>
+              </select>
+            </div>
+            <!-- 2) 검색어 입력 -->
+            <div class="col-md-2">
+              <input
+                type="text"
+                class="form-control"
+                placeholder="검색어 입력"
+                id="searchKeyword_Customer"
+              />
+            </div>
+            <!-- 3) 날짜 범위 -->
+            <div class="col-md-2">
+              <input type="date" class="form-control" id="fromDate_Customer" />
+            </div>
+            <div class="col-md-2">
+              <input type="date" class="form-control" id="toDate_Customer" />
+            </div>
+          
+            <!-- 5) 검색 버튼 -->
+            <div class="col-md-2">
+              <button
+                class="btn btn-outline-secondary w-100"
+                id="btnSearch_Customer"
+              >
+                검색
+              </button>
+            </div>
+          </div>
 
-      <!-- ===== 출고 테이블 ===== -->
-      <div class="table-responsive">
-        <table class="table table-bordered align-middle text-center" id="shipmentTable">
-          <thead class="table-light">
-            <tr>
-              <th><input type="checkbox" id="selectAll"/></th>
-              <th>순번</th>
-              <th>출고일자</th>
-              <th>고객사명</th>
-              <th>품목코드</th>
-              <th>품목명</th>
-              <th>수량</th>
-              <th>단위</th>
-              <th>창고</th>
-              <th>담당자</th>
-              <th>비고</th>
-              <th>상세</th>
-              <th>수정</th>
-            </tr>
-          </thead>
-          <tbody>
-            <!-- JS( fetch("/api/shipments") )로 데이터를 렌더링해 줄 부분 -->
-          </tbody>
-        </table>
+          <!-- ===== 버튼들(고객사 출고 전용) ===== -->
+          <div class="mb-3 d-flex gap-2">
+            <button class="btn btn-success" id="btnExcelDownload_Customer">엑셀 다운로드</button>
+            <button class="btn btn-danger" id="btnDelete_Customer">삭제</button>
+            
+          </div>
+
+          <!-- ===== 고객사 출고 전용 테이블 ===== -->
+          <div class="table-responsive">
+            <table
+              class="table table-bordered align-middle text-center"
+              id="tblCustomerShipment"
+            >
+              <thead class="table-light">
+                <tr>
+                  <th><input type="checkbox" id="selectAllCustomer" /></th>
+                  <th>순번</th>
+                  <th>출고일자</th>
+                  <th>고객사명</th>
+                  <th>주문번호</th>
+                  <th>품목코드</th>
+                  <th>품목명</th>
+                  <th>수량</th>
+                  <th>단위</th>
+                  <th>창고</th>
+                  <th>담당자</th>
+                  <th>비고</th>
+
+                </tr>
+              </thead>
+              <tbody id="tbodyCustomerShipment">
+                <!-- JS로 데이터를 렌더링 -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- ===== 페이징(고객사) ===== -->
+          <nav class="mt-3">
+            <ul class="pagination justify-content-center" id="paginationCustomer">
+              <!-- JS로 페이지 번호 렌더링 -->
+            </ul>
+          </nav>
+        </div>
+
+        <!-- ─────────────────────────────────────────────── -->
+        <!-- 2) 특별 출고(창고 이동) 탭 패널               -->
+        <!-- ─────────────────────────────────────────────── -->
+        <div
+          class="tab-pane fade"
+          id="pane-transfer-shipment"
+          role="tabpanel"
+          aria-labelledby="tab-transfer-shipment"
+        >
+          <!-- ===== 검색바(창고 이동 전용) ===== -->
+          <div class="row g-2 mb-3">
+            <!-- 1) 검색 대상 셀렉트 -->
+            <div class="col-md-2">
+              <select class="form-select" id="searchField_Transfer">
+                <option value="itemName">품목명</option>
+                <option value="itemCode">품목코드</option>
+                <option value="orderNum">주문번호</option>
+              </select>
+            </div>
+            <!-- 2) 검색어 입력 -->
+            <div class="col-md-2">
+              <input
+                type="text"
+                class="form-control"
+                placeholder="검색어 입력"
+                id="searchKeyword_Transfer"
+              />
+            </div>
+            <!-- 3) 날짜 범위 -->
+            <div class="col-md-2">
+              <input type="date" class="form-control" id="fromDate_Transfer" />
+            </div>
+            <div class="col-md-2">
+              <input type="date" class="form-control" id="toDate_Transfer" />
+            </div>
+            <!-- 4) 창고 필터 -->
+            <div class="col-md-2">
+              <select class="form-select" id="warehouseFilter_Transfer">
+                <option value="">전체 창고</option>
+                <!-- JS로 옵션 채우기 -->
+              </select>
+            </div>
+            <!-- 5) 검색 버튼 -->
+            <div class="col-md-2">
+              <button
+                class="btn btn-outline-secondary w-100"
+                id="btnSearch_Transfer"
+              >
+                검색
+              </button>
+            </div>
+          </div>
+
+          <!-- ===== 버튼들(창고 이동 전용) ===== -->
+          <div class="mb-3 d-flex gap-2">
+            <button class="btn btn-success" id="btnExcelDownload_Customer">엑셀 다운로드</button>
+            <button class="btn btn-danger" id="btnDelete_Transfer">삭제</button>
+            
+          </div>
+
+          <!-- ===== 창고 이동 전용 테이블 ===== -->
+          <div class="table-responsive">
+            <table
+              class="table table-bordered align-middle text-center"
+              id="tblTransferShipment"
+            >
+              <thead class="table-light">
+                <tr>
+                  <th><input type="checkbox" id="selectAllTransfer" /></th>
+                  <th>순번</th>
+                  <th>이동일자</th>
+                  <th>품목코드</th>
+                  <th>품목명</th>
+                  <th>수량</th>
+                  <th>단위</th>
+                  <th>출발창고</th>
+                  <th>비고</th>
+ 
+                </tr>
+              </thead>
+              <tbody id="tbodyTransferShipment">
+                <!-- JS로 데이터를 렌더링 -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- ===== 페이징(창고 이동) ===== -->
+          <nav class="mt-3">
+            <ul class="pagination justify-content-center" id="paginationTransfer">
+              <!-- JS로 페이지 번호 렌더링 -->
+            </ul>
+          </nav>
+        </div>
       </div>
+      <!-- ─────────────────────────────────────────────── -->
     </main>
   </div>
 
   <!-- 전용 JS 로드 -->
-  <script src="/js/shipment/shipment.js"></script>
+  <script src="/js/shipment/shipment-tabs.js"></script>
+  <!-- 
+  <script src="/js/shipment/shipment.js"></script> -->
 </body>
 </html>

@@ -324,54 +324,64 @@ function fetchOrders(page = 0) {
 		.catch(() => alert("주문 목록 조회 실패"));
 }
 
+/**
+ * 주문 목록을 화면에 그려주는 함수
+ * - orders: 백엔드에서 내려준 페이지(content) 배열
+ * - pageNumber, pageSize: 페이징용 계산값
+ */
 function renderOrderTable(orders, pageNumber, pageSize) {
-	const $tbody = $('#orderTableBody').empty();
-	orders.forEach((o, i) => {
-		const idx = i + 1 + pageNumber * pageSize;
-		  // ① allShipped 상태에 따라 버튼 HTML을 달리 만든다.
-		  let shipmentBtnHtml;
-		  if (o.allShipped) {
-		      // 출고가 이미 완료된 상태라면 비활성화된 “출고완료” 버튼
-		      shipmentBtnHtml = `
-		          <button type="button" class="btn btn-secondary btn-sm" disabled>
-		              출고완료
-		          </button>`;
-		  } else {
-		      // 아직 출고되지 않은 상태라면 “출고등록” 버튼 활성화
-		      shipmentBtnHtml = `
-		          <button type="button" class="btn btn-success btn-sm shipmentBtn" data-id="${o.orderId}">
-		              출고 등록
-		          </button>`;
-		  }
+  const $tbody = $('#orderTableBody').empty();
 
-		  // ② tr 전체 문자열을 조립할 때 새로 만든 shipmentBtnHtml을 넣어준다.
-		  const row = `
-		<tr>
-		  <td><input type="checkbox" class="selectBox" value="${o.orderId}" /></td>
-		  <td>${idx}</td>
-		  <td>${o.orderDate}</td>
-		  <td>${o.orderNum || '-'}</td>
-		  <td>${o.companyName}</td>
-		  <td>${o.orderQty}</td>
-		  <td>${o.amount}</td>
-		  <td>${o.companyEmpName || '-'}</td>
-		  <td>${o.empName || '-'}</td>
-		  <td><button class="btn btn-info btn-sm detailBtn" data-id="${o.orderId}">상세</button></td>
-		  <td><button class="btn btn-warning btn-sm editBtn" data-id="${o.orderId}">수정</button></td>
-		  <td>${shipmentBtnHtml}</td>
-		</tr>`;
-		  $tbody.append(row)
-	});
+  // ───────────────────────────────────────────────────────
+  // ★ 이미 출고가 완료된 행(allShipped===true)은 건너뛰고(!) 렌더링
+  // ───────────────────────────────────────────────────────
+  const visibleOrders = orders.filter(o => !o.allShipped);
 
-	$('.detailBtn').click(function() {
-		const orderId = $(this).data('id');
-		$.get(`/api/orders/${orderId}`, populateDetailModal);
-	});
+  visibleOrders.forEach((o, i) => {
+    const idx = i + 1 + pageNumber * pageSize;
 
-	$('.editBtn').click(function() {
-		const orderId = $(this).data('id');
-		$.get(`/api/orders/${orderId}`, populateFixedForm);
-	});
+    // (예시: allShipped가 false이므로, 항상 '출고등록' 버튼을 렌더링)
+    const shipmentBtnHtml = `
+      <button type="button"
+              class="btn btn-success btn-sm shipmentBtn"
+              data-id="${o.orderId}">
+        출고 등록
+      </button>`;
+
+    const row = `
+      <tr>
+        <td><input type="checkbox" class="selectBox" value="${o.orderId}" /></td>
+        <td>${idx}</td>
+        <td>${o.orderDate}</td>
+        <td>${o.orderNum || '-'}</td>
+        <td>${o.companyName}</td>
+        <td>${o.orderQty}</td>
+        <td>${o.amount}원</td>
+        <td>${o.companyEmpName || '-'}</td>
+        <td>${o.empName || '-'}</td>
+        <td>
+          <button class="btn btn-info btn-sm detailBtn" data-id="${o.orderId}">상세</button>
+        </td>
+        <td>
+          <button class="btn btn-warning btn-sm editBtn" data-id="${o.orderId}">수정</button>
+        </td>
+        <td>
+          ${shipmentBtnHtml}
+        </td>
+      </tr>`;
+
+    $tbody.append(row);
+  });
+
+  // 기존에 Detail/수정 버튼 바인딩 로직을 그대로 유지
+  $('.detailBtn').off('click').on('click', function() {
+    const orderId = $(this).data('id');
+    $.get(`/api/orders/${orderId}`, populateDetailModal);
+  });
+  $('.editBtn').off('click').on('click', function() {
+    const orderId = $(this).data('id');
+    $.get(`/api/orders/${orderId}`, populateFixedForm);
+  });
 }
 
 function renderPagination(totalPages, currentPage) {
@@ -481,86 +491,172 @@ function populateDetailModal(data) {
 
     // 6) wrapper(DOM 요소) 반환
     return wrapper;
-  }
-  // “출고 등록” 버튼 클릭 시 모달 열기 로직 (OrderApiController.getShipmentInfo 호출 후)
-  document.getElementById('orderTableBody').addEventListener('click', async (event) => {
-    if (!event.target.classList.contains('shipmentBtn')) return;
+  }	// order.js (혹은 shipment-tabs.js 등 실제 사용하는 파일)
+	document
+	  .getElementById('orderTableBody')
+	  .addEventListener('click', async (event) => {
+	    // 1) 클릭된 요소가 .shipmentBtn 인지 확인
+	    if (!event.target.classList.contains('shipmentBtn')) return;
 
-    const orderId = Number(event.target.dataset.id);
+	    // 2) 주문 ID
+	    const orderId = Number(event.target.dataset.id);
 
-    try {
-      const response = await fetch(`/api/orders/${orderId}/shipment-info`);
-      if (!response.ok) throw new Error(`서버 오류: ${response.status}`);
-      const rawData = await response.json();
-      // rawData: [ { orderLineItemId, itemId, itemCode, itemName, orderQty, warehouseId, warehouseName, stockQty }, … ]
+	    try {
+	      // 3) 서버에서 “해당 주문 상품별 창고/재고 정보” 가져오기
+	      const response = await fetch(`/api/orders/${orderId}/shipment-info`);
+	      if (!response.ok) {
+	        throw new Error(`서버 오류: HTTP ${response.status}`);
+	      }
 
-      // (1) 테이블 <tbody> 초기화
-      const tbody = document.getElementById('shipmentItemTableBody');
-      tbody.innerHTML = '';
+	      // 4) JSON 파싱
+	      const rawData = await response.json();
+	      console.log("🚀 서버 응답 rawData:", rawData);
 
-      // (2) rawData를 “itemId → [창고정보…]” 형태로 그룹핑
-      const dataMap = {};
-      rawData.forEach(wsi => {
-        const key = wsi.orderLineItemId; // 주문상품 ID로 그룹핑
-        if (!dataMap[key]) dataMap[key] = [];
-        dataMap[key].push(wsi);
-      });
+	      // ────────────────────────────────────────────────────────────
+	      // 여기까지 왔다는 것은 서버가 “orderLineItem 별 재고” 정보를 내려준 상태입니다.
+	      // rawData는 flat list 형태이며, 예시 한 행(row)의 형태는 아래와 같습니다:
+	      // {
+	      //   orderLineItemId: 10,
+	      //   itemId: 5,
+	      //   itemCode: "PRD001",
+	      //   itemName: "휴대용 선풍기",
+	      //   orderQty: 7,           // '이 주문상품의 주문 수량'
+	      //   warehouseId: 2,
+	      //   warehouseName: "완제품 창고",
+	      //   stockQty: 3            // 이 창고에 남아 있는 재고 수량
+	      // }
+	      //
+	      //    → rawData 배열에는 여러 창고(row)가 섞여 있을 수 있습니다.
+	      //    → orderLineItemId가 동일한 row들을 모아서 “하나의 주문상품”에
+	      //      여러 창고의 stockQty 정보를 합산해야 합니다.
+	      // ────────────────────────────────────────────────────────────
 
-      // (3) 그룹별로 <tr> 생성
-      Object.entries(dataMap).forEach(([oliIdStr, warehouseList]) => {
-        const tr = document.createElement('tr');
+	      // 5)  rawData가 비어 있으면 “아무 재고도 없이 빈 배열([])이 온 경우”이므로
+	      //     바로 MRP 페이지로 이동하도록 합니다.
+	      if (Array.isArray(rawData) && rawData.length === 0) {
+	        alert("– 현재 재고가 전혀 없습니다.\nMRP 페이지로 이동합니다.");
+	        window.location.href = '/mrp/mrp';
+	        return;
+	      }
+	      if (!Array.isArray(rawData) && typeof rawData === 'object' && Object.keys(rawData).length === 0) {
+	        alert("– 현재 재고가 전혀 없습니다.\nMRP 페이지로 이동합니다.");
+	        window.location.href = '/mrp/mrp';
+	        return;
+	      }
 
-        // (가) <td> 품목코드, 품목명, 주문수량
-        const first = warehouseList[0];
-        const tdCode = document.createElement('td');
-        tdCode.innerText = first.itemCode;  
-        tr.appendChild(tdCode);
+	      // 6) rawData를 orderLineItemId 별로 그룹핑하여 dataMap 생성
+	      //    → key: orderLineItemId (예: "10"), value: [ { … }, { … }, … ]
+	      const dataMap = {};
+	      rawData.forEach(wsi => {
+	        const oliId = wsi.orderLineItemId;
+	        if (!dataMap[oliId]) dataMap[oliId] = [];
+	        dataMap[oliId].push(wsi);
+	      });
+	      console.log("🚀 그룹핑된 dataMap:", dataMap);
 
-        const tdName = document.createElement('td');
-        tdName.innerText = first.itemName;
-        tr.appendChild(tdName);
+	      // 7) “MRP 이동 판정”: 
+	      //    dataMap의 각 그룹(주문상품별)마다 재고합계 < 주문수량인지 검사
+	      for (const [oliIdStr, warehouseList] of Object.entries(dataMap)) {
+	        // 7-1) 주문수량 (모든 warehouseList 요소에서 동일하다고 가정)
+	        const requiredQty = warehouseList[0].orderQty;
 
-        const tdOrderQty = document.createElement('td');
-        tdOrderQty.innerText = first.orderQty;
-        tr.appendChild(tdOrderQty);
+	        // 7-2) 해당 주문상품(주문라인)에 남아있는 총 재고합계를 계산
+	        const totalStock = warehouseList.reduce((sum, wsi) => {
+	          return sum + (wsi.stockQty || 0);
+	        }, 0);
 
-        // (나) 창고+수량 입력 영역 <td>
-        const tdWarehouseArea = document.createElement('td');
-        const container = document.createElement('div');
-        container.classList.add('warehouse-rows-container');
+	        // 7-3) 재고<주문수량 이면 MRP 페이지로 이동
+	        if (totalStock < requiredQty) {
+	          alert(
+	            `주문 상품(${warehouseList[0].itemCode} : ${warehouseList[0].itemName})의\n` +
+	            `총 재고(${totalStock}개)가 주문 수량(${requiredQty}개)보다 적습니다.\n` +
+	            `MRP 페이지로 이동합니다.`
+	          );
+	          window.location.href = '/mrp/mrp';
+	          return; // 더 이상 모달을 띄우지 않고 함수 종료
+	        }
+	      }
 
-        // 최초 1개 라인
-        const firstRow = createWarehouseRow(first.itemId, warehouseList);
-        container.appendChild(firstRow);
+	      // ────────────────────────────────────────────────────────────
+	      // 8) 모든 주문상품에 대해 “재고 합계 >= 주문수량”이라면
+	      //    아래 코드를 실행하여 출고 모달을 띄워줍니다.
+	      // ────────────────────────────────────────────────────────────
 
-        // “➕ 행 추가” 버튼
-        const addBtn = document.createElement('button');
-        addBtn.type = 'button';
-        addBtn.classList.add('btn', 'btn-sm', 'btn-outline-secondary', 'ms-2');
-        addBtn.innerText = '➕';
-        addBtn.title = '다른 창고도 추가 등록';
-        addBtn.addEventListener('click', () => {
-          const newRow = createWarehouseRow(first.itemId, warehouseList);
-          container.appendChild(newRow);
-        });
+	      // 8-1) <tbody> 비우기
+	      const tbody = document.getElementById('shipmentItemTableBody');
+	      tbody.innerHTML = '';
 
-        tdWarehouseArea.appendChild(container);
-        tdWarehouseArea.appendChild(addBtn);
-        tr.appendChild(tdWarehouseArea);
+	      // 8-2) dataMap을 itemId나 orderLineItemId 별로 다시 한 번 순회하며 테이블 행 생성
+	      //      예시에서는 orderLineItemId 기반으로 했으니, 그대로 진행합니다.
+	      Object.entries(dataMap).forEach(([oliIdStr, warehouseList]) => {
+	        // 하나의 주문상품(orderLineItem) 대표 정보 가져오기
+	        const first = warehouseList[0];
+	        const itemCode = first.itemCode;
+	        const itemName = first.itemName;
+	        const orderQty = first.orderQty; // 주문수량
 
-        tbody.appendChild(tr);
-      });
+	        // <tr> 생성
+	        const tr = document.createElement('tr');
 
-      // (4) 모달을 띄우기 전에 data-order-id 속성 추가
-      const modalEl = document.getElementById('shipmentModal');
-      modalEl.setAttribute('data-order-id', orderId);
+	        // ─── 품목 코드 셀
+	        const tdCode = document.createElement('td');
+	        tdCode.innerText = itemCode;
+	        tr.appendChild(tdCode);
 
-      // (5) 모달 띄우기
-      const modalInstance = new bootstrap.Modal(modalEl);
-      modalInstance.show();
+	        // ─── 품목 이름 셀
+	        const tdName = document.createElement('td');
+	        tdName.innerText = itemName;
+	        tr.appendChild(tdName);
 
-    } catch (err) {
-      console.error('❌ 출고 정보를 불러오는 데 실패했습니다.', err);
-      alert('❌ 출고 정보를 불러오는 데 실패했습니다.');
-    }
-  });
+	        // ─── 주문 수량 셀
+	        const tdOrderQty = document.createElement('td');
+	        tdOrderQty.innerText = orderQty;
+	        tr.appendChild(tdOrderQty);
+
+	        // ─── 창고별 출고 수량 입력 셀
+	        const tdWarehouseArea = document.createElement('td');
+	        const container = document.createElement('div');
+	        container.classList.add('warehouse-rows-container');
+
+	        // 최초 1개의 “창고 입력 줄(wrapper)” 생성
+	        const firstRow = createWarehouseRow(Number(oliIdStr), warehouseList);
+	        container.appendChild(firstRow);
+
+	        // “➕ 행 추가” 버튼
+	        const addBtn = document.createElement('button');
+	        addBtn.type = 'button';
+	        addBtn.classList.add('btn', 'btn-sm', 'btn-outline-secondary', 'ms-2');
+	        addBtn.innerText = '➕';
+	        addBtn.title = '다른 창고도 추가 등록';
+	        addBtn.addEventListener('click', () => {
+	          const newRow = createWarehouseRow(Number(oliIdStr), warehouseList);
+	          container.appendChild(newRow);
+	        });
+
+	        tdWarehouseArea.appendChild(container);
+	        tdWarehouseArea.appendChild(addBtn);
+	        tr.appendChild(tdWarehouseArea);
+
+	        // 완성된 <tr>을 <tbody>에 붙이기
+	        tbody.appendChild(tr);
+	      });
+
+	      // 9) 모달 띄우기 전, data-order-id 속성 설정
+	      const modalEl = document.getElementById('shipmentModal');
+	      modalEl.setAttribute('data-order-id', orderId);
+
+	      // 10) 모달 띄우기
+	      const modalInstance = new bootstrap.Modal(modalEl);
+	      modalInstance.show();
+
+	    } catch (err) {
+	      console.error('❌ 출고 정보를 불러오는 데 실패했습니다.', err);
+	      alert('❌ 출고 정보를 불러오는 데 실패했습니다.');
+	    }
+	  });
+
+	/**
+	 * createWarehouseRow 함수는 그대로 기존 로직을 사용하시면 됩니다.
+	 * (orderLineItemId, warehouseList를 인자로 받아서 “숨김(hidden) input + 창고 select + 수량 input + ❌ 제거 버튼”을
+	 *  가진 <div>를 반환하도록 이미 구현되어 있을 겁니다.)
+	 */

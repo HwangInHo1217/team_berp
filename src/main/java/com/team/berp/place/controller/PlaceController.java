@@ -69,14 +69,6 @@ public class PlaceController {
         return placeService.findByType(itemType);
     }
 
-//    @GetMapping("/employees")
-//    @ResponseBody
-//    public ResponseEntity<EmployeeDto> getEmployeeByCompanyId(@RequestParam("companyId") Long companyId) {
-//        return placeService.getEmployeeByCompanyId(companyId)
-//            .map(employee -> ResponseEntity.ok(new EmployeeDto(employee.getEmployeeId(), employee.getEmpName())))
-//            .orElse(ResponseEntity.notFound().build());
-//    }
-
     @GetMapping("/employees/byCompany")
     @ResponseBody
     public ResponseEntity<EmployeeDto> getEmployeeByCompanyId(@RequestParam("companyId") Long companyId) {
@@ -93,7 +85,13 @@ public class PlaceController {
     	placeService.registerOrder(dto);
     	return "redirect:/place";
     }
-    
+
+
+    @GetMapping("/edit/{lineItemId}")
+    public ResponseEntity<PlaceDTO> getPlaceForEdit(@PathVariable("lineItemId") Long lineItemId) {
+        PlaceDTO dto = placeService.getPlaceEditData(lineItemId);
+        return ResponseEntity.ok(dto);
+    }
 
  
 }

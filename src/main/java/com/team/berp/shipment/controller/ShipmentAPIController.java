@@ -3,6 +3,7 @@ package com.team.berp.shipment.controller;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -52,4 +53,16 @@ public class ShipmentAPIController {
 		List<ShipmentInfoDTO> list = shipmentService.getAllShipments();
 		return ResponseEntity.ok(list);
 	}
+	
+	   // ───────────────────────────────────────────────────────
+    // ✅ ① 체크박스로 넘어온 “logId 리스트”를 삭제해주는 엔드포인트 추가
+    @DeleteMapping("/api/shipments-del")
+    public ResponseEntity<String> deleteShipments(@RequestBody List<Long> logIds) {
+        try {
+            shipmentService.deleteShipments(logIds);
+            return ResponseEntity.ok("삭제 완료");
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(400).body("삭제 실패: " + e.getMessage());
+        }
+    }
 }

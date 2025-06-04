@@ -27,4 +27,5 @@ public interface PlaceService {
      * 거기서 연결된 Employee(Optional)를 반환*/
 	Optional<Employee> getEmployeeByCompanyId(Long companyId);
 
+	PlaceDTO getPlaceEditData(Long lineItemId);
 }

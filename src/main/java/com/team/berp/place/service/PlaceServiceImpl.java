@@ -5,6 +5,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
@@ -37,7 +38,7 @@ public class PlaceServiceImpl implements PlaceService{ //실제 구현
     private final Order_OrderLineItemRepository orderLineItemRepository;
     private final EmployeeRepository employeeRepository;  // 생성자 주입으로 추가
 
-	
+	 
 	
     @Override
     @Transactional //예외 발생시 자동으로 rollback
@@ -95,7 +96,7 @@ public class PlaceServiceImpl implements PlaceService{ //실제 구현
                 lineItem.setItem(item); 
 
                 // 수량 세팅
-                lineItem.setUnitQty(itemDTO.getUnitQty());
+                lineItem.setUnitQty(itemDTO.getUnitQty().intValue()); // Long → Integer
 
                 // 단가 세팅 (필요하면)
                 lineItem.setUnitPrice(itemDTO.getUnitPrice());
@@ -116,7 +117,7 @@ public class PlaceServiceImpl implements PlaceService{ //실제 구현
             }
         }
        // 총합을 발주에 반영
-        savedOrder.setOrderQty(totalOrderQty);
+        savedOrder.setOrderQty((int) totalOrderQty); // long → int
         savedOrder.setAmount(totalAmount);
         companyOrderRepository.save(savedOrder); // 다시 저장
 
@@ -135,6 +136,7 @@ public class PlaceServiceImpl implements PlaceService{ //실제 구현
     	return itemRepository.findByType(type);
     }
     
+    
     private String generateOrderNum() {
         String datePart = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         String randomPart = UUID.randomUUID().toString().substring(0, 4);
@@ -143,9 +145,53 @@ public class PlaceServiceImpl implements PlaceService{ //실제 구현
     
     @Override
     public Optional<Employee> getEmployeeByCompanyId(Long companyId) {
-        return companyRepository.findById(companyId) // 1) companyRepository.findById(...)로 Company 엔티티 가져옴
-                .map(Company::getEmployee); // 2) Company.getEmployee()가 반환하는 Optional<Employee>
+        return companyRepository.findById(companyId)
+            .map(Company::getEmployee); // 회사가 존재하면 연결된 직원 Optional 반환
     }
 
- 
+    
+    @Override
+    public PlaceDTO getPlaceEditData(Long lineItemId) {
+    	// orderLineItemRepository 등에서 데이터 조회
+        OrderLineItem lineItem = orderLineItemRepository.findById(lineItemId)
+                .orElseThrow(() -> new RuntimeException("존재하지 않는 품목입니다."));
+
+        CompanyOrder order = lineItem.getCompanyOrder();// order 변수 선언
+        Company company = order.getCompany();
+        Employee employee = company.getEmployee();
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+        List<PlaceDTO.OrderLineItemDTO> lineItemDTOs = order.getLineItems().stream()
+                .map((OrderLineItem item) -> {
+                    Item entityItem = item.getItem();
+                    return PlaceDTO.OrderLineItemDTO.builder()
+                            .orderLineItemId(item.getOrderLineItemId()) // ✅ 필드 누락 주의
+                            .itemId(entityItem.getId())
+                            .itemName(entityItem.getName())
+                            .itemCode(entityItem.getCode())
+                            .unit(item.getUnit())
+                            .unitPrice(item.getUnitPrice())
+                            .unitQty((long) item.getUnitQty())
+                            .unitPriceAll(item.getUnitPriceall())
+                            .build();
+                })
+                .collect(Collectors.toList());
+
+        return PlaceDTO.builder()
+                .orderId(order.getOrderId()) // ✅ 누락
+                .orderNum(order.getOrderNum()) // ✅ 누락
+                .orderDate(order.getOrderDate().format(formatter))
+                .orderType(order.getOrderType().name()) // ✅ 누락
+                .companyId(company.getCompanyId())
+                .note(order.getNote()) // ✅ 누락
+                .employeeId(employee.getEmployeeId())
+                .employeeName(employee.getEmpName()) // ✅ 누락
+                .employeeTel(employee.getEmpTel()) // ✅ 누락
+                .employeeEmail(employee.getEmpEmail()) // ✅ 누락
+                .lineItems(lineItemDTOs)
+                .build();
+    }
+
+    
 }
