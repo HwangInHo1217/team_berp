@@ -19,8 +19,6 @@ let lastModalMrpData = null;       // 모달에 마지막으로 로드된 MRP �
 // ────────────────────────────────────────────────────────
 // 전역 함수: 버튼 활성/비활성 토글 함수
 // ────────────────────────────────────────────────────────
-// 이 함수는 전역 스코프에 있어야 onMrpCheckboxChange() 등
-// 다른 전역 함수들에서 호출할 수 있습니다.
 function updateToolbarButtons() {
     const checkedBoxes = Array.from(document.querySelectorAll('.bom-checkbox:checked'));
     const btnPlan  = document.getElementById('btn-create-plan');
@@ -142,29 +140,31 @@ function renderMrpList(data, page) {
         const tr = document.createElement("tr");
 
         tr.innerHTML = `
-            <td><input type="checkbox" class="mrp-checkbox" data-code="${mrp.itemCode}" onchange="onMrpCheckboxChange()"></td>
+            <td>
+              <input type="checkbox"
+                     class="mrp-checkbox"
+                     data-code="${mrp.itemCode}"
+                     onchange="onMrpCheckboxChange()">
+            </td>
             <td class="col-no">${rowNumber}</td>
-            <td>${mrp.itemCode ?? '-'}</td>
-            <td>${mrp.itemName ?? '-'}</td>
-            <td>${mrp.custName ?? '-'}</td>
-            <td>${mrp.spec ?? '-'}</td>
-            <td>${mrp.unit ?? '-'}</td>
-            <td>${mrp.orderQty ?? 0}</td>
-            <td>${mrp.stockQty ?? 0}</td>
-            <td>${mrp.shortageQty ?? 0}</td>
-            <td>${mrp.dueDate ?? '-'}</td>
-            <td>${mrp.leadTime ?? 0}</td>
-            <td>${mrp.mrpStatus ?? '-'}</td>
-            <td><button class="btn btn-info btn-sm" onclick="showMrpDetailModalByIndex(${idx})">상세</button></td>
+            <td>${mrp.itemCode   ?? '-'}</td>
+            <td>${mrp.itemName   ?? '-'}</td>
+            <td>${mrp.custName   ?? '-'}</td>
+            <td>${mrp.spec       ?? '-'}</td>
+            <td>${mrp.unit       ?? '-'}</td>
+            <td>${mrp.orderQty   ?? 0 }</td>
+            <td>${mrp.stockQty   ?? 0 }</td>
+            <td>${mrp.shortageQty ?? 0 }</td>
+            <td>${mrp.dueDate    ?? '-'}</td>
+            <td>${mrp.leadTime   ?? 0 }</td>
+            <td>${mrp.mrpStatus  ?? '-'}</td>
+            <td>
+              <button class="btn btn-info btn-sm"
+                      onclick="showMrpDetailModalByIndex(${idx})">
+                상세
+              </button>
+            </td>
         `;
-
-        // tr 전체 클릭 시 체크박스 토글
-        tr.addEventListener('click', e => {
-            if (e.target.type === 'checkbox' || e.target.tagName === 'BUTTON') return;
-            const cb = tr.querySelector('.mrp-checkbox');
-            cb.checked = !cb.checked;
-            onMrpCheckboxChange();
-        });
 
         tbody.appendChild(tr);
     });
@@ -216,22 +216,26 @@ function renderBomList(bomList) {
     bomList.forEach((bom, idx) => {
         const tr = document.createElement("tr");
         tr.setAttribute("data-code", bom.childCode ?? "");
-        tr.setAttribute("data-purchase-qty", (bom.purchaseQty ?? 0).toString());
+        tr.setAttribute("data-totalqty", (bom.totalQty ?? 0).toString());
         tr.setAttribute("data-shortage-qty", (bom.shortageQty ?? 0).toString());
 
         tr.innerHTML = `
-            <td><input type="checkbox" class="bom-checkbox" data-code="${bom.childCode}"></td>
+            <td>
+              <input type="checkbox"
+                     class="bom-checkbox"
+                     data-code="${bom.childCode}">
+            </td>
             <td class="col-no">${idx + 1}</td>
-            <td>${bom.childCode ?? '-'}</td>
-            <td>${bom.childName ?? '-'}</td>
-            <td>${bom.spec ?? '-'}</td>
-            <td>${bom.unit ?? '-'}</td>
-            <td>${bom.qty ?? 0}</td>
-            <td>${bom.stockQty ?? 0}</td>
-            <td>${bom.shortageQty ?? 0}</td>
-            <td>${bom.safetyStock ?? 0}</td>
-            <td>${bom.purchaseQty ?? 0}</td>
-            <td>${bom.purchaseLeadTime ?? 0}</td>
+            <td>${bom.childCode   ?? '-'}</td>
+            <td>${bom.childName   ?? '-'}</td>
+            <td>${bom.spec        ?? '-'}</td>
+            <td>${bom.unit        ?? '-'}</td>
+            <td>${bom.totalQty    ?? 0 }</td>
+            <td>${bom.stockQty    ?? 0 }</td>
+            <td>${bom.shortageQty ?? 0 }</td>
+            <td>${bom.safetyStock ?? 0 }</td>
+            <td>${bom.purchaseQty ?? 0 }</td>
+            <td>${bom.purchaseLeadTime ?? 0 }</td>
             <td>${bom.expectedDate ?? '-'}</td>
         `;
 
@@ -243,7 +247,7 @@ function renderBomList(bomList) {
 // 전역 함수: MRP 상세 모달 내용을 채우고 표시
 // ────────────────────────────────────────────────────────
 function showMrpDetailModal(mrp, openModal) {
-    // 모달을 새로 열 때, 기존 인스턴스가 있으면 폐기(dispose)
+    // “openModal = true”인 경우, 기존 인스턴스가 있으면 dispose
     if (openModal && mrpModalInstance) {
         mrpModalInstance.dispose();
         mrpModalInstance = null;
@@ -259,7 +263,7 @@ function showMrpDetailModal(mrp, openModal) {
     document.getElementById("mrpDetailPlanType").textContent   = mrp.planType     || '-';
     document.getElementById("mrpDetailStatus").textContent     = mrp.status       || '-';
 
-    // B. 품목 정보
+    // B. 품목 정보 (완제품 기준)
     document.getElementById("mrpDetailItemCode").textContent    = mrp.itemCode    || '-';
     document.getElementById("mrpDetailItemName").textContent    = mrp.itemName    || '-';
     document.getElementById("mrpDetailItemType").textContent    = mrp.itemType    || '-';
@@ -301,41 +305,42 @@ function showMrpDetailModal(mrp, openModal) {
         });
 
     // C. 수량·리드타임
+    //   → 이제 DTO에서 직접 “requestQty(요청 수량)”과 “shortageQty(부족 수량)”을 내려줍니다.
     document.getElementById("mrpDetailRequiredQty").textContent       = mrp.requiredQty        ?? '0';
     document.getElementById("mrpDetailShortQty").textContent          = mrp.shortageQty        ?? '0';
     document.getElementById("mrpDetailPurchaseLeadTime").textContent  = mrp.purchaseLeadTime   ?? '0';
     document.getElementById("mrpDetailProductionLeadTime").textContent = mrp.productionLeadTime ?? '0';
     document.getElementById("mrpDetailOrderableDate").textContent      = mrp.orderableDate      || '-';
 
-    // D. BOM 구성
+    // D. BOM 구성 (완제품 기준)
     const bomBody = document.getElementById("mrpDetailBomBody");
     bomBody.innerHTML = "";
     (mrp.bomComponents || []).forEach(c => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
-            <td>${c.childCode ?? '-'}</td>
-            <td>${c.childName ?? '-'}</td>
-            <td>${c.perParentQty ?? 0}</td>
-            <td>${c.totalQty ?? 0}</td>
-            <td>${c.stockQty ?? 0}</td>
-            <td>${c.shortageQty ?? 0}</td>
-            <td>${c.leadTime ?? 0}</td>
+            <td>${c.childCode   ?? '-'}</td>
+            <td>${c.childName   ?? '-'}</td>
+            <td>${c.perParentQty ?? 0 }</td>
+            <td>${c.totalQty    ?? 0 }</td>
+            <td>${c.stockQty    ?? 0 }</td>
+            <td>${c.shortageQty ?? 0 }</td>
+            <td>${c.leadTime    ?? 0 }</td>
         `;
         bomBody.appendChild(tr);
     });
 
-    // E. 연계 오더 현황: 생산 오더(WO) 리스트만 렌더
+    // E. 연계 오더 현황: 생산 오더(WO) 리스트
     const woBody = document.getElementById("mrpDetailWoList");
     woBody.innerHTML = "";
     (mrp.workOrders || []).forEach(wo => {
         const tr = document.createElement("tr");
         tr.innerHTML = `
-            <td>${wo.woNo ?? '-'}</td>
-            <td>${wo.itemCode ?? '-'}</td>
-            <td>${wo.qty ?? 0}</td>
+            <td>${wo.woNo      ?? '-'}</td>
+            <td>${wo.itemCode  ?? '-'}</td>
+            <td>${wo.qty       ?? 0 }</td>
             <td>${wo.startDate ?? '-'}</td>
-            <td>${wo.endDate ?? '-'}</td>
-            <td>${wo.status ?? '-'}</td>
+            <td>${wo.endDate   ?? '-'}</td>
+            <td>${wo.status    ?? '-'}</td>
         `;
         woBody.appendChild(tr);
     });
@@ -358,19 +363,26 @@ function showMrpDetailModal(mrp, openModal) {
         if (!lastModalMrpData || !Array.isArray(lastModalMrpData.bomComponents)) {
             return alert("생산계획으로 넘어갈 자재 정보가 없습니다.");
         }
-        const toPlanCodes = lastModalMrpData.bomComponents
+        // “코드:수량” 형태로 URL 파라미터에 붙이기 위해, dataset-totalqty 를 같이 읽어옵니다.
+        const checkedPairs = lastModalMrpData.bomComponents
             .filter(c => (c.shortageQty ?? 0) === 0)
-            .map(c => c.childCode);
+            .map(c => `${c.childCode}:${c.totalQty}`);
+        const allPairs = (checkedPairs.length)
+            ? checkedPairs
+            : lastModalMrpData.bomComponents
+                .filter(c => (c.shortageQty ?? 0) === 0)
+                .map(c => `${c.childCode}:${c.totalQty}`);
 
-        if (!toPlanCodes.length) {
-            return alert("생산계획으로 넘어갈 자재가 없습니다.");
+        const uniquePairs = Array.from(new Set(allPairs));
+        if (!uniquePairs.length) {
+            return alert("생산계획을 세울 자재가 없습니다.");
         }
 
         const confirmMsg = "생산계획으로 넘어갈 자재들이 자동으로 선택되었습니다.\n생산계획 페이지로 이동하시겠습니까?";
         if (!window.confirm(confirmMsg)) {
             return;
         }
-        window.location.href = `/prod-plan?items=${encodeURIComponent(toPlanCodes.join(","))}`;
+        window.location.href = `/prod-plan?items=${encodeURIComponent(uniquePairs.join(","))}`;
     };
 
     // H. 모달 내 “발주 등록” 버튼 이벤트
@@ -378,11 +390,18 @@ function showMrpDetailModal(mrp, openModal) {
         if (!lastModalMrpData || !Array.isArray(lastModalMrpData.bomComponents)) {
             return alert("발주할 자재 정보가 없습니다.");
         }
-        const toOrderCodes = lastModalMrpData.bomComponents
+        // “코드:수량” 형태로 URL 파라미터에 붙이기 위해, dataset-totalqty 를 같이 읽어옵니다.
+        const checkedPairs = lastModalMrpData.bomComponents
             .filter(c => (c.shortageQty ?? 0) > 0)
-            .map(c => c.childCode);
+            .map(c => `${c.childCode}:${c.totalQty}`);
+        const allPairs = (checkedPairs.length)
+            ? checkedPairs
+            : lastModalMrpData.bomComponents
+                .filter(c => (c.shortageQty ?? 0) > 0)
+                .map(c => `${c.childCode}:${c.totalQty}`);
 
-        if (!toOrderCodes.length) {
+        const uniquePairs = Array.from(new Set(allPairs));
+        if (!uniquePairs.length) {
             return alert("발주할 자재가 없습니다.");
         }
 
@@ -390,7 +409,7 @@ function showMrpDetailModal(mrp, openModal) {
         if (!window.confirm(confirmMsg)) {
             return;
         }
-        window.location.href = `/purchase-order?items=${encodeURIComponent(toOrderCodes.join(","))}`;
+        window.location.href = `/purchase-order?items=${encodeURIComponent(uniquePairs.join(","))}`;
     };
 
     // 모달 열기 (openModal=true인 경우)
@@ -407,6 +426,7 @@ function moveModal(offset) {
     let newIdx = currentModalIdx + offset;
     if (newIdx < 0 || newIdx >= currentMrpList.length) return;
     currentModalIdx = newIdx;
+    // “mrpId” 자리에 실제로는 planId 가 담겨 있습니다.
     const mrpId = currentMrpList[newIdx].mrpId;
     fetch(`/api/mrp/detail/${mrpId}`)
         .then(res => res.json())
@@ -421,6 +441,7 @@ function moveModal(offset) {
 // ────────────────────────────────────────────────────────
 function showMrpDetailModalByIndex(idx) {
     currentModalIdx = idx;
+    // data.content[idx].mrpId → 실제로는 planId 가 담겨 있습니다.
     const mrpId = currentMrpList[idx].mrpId;
     fetch(`/api/mrp/detail/${mrpId}`)
       .then(res => res.json())
@@ -509,36 +530,27 @@ window.onload = function() {
             return cb && cb.checked;
         });
 
-        let toPlanCodes;
-        if (checkedRows.length === 1) {
-            const shortage = parseInt(checkedRows[0].dataset.shortageQty || "0", 10);
-            if (shortage > 0) {
-                return alert("체크된 자재는 발주가 필요합니다.");
-            }
-            toPlanCodes = [ checkedRows[0].dataset.code ];
+        let pairs;
+        if (checkedRows.length > 0) {
+            pairs = checkedRows
+                .filter(tr => parseInt(tr.dataset.shortageQty || "0", 10) === 0)
+                .map(tr => `${tr.dataset.code}:${tr.dataset.totalqty}`);
+        } else {
+            pairs = allBomRows
+                .filter(tr => parseInt(tr.dataset.shortageQty || "0", 10) === 0)
+                .map(tr => `${tr.dataset.code}:${tr.dataset.totalqty}`);
         }
-        else if (checkedRows.length > 1) {
-            toPlanCodes = checkedRows
-              .filter(tr => parseInt(tr.dataset.shortageQty || "0", 10) === 0)
-              .map(tr => tr.dataset.code);
-            if (!toPlanCodes.length) {
-                return alert("체크된 자재 중 생산계획을 세울 자재가 없습니다.");
-            }
-        }
-        else {
-            toPlanCodes = allBomRows
-              .filter(tr => parseInt(tr.dataset.shortageQty || "0", 10) === 0)
-              .map(tr => tr.dataset.code);
-            if (!toPlanCodes.length) {
-                return alert("생산계획을 세울 자재가 없습니다.");
-            }
+
+        const uniquePairs = Array.from(new Set(pairs));
+        if (!uniquePairs.length) {
+            return alert("생산계획을 세울 자재가 없습니다.");
         }
 
         const confirmMsg = "생산계획으로 넘어갈 자재들이 선택되었습니다.\n생산계획 페이지로 이동하시겠습니까?";
         if (!window.confirm(confirmMsg)) {
             return;
         }
-        window.location.href = `/prod-plan?items=${encodeURIComponent(toPlanCodes.join(','))}`;
+        window.location.href = `/prod-plan?items=${encodeURIComponent(uniquePairs.join(","))}`;
     });
 
     // ■ “발주 등록” 버튼 클릭 (하단 BOM 리스트 바로 아래)
@@ -549,36 +561,26 @@ window.onload = function() {
             return cb && cb.checked;
         });
 
-        let toOrderCodes;
-        if (checkedRows.length === 1) {
-            const shortage = parseInt(checkedRows[0].dataset.shortageQty || "0", 10);
-            if (shortage <= 0) {
-                return alert("체크된 자재는 발주가 필요하지 않습니다.");
-            }
-            toOrderCodes = [ checkedRows[0].dataset.code ];
-        }
-        else if (checkedRows.length > 1) {
-            toOrderCodes = checkedRows
-              .filter(tr => parseInt(tr.dataset.shortageQty || "0", 10) > 0)
-              .map(tr => tr.dataset.code);
-            if (!toOrderCodes.length) {
-                return alert("체크된 자재 중 발주가 필요한 자재가 없습니다.");
-            }
-        }
-        else {
-            toOrderCodes = allBomRows
-              .filter(tr => parseInt(tr.dataset.shortageQty || "0", 10) > 0)
-              .map(tr => tr.dataset.code);
-            if (!toOrderCodes.length) {
-                return alert("발주할 자재가 없습니다.");
-            }
+        let pairs;
+        if (checkedRows.length > 0) {
+            pairs = checkedRows
+                .filter(tr => parseInt(tr.dataset.shortageQty || "0", 10) > 0)
+                .map(tr => `${tr.dataset.code}:${tr.dataset.totalqty}`);
+        } else {
+            pairs = allBomRows
+                .filter(tr => parseInt(tr.dataset.shortageQty || "0", 10) > 0)
+                .map(tr => `${tr.dataset.code}:${tr.dataset.totalqty}`);
         }
 
-        const confirmMsg = "발주가 필요한 자재들이 선택되었습니다.\n발주 등록하시겠습니까?";
-        if (!window.confirm(confirmMsg)) {
+        const uniquePairs = Array.from(new Set(pairs));
+        if (!uniquePairs.length) {
+            return alert("발주할 자재가 없습니다.");
+        }
+
+        const confirmMsg = "발주가 필요한 자재들이 선택되었습니다.\n발주 등록하시겠습니까?";        if (!window.confirm(confirmMsg)) {
             return;
         }
-        window.location.href = `/purchase-order?items=${encodeURIComponent(toOrderCodes.join(','))}`;
+        window.location.href = `/purchase-order?items=${encodeURIComponent(uniquePairs.join(","))}`;
     });
 
     // ■ 엔터키 → calculateMrp() 호출

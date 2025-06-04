@@ -20,7 +20,7 @@ public interface PlaceService {
 	//registerOrder: 메소드 이름, 발주를 새로 등록하는 기능
 	//PlaceDTO dto: 메소드가 입력으로 받는 인자 -> 사용자가 입력한 정보
 	CompanyOrder registerOrder(PlaceDTO dto); //발주등록
-	List<CompanyOrder> getAllOrders();
+	List<CompanyOrder> getAllOrders(); 
 	List<Item> findByType(ItemType type);
 	
 	/* 회사 ID를 기준으로 Company 테이블을 조회하고,
@@ -28,4 +28,12 @@ public interface PlaceService {
 	Optional<Employee> getEmployeeByCompanyId(Long companyId);
 
 	PlaceDTO getPlaceEditData(Long lineItemId);
+	CompanyOrder updateOrder(PlaceDTO dto);
+	
+	// 발주 상세 정보 조회
+	PlaceDTO getPlaceDetailData(Long lineItemId);
+	
+	// 품목명으로 발주 검색
+	List<CompanyOrder> searchOrdersByItemName(String itemName);
+	
 }

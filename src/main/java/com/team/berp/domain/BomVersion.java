@@ -30,7 +30,7 @@ public class BomVersion {
     @JoinColumn(name = "parent_item_id", nullable = false)
     private Item parentItem;
 
-    @Column(name = "version_code", nullable = false, unique = true, length = 20)
+    @Column(name = "version_code", nullable = false, unique = false, length = 20)
     private String versionCode;
 
     @Column(name = "description")

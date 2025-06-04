@@ -25,6 +25,7 @@ public interface BomRepository extends JpaRepository<Bom, Integer> {
 	List<Item> findDistinctParentItems();
 
 	List<Bom> findByParentItemId(Long parentId);
+	List<Bom> findByBomVersion_Id(Long versionId);
 
 	@Modifying
 	@Query("DELETE FROM Bom b WHERE b.parentItem.id = :parentItemId")
