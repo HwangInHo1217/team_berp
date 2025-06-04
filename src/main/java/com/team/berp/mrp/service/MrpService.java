@@ -1,4 +1,3 @@
-// File: /Team_BERP/src/main/java/com/team/berp/mrp/service/MrpService.java
 package com.team.berp.mrp.service;
 
 import com.team.berp.mrp.dto.MrpDetailDto;
@@ -32,4 +31,10 @@ public interface MrpService {
      * 특정 MRP 상세 정보 조회
      */
     MrpDetailDto findMrpDetailById(Long mrpId);
+    
+    /**
+     * 주문(orderId)이 들어왔을 때, 해당 주문에 따라 ProdPlan과 그에 속한 BOM을 조회하여
+     * 자동으로 mrp 테이블에 INSERT를 수행합니다.
+     */
+    void generateMrpForOrder(Long orderId);
 }
