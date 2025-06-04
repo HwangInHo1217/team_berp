@@ -409,7 +409,7 @@ function showMrpDetailModal(mrp, openModal) {
         if (!window.confirm(confirmMsg)) {
             return;
         }
-        window.location.href = `/purchase-order?items=${encodeURIComponent(uniquePairs.join(","))}`;
+        window.location.href = `/place?items=${encodeURIComponent(uniquePairs.join(","))}`;
     };
 
     // 모달 열기 (openModal=true인 경우)
@@ -550,7 +550,7 @@ window.onload = function() {
         if (!window.confirm(confirmMsg)) {
             return;
         }
-        window.location.href = `/prod-plan?items=${encodeURIComponent(uniquePairs.join(","))}`;
+        window.location.href = `/plan?items=${encodeURIComponent(uniquePairs.join(","))}`;
     });
 
     // ■ “발주 등록” 버튼 클릭 (하단 BOM 리스트 바로 아래)
