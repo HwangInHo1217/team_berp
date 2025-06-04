@@ -409,7 +409,7 @@ function showMrpDetailModal(mrp, openModal) {
         if (!window.confirm(confirmMsg)) {
             return;
         }
-        window.location.href = `/purchase-order?items=${encodeURIComponent(uniquePairs.join(","))}`;
+        window.location.href = `/place?items=${encodeURIComponent(uniquePairs.join(","))}`;
     };
 
     // 모달 열기 (openModal=true인 경우)
