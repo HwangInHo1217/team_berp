@@ -1,5 +1,6 @@
 package com.team.berp.place.dto;
 
+import lombok.Builder;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
@@ -11,6 +12,7 @@ import com.team.berp.item.dto.ItemListViewResponse;
 @Data
 @Setter
 @Getter
+@Builder
 public class PlaceDTO {
     private Long companyId; // 거래처 ID
     private Long orderId; //주문서 ID
@@ -23,6 +25,7 @@ public class PlaceDTO {
 
 
     @Data
+    @Builder
     public static class OrderLineItemDTO {
         private Long orderLineItemId;
         private Long itemId;
@@ -32,7 +35,7 @@ public class PlaceDTO {
         private String unit;
         private Long unitPrice;
 
-        private Long orderQty;       // 총 주문 수량 (필요시)
+        private Integer orderQty;       // 총 주문 수량 (필요시)
         private Long amount;         // 해당 품목 총 금액 (unitPrice * unitQty)
         private Long unitPriceAll;   // 단가 * 수량 (중복으로 필요없다면 생략 가능)
 

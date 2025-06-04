@@ -25,8 +25,10 @@ public class OrderLineItem {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "item_id")
     private Item item;
+    
     @Column(length = 10)
     private String unit;
+    
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "warehouse_id")
     private Warehouse warehouse;
