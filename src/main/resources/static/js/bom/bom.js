@@ -115,7 +115,7 @@ function renderBomTable(items) {
       <td>${item.unit}</td>
       <td>${item.use}</td>
       <td><button class="btn btn-sm btn-info" onclick="openBomVersionSelectModal(${item.id})">보기</button></td>
-      <td><button class="btn btn-sm btn-outline-info" onclick="openItemDetailModal('${item.code}')">보기</button></td>
+      
       <td><button class="btn btn-sm btn-outline-secondary" onclick="openBomEditVersionSelectModal(${item.id})">수정</button></td>`;
 		tbody.appendChild(row);
 	});
