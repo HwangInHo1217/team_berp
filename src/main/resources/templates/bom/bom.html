@@ -33,15 +33,17 @@
 							placeholder="검색어 입력" />
 						<button class="btn btn-outline-secondary" type="submit">검색</button>
 					</div>
-
+					
 					<div class="col-md-6 d-flex justify-content-end align-items-center">
+					
 						<select id="searchUseYn" class="form-select w-auto me-2">
 							<option value="">전체</option>
 							<option value="Y">Y (사용중)</option>
 							<option value="N">N (미사용)</option>
-						</select>
+						</select> 
+						<!--  
 						<button class="btn btn-danger me-2" type="button"
-							onclick="deleteSelectedBoms()">삭제</button>
+							onclick="deleteSelectedBoms()">삭제</button>-->
 						<button type="button" class="btn btn-primary"
 							data-bs-toggle="modal" data-bs-target="#bomRegisterModal">+
 							BOM 등록</button>
@@ -53,7 +55,7 @@
 					<table class="table table-bordered text-center align-middle">
 						<thead class="table-light">
 							<tr>
-								<th><input type="checkbox" /></th>
+								
 								<th>품목코드</th>
 								<th>품목명</th>
 								<th>품목유형</th>
@@ -63,6 +65,7 @@
 								<th>구성보기</th>
 								
 								<th>수정</th>
+								<th>삭제</th>
 							</tr>
 						</thead>
 						<tbody id="bomTableBody">
