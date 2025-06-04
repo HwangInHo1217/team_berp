@@ -1,0 +1,292 @@
+<!-- 입고 관리 모달들 receive_modal.html - 개선된 버전 -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+
+<!-- 입고 관리 모달들 -->
+<div th:fragment="receive_modals">
+
+    <!-- 입고 등록 모달 - 발주기반/독립적 입고 구분 -->
+    <div class="modal fade" id="receiveRegisterModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-plus-circle me-2"></i>
+                        입고 등록
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="receiveForm">
+                        
+                        <!-- 입고 유형 선택 -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">입고 유형 <span class="text-danger">*</span></label>
+                            <div class="d-flex gap-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="receiveType" 
+                                           id="receiveTypeOrder" value="ORDER_BASED" onchange="toggleReceiveType()">
+                                    <label class="form-check-label" for="receiveTypeOrder">
+                                        <i class="bi bi-file-text me-1"></i>
+                                        발주 기반 입고
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="receiveType" 
+                                           id="receiveTypeIndependent" value="INDEPENDENT" checked onchange="toggleReceiveType()">
+                                    <label class="form-check-label" for="receiveTypeIndependent">
+                                        <i class="bi bi-box-arrow-in-down me-1"></i>
+                                        독립적 입고
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 발주 기반 입고 섹션 -->
+                        <div id="orderBasedSection" style="display: none;">
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-2"></i>
+                                기존 발주를 기반으로 입고를 등록합니다. 발주 정보가 자동으로 입력됩니다.
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">미완료 발주 선택 <span class="text-danger">*</span></label>
+                                <select class="form-select" id="pendingOrderSelect" onchange="onPendingOrderSelect()">
+                                    <option value="">발주를 선택하세요</option>
+                                    <!-- 동적으로 생성될 옵션들 -->
+                                </select>
+                                <div class="form-text">
+                                    발주 번호와 품목 정보를 확인하고 선택하세요.
+                                </div>
+                            </div>
+                            
+                            <!-- 발주 기반일 때 수량 정보 표시 -->
+                            <div class="mb-3">
+                                <label class="form-label">입고 수량 <span class="text-danger">*</span></label>
+                                <input type="number" class="form-control" id="quantityInput" 
+                                       min="1" max="10000" required>
+                                <div class="form-text" id="remainingQtyText">
+                                    미입고 수량: <span id="remainingQty">0</span>개
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 독립적 입고 섹션 -->
+                        <div id="independentSection">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label class="form-label">품목 <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="itemSelect" required>
+                                        <option value="">품목을 선택하세요</option>
+                                        <!-- 동적으로 생성될 옵션들 -->
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">공급업체</label>
+                                    <select class="form-select" id="supplierSelect" onchange="onSupplierSelect()">
+                                        <option value="">공급업체를 선택하세요</option>
+                                        <!-- 동적으로 생성될 옵션들 -->
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <!-- 독립적 입고일 때 수량 입력 -->
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">입고 수량 <span class="text-danger">*</span></label>
+                                    <input type="number" class="form-control" id="quantityInputIndependent" 
+                                           min="1" max="10000" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <!-- 빈 공간 또는 추가 필드 -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 창고 선택 (공통) -->
+                        <div class="mt-4">
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <label class="form-label">창고 <span class="text-danger">*</span></label>
+                                    <select class="form-select" id="warehouseSelect" required>
+                                        <option value="">창고를 선택하세요</option>
+                                        <!-- 동적으로 생성될 옵션들 -->
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 담당자 정보 -->
+                        <div class="mt-3">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <label class="form-label">담당자</label>
+                                    <input type="text" class="form-control" id="managerNameInput" 
+                                           placeholder="담당자명" readonly>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">
+                                        이메일
+                                        <small class="text-muted">(편집 가능)</small>
+                                    </label>
+                                    <input type="email" class="form-control" id="managerEmailInput" 
+                                           placeholder="이메일을 입력하세요">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">
+                                        연락처
+                                        <small class="text-muted">(편집 가능)</small>
+                                    </label>
+                                    <input type="text" class="form-control" id="managerPhoneInput" 
+                                           placeholder="연락처를 입력하세요">
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-md-12">
+                                    <small class="text-info">
+                                        <i class="bi bi-info-circle me-1"></i>
+                                        이메일과 연락처는 필요시 직접 입력하거나 수정할 수 있습니다.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 비고 -->
+                        <div class="mt-3">
+                            <label class="form-label">비고</label>
+                            <textarea class="form-control" id="noteInput" rows="3" 
+                                      placeholder="추가 정보를 입력하세요"></textarea>
+                        </div>
+
+                        <!-- 숨겨진 필드들 -->
+                        <input type="hidden" id="orderLineItemId" value="">
+                        <input type="hidden" id="selectedItemId" value="">
+                        <input type="hidden" id="selectedItemCode" value="">
+                        <input type="hidden" id="selectedItemName" value="">
+                        <input type="hidden" id="selectedCompanyId" value="">
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                    <button type="button" class="btn btn-primary" onclick="submitReceive()">
+                        <i class="bi bi-check-circle me-2"></i>
+                        입고 등록
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 입고 상세 조회 모달 -->
+    <div class="modal fade" id="receiveDetailModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-info-circle me-2"></i>
+                        입고 상세 조회
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-sm-4"><strong>입고일자:</strong></div>
+                        <div class="col-sm-8" id="detailReceiveDate">-</div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-sm-4"><strong>품목코드:</strong></div>
+                        <div class="col-sm-8" id="detailItemCode">-</div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-sm-4"><strong>품목명:</strong></div>
+                        <div class="col-sm-8" id="detailItemName">-</div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-sm-4"><strong>수량:</strong></div>
+                        <div class="col-sm-8" id="detailQuantity">-</div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-sm-4"><strong>창고:</strong></div>
+                        <div class="col-sm-8" id="detailWarehouse">-</div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-sm-4"><strong>입고처:</strong></div>
+                        <div class="col-sm-8" id="detailCompany">-</div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-sm-4"><strong>입고유형:</strong></div>
+                        <div class="col-sm-8" id="detailReceiveType">-</div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-sm-4"><strong>담당자:</strong></div>
+                        <div class="col-sm-8" id="detailManager">-</div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-sm-4"><strong>발주번호:</strong></div>
+                        <div class="col-sm-8" id="detailOrderNum">-</div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-sm-4"><strong>비고:</strong></div>
+                        <div class="col-sm-8" id="detailNote">-</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+<!-- 입고 관리 모달들 끝 -->
+
+<script>
+// 입고 유형 변경 시 섹션 토글 (개선된 버전)
+function toggleReceiveType() {
+    const orderBased = document.getElementById('receiveTypeOrder').checked;
+    const orderSection = document.getElementById('orderBasedSection');
+    const independentSection = document.getElementById('independentSection');
+    
+    if (orderBased) {
+        orderSection.style.display = 'block';
+        independentSection.style.display = 'none';
+        
+        // 발주 기반일 때는 quantityInput 사용
+        const quantityInput = document.getElementById('quantityInput');
+        const quantityInputIndependent = document.getElementById('quantityInputIndependent');
+        if (quantityInput) quantityInput.required = true;
+        if (quantityInputIndependent) quantityInputIndependent.required = false;
+        
+    } else {
+        orderSection.style.display = 'none';
+        independentSection.style.display = 'block';
+        
+        // 독립적 입고일 때는 quantityInputIndependent 사용
+        const quantityInput = document.getElementById('quantityInput');
+        const quantityInputIndependent = document.getElementById('quantityInputIndependent');
+        if (quantityInput) quantityInput.required = false;
+        if (quantityInputIndependent) quantityInputIndependent.required = true;
+    }
+}
+
+// 모달이 열릴 때 자동으로 데이터 로드하는 이벤트 추가
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('receiveRegisterModal');
+    if (modal) {
+        modal.addEventListener('shown.bs.modal', function() {
+            // 모달이 완전히 열린 후 데이터 로드
+            if (typeof window.openReceiveModal === 'function') {
+                // 이미 openReceiveModal에서 데이터 로드를 하므로 여기서는 추가 작업 없음
+                console.log('입고 등록 모달이 열렸습니다.');
+            }
+        });
+    }
+});
+</script>
+
+</body>
+</html>

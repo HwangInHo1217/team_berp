@@ -1,0 +1,111 @@
+<!-- warehouse_stock_modal.html -->
+<div class="modal fade" id="warehouseStockModal" tabindex="-1" aria-hidden="true" th:fragment="warehouse_stock_modal">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-warehouse me-2"></i>
+                    <span id="modalWarehouseName">창고명</span> - 재고 현황
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+            </div>
+            <div class="modal-body">
+                <!-- 창고 정보 요약 -->
+                <div class="alert alert-info mb-3">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>창고코드:</strong> <span id="modalWarehouseCode">-</span>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>창고유형:</strong> <span id="modalWarehouseType">-</span>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>총 품목 수:</strong> <span id="modalTotalItems">0</span>개
+                        </div>
+                        <div class="col-md-3">
+                            <strong>총 재고량:</strong> <span id="modalTotalQty">0</span>개
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 검색 및 필터 -->
+                <div class="card mb-3">
+                    <div class="card-body py-2">
+                        <div class="row g-2">
+                            <div class="col-md-4">
+                                <input type="text" class="form-control form-control-sm" 
+                                       id="modalSearchInput" placeholder="품목명 또는 품목코드 검색">
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select form-select-sm" id="modalItemTypeFilter">
+                                    <option value="">전체 품목유형</option>
+                                    <option value="raw">자재</option>
+                                    <option value="product">완제품</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select form-select-sm" id="modalStockStatusFilter">
+                                    <option value="">전체 재고상태</option>
+                                    <option value="inStock">재고 있음</option>
+                                    <option value="outOfStock">재고 없음</option>
+                                    <option value="belowSafety">안전재고 미달</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <button class="btn btn-primary btn-sm w-100" id="modalSearchBtn">
+                                    <i class="fas fa-search"></i> 검색
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 재고 목록 테이블 -->
+                <div class="table-responsive" style="max-height: 400px;">
+                    <table class="table table-hover table-sm">
+                        <thead class="table-light sticky-top">
+                            <tr>
+                                <th width="5%">순번</th>
+                                <th width="15%">품목코드</th>
+                                <th width="25%">품목명</th>
+                                <th width="10%">품목유형</th>
+                                <th width="12%">재고수량</th>
+                                <th width="8%">단위</th>
+                                <th width="12%">최종입고일</th>
+                                <th width="13%">재고상태</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modalStockTableBody">
+                            <tr>
+                                <td colspan="8" class="text-center py-4">
+                                    <i class="fas fa-spinner fa-spin me-2"></i>
+                                    로딩 중...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 페이징 정보 -->
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div>
+                        <small class="text-muted" id="modalPaginationInfo">
+                            총 0개 품목
+                        </small>
+                    </div>
+                    <nav aria-label="페이지네이션">
+                        <ul class="pagination pagination-sm mb-0" id="modalPaginationUl">
+                            <!-- 동적 생성 -->
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-success" id="modalExcelDownloadBtn">
+                    <i class="fas fa-file-excel"></i> 엑셀 다운로드
+                </button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+            </div>
+        </div>
+    </div>
+</div>

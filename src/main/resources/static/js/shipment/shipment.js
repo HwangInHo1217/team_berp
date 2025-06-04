@@ -68,7 +68,9 @@ async function loadShipments() {
       const tdCompany = document.createElement("td");
       tdCompany.textContent = s.companyName || "";
       tr.appendChild(tdCompany);
-
+	  const tdOrderCode = document.createElement("td");
+	  tdOrderCode.textContent = s.orderNum || "";
+	  tr.appendChild(tdOrderCode);
       // 5) 품목코드
       const tdItemCode = document.createElement("td");
       tdItemCode.textContent = s.itemCode || "";
@@ -104,35 +106,9 @@ async function loadShipments() {
       tdComment.textContent = s.comment || "";
       tr.appendChild(tdComment);
 
-      // 12) 상세 버튼 (모달 또는 상세 페이지로 연결)
-      const tdDetail = document.createElement("td");
-      const btnDetail = document.createElement("button");
-      btnDetail.classList.add("btn", "btn-sm", "btn-info");
-      btnDetail.textContent = "상세";
-      // 예: 상세 모달을 띄우려면 버튼에 data-log-id 같은 속성을 둔다
-      btnDetail.setAttribute("data-log-id", s.logId);
-      btnDetail.addEventListener("click", function() {
-        // TODO: 상세 모달을 띄우는 로직을 여기에 추가
-        openShipmentDetailModal(s.logId);
-      });
-      tdDetail.appendChild(btnDetail);
-      tr.appendChild(tdDetail);
+    
 
-      // 13) 수정 버튼
-      const tdEdit = document.createElement("td");
-      const btnEdit = document.createElement("button");
-      btnEdit.classList.add("btn", "btn-sm", "btn-warning");
-      btnEdit.textContent = "수정";
-      btnEdit.setAttribute("data-log-id", s.logId);
-      btnEdit.addEventListener("click", function() {
-        // TODO: 수정 모달을 띄우는 로직을 여기에 추가
-        openShipmentEditModal(s.logId);
-      });
-      tdEdit.appendChild(btnEdit);
-      tr.appendChild(tdEdit);
-
-      // 테이블 바디에 붙이기
-      tbody.appendChild(tr);
+      
     });
 
   } catch (error) {
@@ -141,20 +117,6 @@ async function loadShipments() {
   }
 }
 
-/**
- * 출고 상세 모달 띄우기 (임시 함수 뼈대)
- */
-function openShipmentDetailModal(logId) {
-  // logId를 기반으로 /api/shipments/{logId} 같은 엔드포인트를 호출하여
-  // 상세 정보를 fetch 한 뒤, 모달 내용을 채워 화면에 보여줍니다.
-  console.log("상세 모달 열기: logId =", logId);
-  // 예: fetch(`/api/shipments/${logId}`) …
-}
 
-/**
- * 출고 수정 모달 띄우기 (임시 함수 뼈대)
- */
-function openShipmentEditModal(logId) {
-  console.log("수정 모달 열기: logId =", logId);
-  // 예: fetch(`/api/shipments/${logId}`) …
-}
+
+

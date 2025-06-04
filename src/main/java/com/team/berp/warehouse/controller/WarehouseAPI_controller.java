@@ -1,16 +1,23 @@
 package com.team.berp.warehouse.controller;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.util.StringUtils;
 
 import com.team.berp.domain.WarehouseType;
+import com.team.berp.stock.dto.StockResponseDTO;
+import com.team.berp.stock.service.StockService;
 import com.team.berp.warehouse.dto.WarehouseCreateRequestDTO;
 import com.team.berp.warehouse.dto.WarehouseResponseDTO;
 import com.team.berp.warehouse.service.Warehouse_service;
@@ -29,10 +36,12 @@ public class WarehouseAPI_controller {
 
     private static final Logger log = LoggerFactory.getLogger(WarehouseAPI_controller.class);
     private final Warehouse_service whsService;
+    private final StockService stockService; // 🔧 StockService 의존성 주입 추가
 
     @Autowired
-    public WarehouseAPI_controller(Warehouse_service whsService) {
+    public WarehouseAPI_controller(Warehouse_service whsService, StockService stockService) {
         this.whsService = whsService;
+        this.stockService = stockService; // 🔧 생성자에 stockService 추가
     }
 
     /**
@@ -159,5 +168,93 @@ public class WarehouseAPI_controller {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteWhs(@PathVariable("id") Long id) {
         return ApiUtils.handleDelete(() -> whsService.deleteWhs(id));
+    }
+    
+    /**
+     * 특정 창고의 재고 목록 조회 - GET /api/warehouses/{warehouseId}/stocks
+     * 창고별 재고 모달에서 사용
+     */
+    @GetMapping("/{warehouseId}/stocks")
+    public ResponseEntity<Page<StockResponseDTO>> getWarehouseStocks(
+            @PathVariable("warehouseId") Long warehouseId,
+            @RequestParam(name = "keyword", required = false) String keyword,
+            @RequestParam(name = "itemType", required = false) String itemType,
+            @RequestParam(name = "stockStatus", required = false) String stockStatus,
+            @RequestParam(name = "page", defaultValue = "0") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size,
+            @RequestParam(name = "sort", defaultValue = "item.name,ASC") String sort) {
+        
+        return ApiUtils.handle(() -> {
+            log.debug("창고별 재고 조회 요청 - warehouseId: {}", warehouseId);
+            
+            // 창고 존재 여부 확인
+            WarehouseResponseDTO warehouse = whsService.getWhsById(warehouseId);
+            if (warehouse == null) {
+                throw new IllegalArgumentException("존재하지 않는 창고입니다.");
+            }
+            
+            // 창고 코드로 재고 검색 (기존 StockService 활용)
+            String warehouseCode = warehouse.getWarehouseCode();
+            
+            // 정렬 조건 파싱
+            String[] sortParams = sort.split(",");
+            String sortField = sortParams[0];
+            Sort.Direction direction = sortParams.length > 1 && "ASC".equalsIgnoreCase(sortParams[1]) 
+                ? Sort.Direction.ASC : Sort.Direction.DESC;
+            
+            // 정렬 필드 매핑
+            sortField = mapSortField(sortField);
+            
+            Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortField));
+            
+            // 🔧 StockService 인스턴스 메서드로 호출 (static 제거)
+            Page<StockResponseDTO> stocks = stockService.getList(
+                keyword, warehouseCode, itemType, stockStatus, pageable);
+            
+            log.info("창고별 재고 조회 완료 - 창고: {}, 재고 수: {}", 
+                    warehouse.getWarehouseName(), stocks.getTotalElements());
+            
+            return stocks;
+        });
+    }
+    
+    /**
+     * 창고별 재고 요약 통계 - GET /api/warehouses/{warehouseId}/stocks/summary
+     */
+    @GetMapping("/{warehouseId}/stocks/summary")
+    public ResponseEntity<Map<String, Object>> getWarehouseStockSummary(
+            @PathVariable("warehouseId") Long warehouseId) {
+        
+        return ApiUtils.handle(() -> {
+            log.debug("창고별 재고 요약 조회 - warehouseId: {}", warehouseId);
+            
+            // 창고 존재 여부 확인
+            WarehouseResponseDTO warehouse = whsService.getWhsById(warehouseId);
+            if (warehouse == null) {
+                throw new IllegalArgumentException("존재하지 않는 창고입니다.");
+            }
+            
+            // 🔧 StockService 인스턴스 메서드로 호출 (static 제거)
+            Map<String, Object> summary = stockService.getWarehouseStockSummary(warehouseId);
+            
+            log.info("창고별 재고 요약 조회 완료 - 창고: {}", warehouse.getWarehouseName());
+            
+            return summary;
+        });
+    }
+
+    /**
+     * 정렬 필드 매핑 헬퍼 메서드
+     */
+    private String mapSortField(String sortField) {
+        return switch (sortField) {
+            case "itemCode" -> "item.code";
+            case "itemName" -> "item.name";
+            case "item.name" -> "item.name";
+            case "item.code" -> "item.code";
+            case "quantity" -> "quantity";
+            case "warehouseName" -> "warehouse.warehouseName";
+            default -> "item.name"; // 기본값: 품목명 정렬
+        };
     }
 }
