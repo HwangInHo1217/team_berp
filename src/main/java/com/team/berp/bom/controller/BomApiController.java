@@ -27,6 +27,7 @@ import com.team.berp.bom.dto.BomVersionResponseDTO;
 import com.team.berp.bom.dto.ItemSelectionDTO;
 import com.team.berp.bom.dto.UpdateBomRequestDTO;
 import com.team.berp.bom.service.BomService;
+import com.team.berp.bom.service.BomVersionService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -35,7 +36,7 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/bom") // ✅ 공통 prefix 추가
 public class BomApiController {
 	private final BomService bomService;
-
+	private final BomVersionService bomVersionService;
 	// ✅ 등록
     // 수정: 자동 생성된 versionId, versionCode를 함께 반환
     @PostMapping
@@ -105,7 +106,7 @@ public class BomApiController {
 	        itemSelectionDTO.getMaterials(),
 	        itemSelectionDTO.getProducts()
 	    );
-
+	    System.out.println("흠");
 	    return ResponseEntity.ok(response);
 	}
 	
@@ -119,5 +120,19 @@ public class BomApiController {
     public ResponseEntity<BomEditResponseDTO> getBomVersionDetail(@PathVariable("versionId") Long versionId) {
         BomEditResponseDTO response = bomService.getBomEditData(versionId);
         return ResponseEntity.ok(response);
+    }
+    
+    @DeleteMapping("/group/{parentItemId}")
+    public ResponseEntity<Void> deleteBomGroup(@PathVariable("parentItemId") Long parentItemId) {
+        bomService.deleteBomGroupByProductId(parentItemId);
+        return ResponseEntity.noContent().build();
+    }
+    /**
+     * ★ 추가 ★
+     * versionId 기준 – 해당 버전에 속한 자식 노드만 포함한 트리
+     */
+    @GetMapping("/tree/version/{versionId}")
+    public BomTreeDTO getBomTreeByVersion(@PathVariable("versionId") Long versionId) {
+        return bomVersionService.getBomTreeByVersion(versionId);
     }
 }

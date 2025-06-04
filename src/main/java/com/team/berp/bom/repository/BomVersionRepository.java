@@ -32,5 +32,12 @@ public interface BomVersionRepository extends JpaRepository<BomVersion, Long> {
         nativeQuery = true
     )
     Optional<BomVersion> findLatestVersionByParent(@Param("parentId") Long parentId);
+    
+    // 1) parentItemId로 BomVersion 찾기
+    List<BomVersion> findByParentItem_Id(Long parentItemId);
+
+    // 2) parentItemId로 BomVersion “모두” 삭제하기
+    //    JPA query method 이름 규칙에 따라 만들어 두면 편리
+    void deleteByParentItem_Id(Long parentItemId);
 
 }
