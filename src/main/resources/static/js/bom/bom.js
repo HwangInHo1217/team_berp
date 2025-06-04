@@ -107,7 +107,7 @@ function renderBomTable(items) {
 	items.forEach(item => {
 		const row = document.createElement("tr");
 		row.innerHTML = `
-      <td><input type="checkbox" value="${item.id}" /></td>
+      <input type="hidden" value="${item.id}" />
       <td>${item.code}</td>
       <td>${item.name}</td>
       <td>${item.type}</td>
@@ -115,9 +115,16 @@ function renderBomTable(items) {
       <td>${item.unit}</td>
       <td>${item.use}</td>
       <td><button class="btn btn-sm btn-info" onclick="openBomVersionSelectModal(${item.id})">보기</button></td>
-      
-      <td><button class="btn btn-sm btn-outline-secondary" onclick="openBomEditVersionSelectModal(${item.id})">수정</button></td>`;
-		tbody.appendChild(row);
+      <td><button class="btn btn-sm btn-outline-secondary" onclick="openBomEditVersionSelectModal(${item.id})">수정</button></td>
+	  <td>
+	    <button class="btn btn-sm btn-danger"
+	            onclick="deleteBomGroup(${item.id})">
+	      전체 삭제
+	    </button>
+	  </td>
+	  `;
+		
+	  tbody.appendChild(row);
 	});
 }
 
@@ -200,7 +207,7 @@ function loadBomVersionForView(versionId) {
 	      // versionId가 아니라, data.parentId(또는 data.parentItemId)로 변경하세요.
 	      // 만약 version API에서 parentItemId를 주지 않는다면,
 	      // loadBomTree에는 “data.parentId”가 아니라 “부모 품목 ID”를 사용해야 합니다.
-	      loadBomTree(data.parentId || data.parentItemId);
+	      loadBomTreeByVersion(versionId);
 
 	      // (d) 모달 숨기고 → modal.show()
 	      bootstrap.Modal.getInstance(
@@ -296,30 +303,33 @@ function loadBomVersionForEdit(versionId) {
 			alert("수정 정보 불러오기 실패");
 		});
 }
-
 function addEditRow() {
-	const area = document.getElementById("bomEditTableArea");
+  const area = document.getElementById("bomEditTableArea");
 
-	// ✅ 현재 이미 선택된 자재 ID들 수집
-	const selectedIds = Array.from(document.querySelectorAll("select[name='child_item_id[]']"))
-		.map(select => select.value);
+  // 현재 자재 행 개수(이미 렌더링된 div.row.g-2)를 센다.
+  const existingRows = area.querySelectorAll(".row.g-2");
+  const nextSeq = existingRows.length + 1;
 
-	// ✅ 선택되지 않은 자재 목록만 추림
-	const availableOptions = window.allRawItemOptions
-		.filter(opt => !selectedIds.includes(String(opt.value)));
+  // 현재 이미 선택된 자재 ID들 수집
+  const selectedIds = Array.from(document.querySelectorAll("select[name='child_item_id[]']"))
+    .map(select => select.value);
 
-	// ✅ 더 이상 추가할 수 있는 자재가 없다면 종료
-	if (availableOptions.length === 0) {
-		alert("선택 가능한 자재가 더 이상 없습니다.");
-		return;
-	}
+  // 선택되지 않은 자재 목록만 추림
+  const availableOptions = window.allRawItemOptions
+    .filter(opt => !selectedIds.includes(String(opt.value)));
 
-	// ✅ 행 DOM 생성
-	const row = document.createElement("div");
-	row.className = "row g-2 align-items-end mb-2";
+  // 더 이상 추가할 수 있는 자재가 없다면 종료
+  if (availableOptions.length === 0) {
+    alert("선택 가능한 자재가 더 이상 없습니다.");
+    return;
+  }
 
-	// ✅ innerHTML에 availableOptions만 포함
-	row.innerHTML = `
+  // 행 DOM 생성
+  const row = document.createElement("div");
+  row.className = "row g-2 align-items-end mb-2";
+
+  // innerHTML에 seq_no 값을 nextSeq로 넣어준다.
+  row.innerHTML = `
     <div class="col-md-2">
       <label class="form-label">자재</label>
       <select class="form-select" name="child_item_id[]">
@@ -328,7 +338,7 @@ function addEditRow() {
     </div>
     <div class="col-md-1">
       <label class="form-label">순번</label>
-      <input type="number" class="form-control" name="seq_no[]" />
+      <input type="number" class="form-control" name="seq_no[]" value="${nextSeq}"  />
     </div>
     <div class="col-md-1">
       <label class="form-label">소요량</label>
@@ -352,9 +362,8 @@ function addEditRow() {
     </div>
   `;
 
-	// ✅ 추가
-	area.appendChild(row);
-	disableAddButtonIfNoOptions();
+  area.appendChild(row);
+  disableAddButtonIfNoOptions();
 }
 
 
@@ -368,22 +377,35 @@ document.addEventListener("change", function(e) {
 
 function addChildRow() {
 	const container = document.getElementById('child-items-area');
-	const template = document.getElementById('child-item-template');
-	const clone = template.content.cloneNode(true);
-	const select = clone.querySelector("select[name='child_item_id[]']");
+	 const template = document.getElementById('child-item-template');
 
-	// ✅ 현재 선택된 자재 목록 추출
-	const selectedIds = Array.from(document.querySelectorAll("select[name='child_item_id[]']"))
-		.map(s => s.value);
+	 // 1) 먼저 «기존에 렌더링된 자재 행»을 셉니다.
+	 //    여기서는 container 내부에 이미 추가된 <div class="row…">들이 있다고 가정합니다.
+	 const existingRows = container.querySelectorAll(".row.g-2");
+	 const nextSeq = existingRows.length + 1;
 
-	// ✅ 선택되지 않은 자재만 렌더링
-	select.innerHTML = window.allRawItemOptions
-		.filter(opt => !selectedIds.includes(String(opt.value)))
-		.map(opt => `<option value="${opt.value}">${opt.label}</option>`)
-		.join('');
+	 // 2) 템플릿을 복제합니다.
+	 const clone = template.content.cloneNode(true);
 
-	container.appendChild(clone);
-	disableAddButtonIfNoOptions();
+	 // 3) 복제본에서 select[name='child_item_id[]'] 찾아 옵션을 세팅
+	 const select = clone.querySelector("select[name='child_item_id[]']");
+	 const selectedIds = Array.from(document.querySelectorAll("select[name='child_item_id[]']"))
+	   .map(s => s.value);
+	 select.innerHTML = window.allRawItemOptions
+	   .filter(opt => !selectedIds.includes(String(opt.value)))
+	   .map(opt => `<option value="${opt.value}">${opt.label}</option>`)
+	   .join('');
+
+	 // 4) 복제본에서 seq_no 입력란을 찾아, nextSeq 값을 넣어줍니다.
+	 //    (템플릿 안에 <input name="seq_no[]" …> 가 반드시 있어야 합니다.)
+	 const seqInput = clone.querySelector("input[name='seq_no[]']");
+	 if (seqInput) {
+	   seqInput.value = nextSeq;
+	 }
+
+	 // 5) 최종적으로 container에 붙이고, 버튼 활성/비활성 상태 갱신
+	 container.appendChild(clone);
+	 disableAddButtonIfNoOptions();
 }
 document.getElementById("bomForm").addEventListener("submit", function(e) {
 	e.preventDefault();
@@ -594,6 +616,19 @@ function loadBomTree(parentId) {
     });
 }
 
+function loadBomTreeByVersion(versionId) {
+  fetch(`/api/bom/tree/version/${versionId}`)
+    .then(res => res.json())
+    .then(tree => {
+      // 기존과 동일하게 렌더링 로직 호출
+      const bomTreeList = document.getElementById("bomTreeList");
+      bomTreeList.innerHTML = "";
+      renderTreeRecursive(tree, bomTreeList);
+    })
+    .catch(err => console.error("버전별 트리 조회 실패:", err));
+}
+
+
 function renderTreeRecursive(node, parentUl) {
   const li = document.createElement("li");
   li.textContent = node.itemName;
@@ -607,4 +642,26 @@ function renderTreeRecursive(node, parentUl) {
       renderTreeRecursive(childNode, childUl);
     });
   }
+}
+// ✅ 완제품(parentItem) 기준으로 BOM 전체를 삭제하는 함수
+function deleteBomGroup(parentItemId) {
+  if (!confirm("이 완제품의 BOM 전체를 삭제하시겠습니까?")) return;
+
+  fetch(`/api/bom/group/${parentItemId}`, {
+    method: "DELETE"
+  })
+    .then(res => {
+      if (res.status === 204) {
+        alert("완제품 기준 BOM 전체 삭제 성공");
+        loadBomList(); // 삭제 후 목록 갱신
+      } else {
+        return res.json().then(json => {
+          throw new Error(json.error || "삭제에 실패했습니다.");
+        });
+      }
+    })
+    .catch(err => {
+      console.error("❌ 그룹 삭제 실패:", err);
+      alert(err.message || "삭제 중 오류 발생");
+    });
 }

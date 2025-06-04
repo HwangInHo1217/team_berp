@@ -109,7 +109,7 @@ async function loadPendingOrders() {
     }
 }
 
-// 품목 옵션 업데이트
+// 품목 옵션 업데이트 (품목 변경 시 창고 필터링 이벤트 추가)
 function updateItemOptions() {
     const itemSelect = document.getElementById('itemSelect');
     if (itemSelect) {
@@ -120,13 +120,18 @@ function updateItemOptions() {
             option.value = item.id;
             option.textContent = `[${item.code}] ${item.name}`;
             option.dataset.unit = item.unit;
-            option.dataset.type = item.type;
+            option.dataset.type = item.type; // raw 또는 product
             itemSelect.appendChild(option);
+        });
+        
+        // 품목 변경 시 창고 필터링 이벤트 추가
+        itemSelect.addEventListener('change', function() {
+            filterWarehousesByItemType();
         });
     }
 }
 
-// 창고 옵션 업데이트
+// 창고 옵션 업데이트 (필터링 기능 추가)
 function updateWarehouseOptions() {
     const warehouseSelect = document.getElementById('warehouseSelect');
     if (warehouseSelect) {
@@ -136,9 +141,152 @@ function updateWarehouseOptions() {
             const option = document.createElement('option');
             option.value = warehouse.id;
             option.textContent = `[${warehouse.code}] ${warehouse.name}`;
-            option.dataset.type = warehouse.type;
+            option.dataset.type = warehouse.type; // RAW 또는 PRODUCT
             warehouseSelect.appendChild(option);
         });
+    }
+}
+
+// 품목 유형에 따른 창고 필터링 함수
+function filterWarehousesByItemType() {
+    const itemSelect = document.getElementById('itemSelect');
+    const warehouseSelect = document.getElementById('warehouseSelect');
+    
+    if (!itemSelect || !warehouseSelect) return;
+    
+    const selectedOption = itemSelect.selectedOptions[0];
+    let selectedItemType = null;
+    
+    if (selectedOption && selectedOption.dataset.type) {
+        selectedItemType = selectedOption.dataset.type; // 'raw' 또는 'product'
+    }
+    
+    // 모든 창고 옵션에 대해 활성화/비활성화 처리
+    Array.from(warehouseSelect.options).forEach(option => {
+        if (option.value === '') {
+            // 기본 옵션은 항상 활성화
+            option.disabled = false;
+            option.style.color = '';
+            return;
+        }
+        
+        const warehouseType = option.dataset.type; // 'RAW' 또는 'PRODUCT'
+        
+        if (selectedItemType) {
+            // 품목이 선택된 경우 유형 매칭 검사
+            const isMatched = (selectedItemType === 'raw' && warehouseType === 'RAW') ||
+                             (selectedItemType === 'product' && warehouseType === 'PRODUCT');
+            
+            option.disabled = !isMatched;
+            option.style.color = isMatched ? '' : '#ccc';
+            
+            if (!isMatched && option.selected) {
+                // 매칭되지 않는 창고가 선택되어 있으면 해제
+                warehouseSelect.value = '';
+            }
+        } else {
+            // 품목이 선택되지 않은 경우 모든 창고 활성화
+            option.disabled = false;
+            option.style.color = '';
+        }
+    });
+    
+    console.log('창고 필터링 완료 - 품목 유형:', selectedItemType);
+}
+
+// 발주 기반 입고에서도 창고 필터링 적용 (강제 필터링 버전)
+function filterWarehousesByOrderItem() {
+    const orderSelect = document.getElementById('pendingOrderSelect');
+    const warehouseSelect = document.getElementById('warehouseSelect');
+    
+    if (!orderSelect || !warehouseSelect) {
+        console.warn('⚠️ 발주 선택 또는 창고 선택 요소를 찾을 수 없습니다.');
+        return;
+    }
+    
+    const selectedOption = orderSelect.selectedOptions[0];
+    let selectedItemType = null;
+    
+    if (selectedOption && selectedOption.dataset.orderData) {
+        try {
+            const orderData = JSON.parse(selectedOption.dataset.orderData);
+            console.log('🔍 파싱된 발주 데이터:', orderData);
+            
+            // 품목 타입 추출
+            selectedItemType = orderData.itemType;
+            console.log('🔍 추출된 품목 타입:', selectedItemType);
+            
+            // 만약 itemType이 없다면 itemCode로 판단
+            if (!selectedItemType && orderData.itemCode) {
+                if (orderData.itemCode.startsWith('PRD')) {
+                    selectedItemType = 'product';
+                    console.log('🔍 품목 코드로 판단된 타입: product');
+                } else if (orderData.itemCode.startsWith('RAW') || orderData.itemCode.startsWith('MAT')) {
+                    selectedItemType = 'raw';
+                    console.log('🔍 품목 코드로 판단된 타입: raw');
+                }
+            }
+            
+        } catch (e) {
+            console.error('❌ 발주 데이터 파싱 오류:', e);
+            console.error('파싱 시도한 데이터:', selectedOption.dataset.orderData);
+        }
+    } else {
+        console.warn('⚠️ 선택된 발주 옵션이 없거나 orderData가 없습니다.');
+    }
+    
+    console.log('🏭 창고 필터링 시작 - 품목 타입:', selectedItemType);
+    
+    // 창고 필터링 적용
+    let enabledCount = 0;
+    let disabledCount = 0;
+    
+    Array.from(warehouseSelect.options).forEach((option, index) => {
+        if (option.value === '') {
+            option.disabled = false;
+            option.style.color = '';
+            option.style.backgroundColor = '';
+            return;
+        }
+        
+        const warehouseType = option.dataset.type; // 'RAW' 또는 'PRODUCT'
+        console.log(`창고 ${index}: ${option.textContent}, 타입: ${warehouseType}`);
+        
+        if (selectedItemType) {
+            const isMatched = (selectedItemType === 'raw' && warehouseType === 'RAW') ||
+                             (selectedItemType === 'product' && warehouseType === 'PRODUCT');
+            
+            option.disabled = !isMatched;
+            option.style.color = isMatched ? '#000' : '#ccc';
+            option.style.backgroundColor = isMatched ? '' : '#f5f5f5';
+            
+            if (!isMatched && option.selected) {
+                warehouseSelect.value = '';
+                console.log('🔄 매칭되지 않는 창고 선택 해제:', option.textContent);
+            }
+            
+            if (isMatched) {
+                enabledCount++;
+                console.log(`✅ 활성화된 창고: ${option.textContent}`);
+            } else {
+                disabledCount++;
+                console.log(`❌ 비활성화된 창고: ${option.textContent}`);
+            }
+            
+        } else {
+            // 품목 타입이 없으면 모든 창고 활성화
+            option.disabled = false;
+            option.style.color = '';
+            option.style.backgroundColor = '';
+        }
+    });
+    
+    console.log(`🏭 창고 필터링 완료 - 품목: ${selectedItemType}, 활성화: ${enabledCount}개, 비활성화: ${disabledCount}개`);
+    
+    // 품목 타입이 없으면 경고 표시
+    if (!selectedItemType) {
+        console.warn('⚠️ 발주에서 품목 타입을 찾을 수 없어 창고 필터링이 적용되지 않았습니다.');
+        alert('품목 타입을 확인할 수 없어 모든 창고가 선택 가능합니다.');
     }
 }
 
@@ -166,7 +314,7 @@ function updateSupplierOptions() {
     }
 }
 
-// 미완료 발주 옵션 업데이트 (수정된 버전)
+// 미완료 발주 옵션 업데이트 (품목 타입 포함된 수정된 버전)
 function updatePendingOrderOptions() {
     const orderSelect = document.getElementById('pendingOrderSelect');
     if (orderSelect) {
@@ -177,27 +325,32 @@ function updatePendingOrderOptions() {
             option.value = order.orderLineItemId;
             option.textContent = `${order.orderNum || '주문번호 없음'} - [${order.itemCode}] ${order.itemName} (${order.unitQty}${order.itemUnit || ''})`;
             
-            // 발주 데이터를 JSON 형태로 저장
+            // 발주 데이터를 JSON 형태로 저장 (품목 타입 포함!)
             option.dataset.orderData = JSON.stringify({
                 orderLineItemId: order.orderLineItemId,
                 itemId: order.itemId,
                 itemCode: order.itemCode,
                 itemName: order.itemName,
+                itemType: order.itemType, // 🔥 이 부분이 핵심!
                 unitQty: order.unitQty,
                 receivedQty: order.receivedQty || 0,
                 remainingQty: order.remainingQty || order.unitQty,
                 unit: order.itemUnit,
                 companyId: order.companyId,
                 companyName: order.companyName,
-                managerName: order.managerName || '담당자 미지정'
+                managerName: order.managerName || '담당자 미지정',
+                managerEmail: order.managerEmail || '',
+                managerPhone: order.managerPhone || ''
             });
             
             orderSelect.appendChild(option);
         });
+        
+        console.log('발주 옵션 업데이트 완료 (품목 타입 포함)');
     }
 }
 
-// 입고 유형 변경 처리
+// 입고 유형 변경 처리 (창고 필터링 초기화 추가)
 window.toggleReceiveType = function() {
     const orderBased = document.getElementById('receiveTypeOrder').checked;
     const orderSection = document.getElementById('orderBasedSection');
@@ -216,6 +369,10 @@ window.toggleReceiveType = function() {
         
         // 독립적 입고 필드 초기화
         resetIndependentFields();
+        
+        // 창고 필터링 초기화 (모든 창고 활성화)
+        resetWarehouseFilter();
+        
     } else {
         orderSection.style.display = 'none';
         independentSection.style.display = 'block';
@@ -223,10 +380,25 @@ window.toggleReceiveType = function() {
         
         // 발주 기반 필드 초기화
         resetOrderBasedFields();
+        
+        // 창고 필터링 초기화 (모든 창고 활성화)
+        resetWarehouseFilter();
     }
 };
 
-// 발주 선택 시 자동 데이터 입력 (수정된 버전)
+// 창고 필터링 초기화 함수
+function resetWarehouseFilter() {
+    const warehouseSelect = document.getElementById('warehouseSelect');
+    if (warehouseSelect) {
+        Array.from(warehouseSelect.options).forEach(option => {
+            option.disabled = false;
+            option.style.color = '';
+        });
+        warehouseSelect.value = '';
+    }
+}
+
+// 발주 선택 시 자동 데이터 입력 (강화된 디버깅 버전)
 window.onPendingOrderSelect = function() {
     const select = document.getElementById('pendingOrderSelect');
     const selectedOption = select.selectedOptions[0];
@@ -239,7 +411,9 @@ window.onPendingOrderSelect = function() {
     try {
         // 선택된 발주의 데이터를 자동으로 입력
         const orderData = JSON.parse(selectedOption.dataset.orderData || '{}');
-        console.log('선택된 발주 데이터:', orderData);
+        console.log('🔍 선택된 발주 전체 데이터:', orderData);
+        console.log('🔍 품목 타입:', orderData.itemType);
+        console.log('🔍 품목 코드:', orderData.itemCode);
         
         // 숨겨진 필드 설정
         document.getElementById('orderLineItemId').value = orderData.orderLineItemId || '';
@@ -257,7 +431,7 @@ window.onPendingOrderSelect = function() {
             quantityInput.value = remainingQty;
         }
         
-        // 담당자 정보 표시 (이메일, 연락처는 편집 가능하도록 유지)
+        // 담당자 정보 표시
         const managerNameInput = document.getElementById('managerNameInput');
         const managerEmailInput = document.getElementById('managerEmailInput');
         const managerPhoneInput = document.getElementById('managerPhoneInput');
@@ -266,7 +440,6 @@ window.onPendingOrderSelect = function() {
             managerNameInput.value = orderData.managerName || '담당자 미지정';
         }
         
-        // 이메일과 연락처는 기존 값이 있으면 표시하되, 편집 가능하도록 유지
         if (managerEmailInput) {
             managerEmailInput.value = orderData.managerEmail || '';
             managerEmailInput.placeholder = '이메일을 입력하세요';
@@ -277,9 +450,13 @@ window.onPendingOrderSelect = function() {
             managerPhoneInput.placeholder = '연락처를 입력하세요';
         }
         
-        console.log('발주 정보 자동 입력 완료 (이메일/연락처 편집 가능)');
+        // 🆕 창고 필터링 즉시 적용
+        console.log('🏭 창고 필터링 시작...');
+        filterWarehousesByOrderItem();
+        
+        console.log('✅ 발주 정보 자동 입력 완료');
     } catch (error) {
-        console.error('발주 데이터 파싱 오류:', error);
+        console.error('❌ 발주 데이터 파싱 오류:', error);
         clearOrderBasedData();
     }
 };

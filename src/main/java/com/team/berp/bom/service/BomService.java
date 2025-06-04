@@ -366,5 +366,30 @@ public class BomService {
 	        componentList
 	    );
 	}
+	
+	/**
+     * 완제품 하나를 “사용자 관점의 BOM 그룹”이라고 보면,
+     * 1) 해당 완제품 Item에 속한 BomVersion 삭제
+     *    (cascade로 인해 Bom 엔티티도 함께 지워짐)
+     * 2) 필요하다면 완제품(Item) 자체도 지움
+     */
+    @Transactional
+    public void deleteBomGroupByProductId(Long parentItemId) {
+        // 1) 완제품(Item)이 실제 존재하는지 확인 (Optional처리 등)
+        Item parentItem = itemRepository.findById(parentItemId)
+            .orElseThrow(() -> new RuntimeException("해당 완제품이 없습니다. ID=" + parentItemId));
+
+        // 2) 해당 완제품에 속하는 BomVersion이 있는지 (필요하다면)
+        List<BomVersion> versions = bomVersionRepository.findByParentItem_Id(parentItemId);
+        if (!versions.isEmpty()) {
+            // 3) BomVersion을 모두 삭제
+            //    → cascade=CascadeType.ALL 설정 덕분에,
+            //       BomVersion이 DELETE 될 때 연관된 Bom 엔티티들도 자동으로 삭제된다.
+            bomVersionRepository.deleteByParentItem_Id(parentItemId);
+        }
+
+        // 4) (선택) 만약 “완제품 자체도 함께 삭제”하고 싶다면 이 코드를 추가
+        // itemRepository.delete(parentItem);
+    }
 
 }

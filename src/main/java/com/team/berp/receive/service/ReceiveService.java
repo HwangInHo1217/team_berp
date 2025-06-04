@@ -10,6 +10,7 @@ import com.team.berp.stock.service.StockBusinessService;
 import com.team.berp.stock.dto.StockRequestDTO;
 import com.team.berp.warehouse.repository.Warehouse_repository;
 import com.team.berp.order.repository.Order_OrderLineItemRepository;
+import com.team.berp.client.repository.ClientRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,7 +22,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * 입고 관리 서비스 - 발주기반/독립적 입고 구분 처리
+ * 입고 관리 서비스 - 발주기반/독립적 입고 구분 처리 (독립적 입고 담당자 정보 개선)
  */
 @Service
 @RequiredArgsConstructor
@@ -34,6 +35,7 @@ public class ReceiveService {
     private final ItemRepository itemRepo;
     private final Warehouse_repository warehouseRepo;
     private final Order_OrderLineItemRepository orderLineItemRepo;
+    private final ClientRepository clientRepo;
 
     /**
      * 입고 이력 조회 - 날짜 범위와 타입 필터 적용
@@ -67,6 +69,9 @@ public class ReceiveService {
                     dto.setOrderNumber(log.getOrderLineItem().getCompanyOrder().getOrderNum());
                 } else {
                     dto.setReceiveType("INDEPENDENT"); // 독립적 입고
+                    
+                    // 🆕 독립적 입고에서 담당자 정보 추가 처리
+                    enhanceIndependentReceiveInfo(dto, log);
                 }
                 
                 return dto;
@@ -89,7 +94,66 @@ public class ReceiveService {
     }
 
     /**
-     * 입고 등록 처리 - 발주기반/독립적 입고 구분
+     * 🆕 독립적 입고에서 담당자 정보 보강 
+     * comment에서 공급업체 정보를 추출하거나 기본 담당자 정보 설정
+     */
+    private void enhanceIndependentReceiveInfo(ReceiveResponseDTO dto, InventoryLog log) {
+        try {
+            // comment에서 공급업체 정보가 있는지 확인
+            String comment = log.getComment();
+            if (comment != null && comment.contains("공급업체:")) {
+                // comment에서 공급업체명 추출 시도
+                extractSupplierFromComment(dto, comment);
+            } else {
+                // 기본 독립적 입고 정보 설정
+                dto.setCompanyName("독립적 입고");
+                dto.setManagerName("시스템 관리자");
+            }
+            
+            System.out.println("독립적 입고 정보 보강 완료 - " + dto.getItemName());
+            
+        } catch (Exception e) {
+            System.err.println("독립적 입고 정보 보강 실패: " + e.getMessage());
+            // 에러 시 기본값 설정
+            dto.setCompanyName("독립적 입고");
+            dto.setManagerName("담당자 미지정");
+        }
+    }
+
+    /**
+     * comment에서 공급업체 정보 추출
+     */
+    private void extractSupplierFromComment(ReceiveResponseDTO dto, String comment) {
+        try {
+            // "[독립적 입고] 공급업체: ABC회사, 담당자: 홍길동" 형태로 저장된 경우
+            if (comment.contains("공급업체:")) {
+                String[] parts = comment.split("공급업체:");
+                if (parts.length > 1) {
+                    String supplierPart = parts[1].trim();
+                    if (supplierPart.contains(",")) {
+                        String supplierName = supplierPart.split(",")[0].trim();
+                        dto.setCompanyName(supplierName);
+                        
+                        // 담당자 정보도 있는지 확인
+                        if (supplierPart.contains("담당자:")) {
+                            String[] managerParts = supplierPart.split("담당자:");
+                            if (managerParts.length > 1) {
+                                String managerName = managerParts[1].trim();
+                                dto.setManagerName(managerName);
+                            }
+                        }
+                    } else {
+                        dto.setCompanyName(supplierPart);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("comment에서 공급업체 정보 추출 실패: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 입고 등록 처리 - 발주기반/독립적 입고 구분 (독립적 입고 comment 개선)
      */
     @Transactional
     public void processReceive(ReceiveRequestDTO request) {
@@ -108,7 +172,14 @@ public class ReceiveService {
             stockRequest.setItemId(request.getItemId());
             stockRequest.setWarehouseId(request.getWarehouseId());
             stockRequest.setQuantity(request.getQuantity());
-            stockRequest.setComment(request.generateComment());
+            
+            // 🆕 독립적 입고인 경우 comment에 공급업체 정보 추가
+            if ("INDEPENDENT".equals(request.getReceiveType()) && request.getSupplierId() != null) {
+                String enhancedComment = generateEnhancedComment(request);
+                stockRequest.setComment(enhancedComment);
+            } else {
+                stockRequest.setComment(request.generateComment());
+            }
             
             stockBusinessService.stockIn(stockRequest);
             
@@ -126,6 +197,39 @@ public class ReceiveService {
             System.err.println("❌ 입고 등록 시스템 오류: " + e.getMessage());
             e.printStackTrace();
             throw new RuntimeException("입고 등록 중 오류가 발생했습니다: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 🆕 독립적 입고용 강화된 comment 생성
+     */
+    private String generateEnhancedComment(ReceiveRequestDTO request) {
+        try {
+            StringBuilder comment = new StringBuilder("[독립적 입고]");
+            
+            // 공급업체 정보 추가
+            if (request.getSupplierId() != null) {
+                Company supplier = clientRepo.findById(request.getSupplierId()).orElse(null);
+                if (supplier != null) {
+                    comment.append(" 공급업체: ").append(supplier.getCompanyName());
+                    
+                    // 담당자 정보 추가
+                    if (supplier.getEmployee() != null) {
+                        comment.append(", 담당자: ").append(supplier.getEmployee().getEmpName());
+                    }
+                }
+            }
+            
+            // 추가 비고가 있으면 추가
+            if (request.getNote() != null && !request.getNote().trim().isEmpty()) {
+                comment.append(" - ").append(request.getNote());
+            }
+            
+            return comment.toString();
+            
+        } catch (Exception e) {
+            System.err.println("강화된 comment 생성 실패: " + e.getMessage());
+            return request.generateComment(); // 기본 comment로 fallback
         }
     }
 
@@ -160,7 +264,7 @@ public class ReceiveService {
     }
 
     /**
-     * 특정 입고 상세 정보 조회
+     * 특정 입고 상세 정보 조회 (독립적 입고 정보 개선)
      */
     public ReceiveResponseDTO getReceiveDetail(Long logId) {
         System.out.println("🔍 입고 상세 조회 - logId: " + logId);
@@ -180,8 +284,15 @@ public class ReceiveService {
                 result.setReceiveType("ORDER_BASED");
                 result.setOrderNumber(log.getOrderLineItem().getCompanyOrder().getOrderNum());
                 result.setCompanyName(log.getOrderLineItem().getCompanyOrder().getCompany().getCompanyName());
+                
+                if (log.getOrderLineItem().getCompanyOrder().getCompany().getEmployee() != null) {
+                    result.setManagerName(log.getOrderLineItem().getCompanyOrder().getCompany().getEmployee().getEmpName());
+                }
             } else {
                 result.setReceiveType("INDEPENDENT");
+                
+                // 🆕 독립적 입고에서 담당자 정보 보강
+                enhanceIndependentReceiveInfo(result, log);
             }
             
             System.out.println("✅ 입고 상세 조회 완료: " + result.getItemName());

@@ -1,32 +1,37 @@
 package com.team.berp.order.apicontroller;
 
-import com.team.berp.domain.Company;
-import com.team.berp.domain.Item;
-import com.team.berp.domain.Company.CompanyType;
-import com.team.berp.order.dto.CreateOrderRequest;
-import com.team.berp.order.dto.OrderDetailResponse;
-import com.team.berp.order.dto.OrderSummaryDto;
-import com.team.berp.order.dto.ItemWarehouseResponse;
-import com.team.berp.order.service.OrderService;
-import com.team.berp.stock.dto.StockResponseDTO;
-import com.team.berp.stock.service.StockService;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.stream.Collectors;
 
-import lombok.RequiredArgsConstructor;
-
-import com.team.berp.order.repository.Order_CompanyRepository;
-import com.team.berp.order.repository.Order_ItemRepository;
-import org.springframework.web.bind.annotation.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
+import com.team.berp.domain.Company;
+import com.team.berp.domain.Company.CompanyType;
+import com.team.berp.domain.ItemType;
+import com.team.berp.item.repository.ItemRepository;
+import com.team.berp.order.dto.CreateOrderRequest;
+import com.team.berp.order.dto.ItemWarehouseResponse;
+import com.team.berp.order.dto.OrderDetailResponse;
+import com.team.berp.order.dto.OrderSummaryDto;
+import com.team.berp.order.repository.Order_CompanyRepository;
+import com.team.berp.order.service.OrderService;
+import com.team.berp.stock.service.StockService;
+
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api")
@@ -35,7 +40,7 @@ public class OrderApiController {
 
     private final OrderService               orderService;
     private final Order_CompanyRepository    companyRepo;
-    private final Order_ItemRepository       itemRepo;
+    private final ItemRepository      itemRepo;
     private final StockService stockService;
     
  
@@ -65,7 +70,7 @@ public class OrderApiController {
     // --- 품목 조회 (등록·수정 modal 용 select 채우기) ---
     @GetMapping("/items")
     public List<ItemDto> listItems() {
-        return itemRepo.findAll().stream()
+        return itemRepo.findByType(ItemType.product).stream()
             .map(i -> new ItemDto(
                    i.getId(),
                    i.getName(),

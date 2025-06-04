@@ -32,7 +32,7 @@ public class Bom {
     private Integer qty;
 
     /** BOM 버전 (연관관계 주인) */
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, cascade=CascadeType.ALL)
     @JoinColumn(name = "bom_version_id")
     @JsonIgnore
     private BomVersion bomVersion;
