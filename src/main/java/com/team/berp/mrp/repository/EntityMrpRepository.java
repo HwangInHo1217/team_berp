@@ -1,13 +1,12 @@
+// File: src/main/java/com/team/berp/mrp/repository/EntityMrpRepository.java
 package com.team.berp.mrp.repository;
 
 import com.team.berp.domain.Mrp;
-
 import java.time.LocalDate;
-
+import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.*;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.repository.query.Param;
 
 public interface EntityMrpRepository extends JpaRepository<Mrp, Long>, JpaSpecificationExecutor<Mrp> {
@@ -55,5 +54,8 @@ public interface EntityMrpRepository extends JpaRepository<Mrp, Long>, JpaSpecif
             LocalDate startDate1, LocalDate endDate1, String itemCode, 
             LocalDate startDate2, LocalDate endDate2, String itemName, 
             Pageable pageable
-        );
+    );
+
+    // ← 아래 메서드를 리포지토리에 추가하세요!  
+    List<Mrp> findByPlan_PlanId(Long planId);
 }

@@ -27,8 +27,8 @@
             </select>
             <select id="searchType" class="form-select me-2 mb-1" style="width:140px;">
               <option value="name">거래처명</option>
-              <option value="ceo">대표자명</option>
-              <option value="employee">담당자명</option>
+              <option value="ceo">담당자명</option>
+              <option value="employee">거래처 담당자명</option>
               <option value="biznum">사업자번호</option>
             </select>
             <input type="text" id="searchKeyword" class="form-control me-2 mb-1" placeholder="검색어 입력" style="width:180px;" />
@@ -52,10 +52,10 @@
               <tr>
                 <th><input type="checkbox" id="all-check"></th>
                 <th>거래처명</th>
-                <th>대표자명</th>
+                <th>담당자</th>
                 <th>사업자번호</th>
                 <th>전화번호</th>
-                <th>담당자</th>
+                <th>거래처 담당자</th>
                 <th>상태</th>
                 <th>상세</th>
                 <th>수정</th>
@@ -98,7 +98,7 @@
                     <input type="text" class="form-control" id="companyName" name="companyName" required />
                   </div>
                   <div class="col-md-6">
-                    <label class="form-label">대표자명</label>
+                    <label class="form-label">담당자명</label>
                     <input type="text" class="form-control" id="ceoName" name="ceoName" required />
                   </div>
                 </div>
@@ -131,9 +131,9 @@
 
                 <div class="row mb-3">
                   <div class="col-md-6">
-                    <label class="form-label">담당자</label>
+                    <label class="form-label">거래처 담당자</label>
                     <select class="form-select" id="employeeId" name="employeeId" required>
-                      <option value="">담당자 선택</option>
+                      <option value="">거래처 담당자 선택</option>
                     </select>
                   </div>
                   <div class="col-md-6">
