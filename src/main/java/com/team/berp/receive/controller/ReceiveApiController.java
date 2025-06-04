@@ -102,14 +102,14 @@ public class ReceiveApiController {
     }
 
     /**
-     * 공급업체 목록 조회 - GET /api/receive/suppliers (최적화된 버전)
+     * 공급업체 목록 조회 - GET /api/receive/suppliers (수정된 버전 - 모든 공급업체 출력)
      */
     @GetMapping("/suppliers")
     public ResponseEntity<List<Map<String, Object>>> getSuppliers() {
         try {
             System.out.println("🏢 공급업체 목록 조회 시작");
             
-            // 공급업체만 필터링하여 빠르게 조회
+            // 모든 공급업체 조회 (제한 없이)
             List<Map<String, Object>> result = clientRepo.findAll().stream()
                 .filter(company -> {
                     boolean isActive = "Y".equals(company.getUseYn());
@@ -117,7 +117,7 @@ public class ReceiveApiController {
                                        Company.CompanyType.BOTH.equals(company.getCompanyType());
                     return isActive && isSupplier;
                 })
-                .limit(50) // 성능을 위해 50개로 제한
+                // .limit(50) 제거 - 모든 공급업체 표시
                 .map(company -> {
                     Map<String, Object> supplierMap = new HashMap<>();
                     supplierMap.put("companyId", company.getCompanyId());
@@ -139,7 +139,7 @@ public class ReceiveApiController {
                 })
                 .collect(Collectors.toList());
             
-            System.out.println("✅ 공급업체 목록 조회 완료: " + result.size() + "개");
+            System.out.println("✅ 공급업체 목록 조회 완료: " + result.size() + "개 (전체 공급업체)");
             return ResponseEntity.ok(result);
             
         } catch (Exception e) {
