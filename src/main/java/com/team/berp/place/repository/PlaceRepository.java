@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.team.berp.domain.CompanyOrder;
 
@@ -24,5 +25,31 @@ public interface PlaceRepository extends JpaRepository<CompanyOrder, Long> {
 		       "JOIN FETCH li.item " +
 		       "WHERE o.orderType = com.team.berp.domain.CompanyOrder.OrderType.SUPPLIER")
 		List<CompanyOrder> findAllWithItems();
+	
+	// ✅ 품목명으로 발주 검색하는 메서드 추가
+	@Query("SELECT DISTINCT co FROM CompanyOrder co " +
+	           "JOIN FETCH co.lineItems li " +
+	           "JOIN FETCH li.item i " +
+	           "JOIN FETCH co.company comp " +
+	           "LEFT JOIN FETCH comp.employee " +
+	           "WHERE LOWER(i.name) LIKE LOWER(CONCAT('%', :itemName, '%'))")
+	    List<CompanyOrder> findOrdersByItemName(@Param("itemName") String itemName);
+	
+	// ✅ 메서드명 기반 검색 (더 간단함)
+//    @Query("SELECT DISTINCT co FROM CompanyOrder co " +
+//           "JOIN FETCH co.lineItems li " +
+//           "JOIN FETCH li.item i " +
+//           "JOIN FETCH co.company comp " +
+//           "LEFT JOIN FETCH comp.employee " +
+//           "WHERE i.name LIKE %:itemName%")
+//    List<CompanyOrder> findByLineItemsItemNameContainingIgnoreCase(@Param("itemName") String itemName);
 
+	// ✅ Native Query 사용 (가장 확실함)
+//    @Query(value = "SELECT DISTINCT co.* FROM company_order co " +
+//                   "JOIN order_line_item oli ON co.order_id = oli.company_order_id " +
+//                   "JOIN item i ON oli.item_id = i.id " +
+//                   "WHERE LOWER(i.name) LIKE LOWER(CONCAT('%', :itemName, '%'))", 
+//           nativeQuery = true)
+//    List<CompanyOrder> findOrdersByItemNameNative(@Param("itemName") String itemName);
+	
 }

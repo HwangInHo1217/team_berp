@@ -2,7 +2,10 @@ package com.team.berp.place.service;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -162,36 +165,282 @@ public class PlaceServiceImpl implements PlaceService{ //실제 구현
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
-        List<PlaceDTO.OrderLineItemDTO> lineItemDTOs = order.getLineItems().stream()
-                .map((OrderLineItem item) -> {
+        List<OrderLineItemDTO> lineItemDTOs = order.getLineItems().stream()
+        	    .map(item -> {
+        	        Item entityItem = item.getItem();
+        	        Long unitQty = item.getUnitQty() != null ? item.getUnitQty().longValue() : 0L;
+        	        Long unitPrice = item.getUnitPrice() != null ? item.getUnitPrice() : 0L;
+        	        Long unitPriceAll = unitQty * unitPrice;
+
+        	        return OrderLineItemDTO.builder()
+        	            .orderLineItemId(item.getOrderLineItemId())
+        	            .itemId(entityItem.getId())
+        	            .itemName(entityItem.getName())
+        	            .itemCode(entityItem.getCode())
+        	            .unit(item.getUnit() != null ? item.getUnit() : "")
+        	            .unitPrice(unitPrice)
+        	            .unitQty(unitQty)
+        	            .unitPriceAll(unitPriceAll)
+        	            .build();
+        	    })
+        	    .collect(Collectors.toList());
+
+        	// 총 주문 수량 (orderQty) = 개별 unitQty 합계
+        	int totalOrderQty = lineItemDTOs.stream()
+        	    .mapToInt(dto -> dto.getUnitQty() != null ? dto.getUnitQty().intValue() : 0)
+        	    .sum();
+
+        	// 총 금액 (amount) = unitPriceAll 합계
+        	long totalAmount = lineItemDTOs.stream()
+        	    .mapToLong(dto -> dto.getUnitPriceAll() != null ? dto.getUnitPriceAll() : 0L)
+        	    .sum();
+
+        	return PlaceDTO.builder()
+        	    .orderId(order.getOrderId())
+        	    .orderNum(order.getOrderNum())
+        	    .orderDate(order.getOrderDate().format(formatter))
+        	    .orderType(order.getOrderType().name())
+        	    .companyId(company.getCompanyId())
+        	    .note(order.getNote())
+        	    .employeeId(employee.getEmployeeId())
+        	    .employeeName(employee.getEmpName())
+        	    .employeeTel(employee.getEmpTel())
+        	    .employeeEmail(employee.getEmpEmail())
+        	    .lineItems(lineItemDTOs)
+        	    .orderQty(totalOrderQty)  // 전체 총 주문 수량
+        	    .amount(totalAmount)     // 전체 총 금액
+        	    .build();
+
+    }
+
+    @Override
+    @Transactional
+    public CompanyOrder updateOrder(PlaceDTO dto) {
+        try {
+            // 1. 기존 발주 (CompanyOrder) 조회
+            CompanyOrder order = companyOrderRepository.findById(dto.getOrderId())
+                .orElseThrow(() -> new RuntimeException("존재하지 않는 발주입니다."));
+
+            System.out.println("✅ 수정할 발주 조회 성공: " + order.getOrderId());
+
+            // 2. 회사 정보 변경
+            if (dto.getCompanyId() != null) {
+                companyRepository.findById(dto.getCompanyId())
+                    .ifPresentOrElse(order::setCompany, () -> {
+                        throw new RuntimeException("회사 정보가 없습니다.");
+                    });
+            }
+
+            // 3. 주문 타입 변경
+            try {
+                CompanyOrder.OrderType orderType = CompanyOrder.OrderType.valueOf(dto.getOrderType());
+                order.setOrderType(orderType);
+            } catch (IllegalArgumentException e) {
+                throw new RuntimeException("잘못된 주문 유형입니다: " + dto.getOrderType());
+            }
+
+            // 4. 주문 날짜 변경
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            LocalDate orderDate = LocalDate.parse(dto.getOrderDate(), formatter);
+            order.setOrderDate(orderDate);
+
+            // 5. 비고 변경
+            order.setNote(dto.getNote());
+
+            // 6. 기존 발주 품목들을 개별적으로 업데이트 (삭제 후 재등록 방식 개선)
+            List<OrderLineItem> existingItems = order.getLineItems();
+            System.out.println("✅ 기존 품목 개수: " + existingItems.size());
+            
+            // 기존 품목들을 Map으로 변환 (orderLineItemId를 키로 사용)
+            Map<Long, OrderLineItem> existingItemMap = existingItems.stream()
+                .collect(Collectors.toMap(OrderLineItem::getOrderLineItemId, item -> item));
+
+            long totalOrderQty = 0L;
+            long totalAmount = 0L;
+
+            // 7. DTO에서 온 품목들을 처리
+            List<OrderLineItemDTO> lineItems = dto.getLineItems();
+            if (lineItems != null && !lineItems.isEmpty()) {
+                for (OrderLineItemDTO itemDTO : lineItems) {
+                    OrderLineItem lineItem;
+                    
+                    // orderLineItemId가 있으면 기존 항목 수정, 없으면 새로 생성
+                    if (itemDTO.getOrderLineItemId() != null && 
+                        existingItemMap.containsKey(itemDTO.getOrderLineItemId())) {
+                        
+                        // 기존 항목 수정
+                        lineItem = existingItemMap.get(itemDTO.getOrderLineItemId());
+                        System.out.println("✅ 기존 품목 수정: " + lineItem.getOrderLineItemId());
+                        
+                        // Map에서 제거 (나중에 삭제되지 않도록)
+                        existingItemMap.remove(itemDTO.getOrderLineItemId());
+                    } else {
+                        // 새 항목 생성
+                        lineItem = new OrderLineItem();
+                        lineItem.setCompanyOrder(order);
+                        System.out.println("✅ 새 품목 생성");
+                    }
+
+                    // 품목 엔티티 조회
+                    Item item = itemRepository.findById(itemDTO.getItemId())
+                        .orElseThrow(() -> new RuntimeException("해당 품목이 존재하지 않습니다: " + itemDTO.getItemId()));
+
+                    // 데이터 설정
+                    lineItem.setItem(item);
+                    lineItem.setUnitQty(itemDTO.getUnitQty().intValue());
+                    lineItem.setUnitPrice(itemDTO.getUnitPrice());
+                    lineItem.setUnit(itemDTO.getUnit());
+
+                    Long unitPriceAll = itemDTO.getUnitQty() * itemDTO.getUnitPrice();
+                    lineItem.setUnitPriceall(unitPriceAll);
+
+                    // 저장
+                    orderLineItemRepository.save(lineItem);
+
+                    // 총합 계산
+                    totalOrderQty += itemDTO.getUnitQty();
+                    totalAmount += unitPriceAll;
+                }
+            }
+
+            // 8. Map에 남아있는 항목들은 삭제 (DTO에서 제거된 항목들)
+            if (!existingItemMap.isEmpty()) {
+                System.out.println("✅ 삭제할 품목 개수: " + existingItemMap.size());
+                orderLineItemRepository.deleteAll(existingItemMap.values());
+            }
+
+            // 9. 총 수량, 총 금액 업데이트
+            order.setOrderQty((int) totalOrderQty);
+            order.setAmount(totalAmount);
+
+            // 10. 발주 저장
+            CompanyOrder updatedOrder = companyOrderRepository.save(order);
+            System.out.println("✅ 발주 수정 완료: " + updatedOrder.getOrderId());
+
+            return updatedOrder;
+            
+        } catch (Exception e) {
+            System.err.println("❌ 발주 수정 중 오류 발생: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("발주 수정 중 오류가 발생했습니다: " + e.getMessage());
+        }
+    }
+    
+    @Override
+    public PlaceDTO getPlaceDetailData(Long lineItemId) {
+        try {
+            OrderLineItem lineItem = orderLineItemRepository.findById(lineItemId)
+                    .orElseThrow(() -> new RuntimeException("존재하지 않는 품목입니다."));
+
+            CompanyOrder order = lineItem.getCompanyOrder();
+            Company company = order.getCompany();
+            Employee employee = company.getEmployee();
+
+            // ✅ 올바른 디버깅 코드
+            System.out.println("========== 상세 조회 디버깅 ==========");
+            System.out.println("lineItemId: " + lineItemId);
+            System.out.println("orderId: " + order.getOrderId());
+            System.out.println("companyId: " + company.getCompanyId());
+            System.out.println("companyName: '" + company.getCompanyName() + "'");
+            System.out.println("companyName null 체크: " + (company.getCompanyName() == null));
+            System.out.println("companyName 빈문자열 체크: " + (company.getCompanyName() != null && company.getCompanyName().trim().isEmpty()));
+            System.out.println("=====================================");
+
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+            // 해당 발주의 모든 품목 정보
+            List<OrderLineItemDTO> lineItemDTOs = order.getLineItems().stream()
+                .map(item -> {
                     Item entityItem = item.getItem();
-                    return PlaceDTO.OrderLineItemDTO.builder()
-                            .orderLineItemId(item.getOrderLineItemId()) // ✅ 필드 누락 주의
-                            .itemId(entityItem.getId())
-                            .itemName(entityItem.getName())
-                            .itemCode(entityItem.getCode())
-                            .unit(item.getUnit())
-                            .unitPrice(item.getUnitPrice())
-                            .unitQty((long) item.getUnitQty())
-                            .unitPriceAll(item.getUnitPriceall())
-                            .build();
+                    Long unitQty = item.getUnitQty() != null ? item.getUnitQty().longValue() : 0L;
+                    Long unitPrice = item.getUnitPrice() != null ? item.getUnitPrice() : 0L;
+                    Long unitPriceAll = unitQty * unitPrice;
+
+                    // ✅ itemType 변환 로직
+                    String itemTypeString;
+                    if (entityItem.getType() == ItemType.raw) {
+                        itemTypeString = "자재";
+                    } else if (entityItem.getType() == ItemType.product) {
+                        itemTypeString = "완제품";
+                    } else {
+                        itemTypeString = entityItem.getType().name();
+                    }
+
+                    return OrderLineItemDTO.builder()
+                        .orderLineItemId(item.getOrderLineItemId())
+                        .itemId(entityItem.getId())
+                        .itemName(entityItem.getName())
+                        .itemCode(entityItem.getCode())
+                        .itemType(itemTypeString)
+                        .unit(item.getUnit() != null ? item.getUnit() : "")
+                        .unitPrice(unitPrice)
+                        .unitQty(unitQty)
+                        .unitPriceAll(unitPriceAll)
+                        .build();
                 })
                 .collect(Collectors.toList());
 
-        return PlaceDTO.builder()
-                .orderId(order.getOrderId()) // ✅ 누락
-                .orderNum(order.getOrderNum()) // ✅ 누락
-                .orderDate(order.getOrderDate().format(formatter))
-                .orderType(order.getOrderType().name()) // ✅ 누락
-                .companyId(company.getCompanyId())
-                .note(order.getNote()) // ✅ 누락
-                .employeeId(employee.getEmployeeId())
-                .employeeName(employee.getEmpName()) // ✅ 누락
-                .employeeTel(employee.getEmpTel()) // ✅ 누락
-                .employeeEmail(employee.getEmpEmail()) // ✅ 누락
-                .lineItems(lineItemDTOs)
-                .build();
-    }
+            // 총 주문 수량과 금액 계산
+            int totalOrderQty = lineItemDTOs.stream()
+                .mapToInt(dto -> dto.getUnitQty() != null ? dto.getUnitQty().intValue() : 0)
+                .sum();
 
+            long totalAmount = lineItemDTOs.stream()
+                .mapToLong(dto -> dto.getUnitPriceAll() != null ? dto.getUnitPriceAll() : 0L)
+                .sum();
+
+            // ✅ companyName null/빈값 처리
+            String companyName = company.getCompanyName();
+            if (companyName == null || companyName.trim().isEmpty()) {
+                companyName = "회사명 미등록 (ID: " + company.getCompanyId() + ")";
+                System.out.println("⚠️ 회사명이 null이거나 빈값입니다. companyId: " + company.getCompanyId());
+            }
+
+            return PlaceDTO.builder()
+                .orderId(order.getOrderId())
+                .orderNum(order.getOrderNum())
+                .orderDate(order.getOrderDate().format(formatter))
+                .orderType(order.getOrderType().name())
+                .companyId(company.getCompanyId())
+                .companyName(companyName) // ✅ 처리된 회사명 사용
+                .note(order.getNote())
+                .employeeId(employee.getEmployeeId())
+                .employeeName(employee.getEmpName())
+                .employeeTel(employee.getEmpTel())
+                .employeeEmail(employee.getEmpEmail())
+                .lineItems(lineItemDTOs)
+                .orderQty(totalOrderQty)
+                .amount(totalAmount)
+                .build();
+                
+        } catch (Exception e) {
+            System.err.println("❌ 상세 조회 오류: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("상세 정보 조회 중 오류가 발생했습니다: " + e.getMessage());
+        }
+    }
     
+    @Override
+    public List<CompanyOrder> searchOrdersByItemName(String itemName) {
+        try {
+            System.out.println("✅ 품목명 검색 시작 - 키워드: " + itemName);
+            
+            // 방법 1: 수정된 @Query 메서드 사용
+            List<CompanyOrder> searchResults = companyOrderRepository.findOrdersByItemName(itemName);
+            
+            // 방법 2: 메서드명 기반 사용 (위에서 구현한 경우)
+            // List<CompanyOrder> searchResults = companyOrderRepository.findByLineItemsItemNameContainingIgnoreCase(itemName);
+            
+            // 방법 3: Native Query 사용 (위에서 구현한 경우)
+            // List<CompanyOrder> searchResults = companyOrderRepository.findOrdersByItemNameNative(itemName);
+            
+            System.out.println("✅ 검색 완료 - 결과 개수: " + searchResults.size());
+            return searchResults;
+            
+        } catch (Exception e) {
+            System.err.println("❌ 검색 오류: " + e.getMessage());
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
+    }
 }
