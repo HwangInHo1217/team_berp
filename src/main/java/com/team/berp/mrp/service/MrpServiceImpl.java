@@ -1,4 +1,4 @@
-// File: /Team_BERP/src/main/java/com/team/berp/mrp/service/MrpServiceImpl.java
+// File: src/main/java/com/team/berp/mrp/service/MrpServiceImpl.java
 package com.team.berp.mrp.service;
 
 import com.team.berp.domain.CompanyOrder;
@@ -61,7 +61,7 @@ public class MrpServiceImpl implements MrpService {
     private final Mrp_WarehouseRepository      mrpWarehouseRepository;
 
     // ──────────────────────────────────────────────────────────
-    // (1) 상단 MRP 리스트 조회
+    // (1) MRP 리스트 조회
     @Override
     public Page<MrpViewDto> findMrpList(
             int page, int size,
@@ -69,104 +69,131 @@ public class MrpServiceImpl implements MrpService {
             String startDate, String endDate,
             String itemSearch
     ) {
+        // ───────────────────────────────────────────────────────────
+        // 1) 정렬(asc/desc)과 페이징 객체 생성
         Sort.Direction dir = sortDir.equalsIgnoreCase("asc")
-            ? Sort.Direction.ASC : Sort.Direction.DESC;
+                ? Sort.Direction.ASC
+                : Sort.Direction.DESC;
         Pageable pageable = PageRequest.of(page - 1, size, Sort.by(dir, sortKey));
 
+        // ───────────────────────────────────────────────────────────
+        // 2) “기간(From/To)”이 비어 있으면, 최솟값~최댓값으로 세팅
+        LocalDate start = (startDate == null || startDate.isEmpty())
+                ? LocalDate.MIN
+                : LocalDate.parse(startDate);
+        LocalDate end   = (endDate   == null || endDate.isEmpty())
+                ? LocalDate.MAX
+                : LocalDate.parse(endDate);
+
+        // ───────────────────────────────────────────────────────────
+        // 3) MRP 엔티티 조회 (완제품 검색/기간 필터 적용)
         Page<Mrp> mrpPage;
-        if ((startDate == null || startDate.isEmpty())
-         || (endDate == null || endDate.isEmpty())
-         || (itemSearch == null || itemSearch.isEmpty())) {
+        if ((startDate == null || startDate.isEmpty()) ||
+            (endDate   == null || endDate.isEmpty()) ||
+            (itemSearch == null || itemSearch.isEmpty())) {
+            // 조건이 하나라도 비어 있으면 단순히 전체 조회 (페이징/정렬만)
             mrpPage = mrpRepository.findAll(pageable);
         } else {
-            LocalDate start = LocalDate.parse(startDate);
-            LocalDate end   = LocalDate.parse(endDate);
+            // “완제품(itemSearch) + 기간” 필터
             mrpPage = mrpRepository
-                .findByBaseDateBetweenAndItem_CodeContainingIgnoreCaseOrBaseDateBetweenAndItem_NameContainingIgnoreCase(
-                    start, end, itemSearch,
-                    start, end, itemSearch,
-                    pageable
-                );
+                    .findByBaseDateBetweenAndPlan_Item_CodeContainingIgnoreCaseOrBaseDateBetweenAndPlan_Item_NameContainingIgnoreCase(
+                            start, end, itemSearch,
+                            start, end, itemSearch,
+                            pageable
+                    );
         }
 
-        // 3) 화면에 뿌릴 DTO 목록 생성
+        // ───────────────────────────────────────────────────────────
+        // 4) 현재고(Stock) 정보를 한 번에 조회해서 Map<제품코드, 재고합계> 형태로 저장
         List<Stock> allStocks = stockRepository.findAll();
+        Map<String, Integer> stockByItemCode = allStocks.stream()
+                .filter(s -> s.getItem() != null)
+                .collect(Collectors.groupingBy(
+                        s -> s.getItem().getCode(),
+                        Collectors.summingInt(s -> Optional.ofNullable(s.getQuantity()).orElse(0))
+                ));
 
-        // 3-1) “완제품별로 최신 주문수량(unitQty)” 을 미리 가져와서 맵에 저장
-        Map<String, Integer> totalOrderQtyByItemCode = new HashMap<>();
+        // ───────────────────────────────────────────────────────────
+        // 5) 제품별 MRP 필요수량(requiredQty) 합계를 구하는 Map 생성
+        //    Map의 key = 완제품 코드(String), value = MRP 필요수량 합계(Integer)
+        Map<String, Integer> totalRequiredByItemCode = new HashMap<>();
         for (Mrp mrp : mrpPage.getContent()) {
-            Item parentItem = mrp.getPlan().getItem();
-            if (parentItem == null) continue;
+            // ◀ 여기서 “완제품”을 꺼내야 합니다.
+            Item parent = mrp.getPlan().getItem();
+            if (parent == null) continue;
 
-            String code = parentItem.getCode();
-            Long itemId = parentItem.getId();
+            Long itemId = parent.getId();
+            String code = parent.getCode();
 
-            // **여기서 plan.getPlanQty() 가 아닌, “최신 주문량”을 꺼냅니다**.
-            Integer latestOrderQty = mrpRepository.findLatestOrderQtyByItemId(itemId);
-            int orderQty = (latestOrderQty != null ? latestOrderQty : 0);
+            // “PLANNED” 상태인 모든 MRP(requiredQty) 합계를 꺼냄
+            Integer sumRequired = mrpRepository.sumRequiredQtyByItemIdAndStatus(
+                    itemId, MrpStatus.PLANNED);
+            int requiredQty = (sumRequired != null ? sumRequired : 0);
 
-            // 맵에 넣기 (나중에 꺼내 쓸 때, “완제품별 최신 주문량”으로 사용)
-            totalOrderQtyByItemCode.put(code, orderQty);
+            totalRequiredByItemCode.put(code, requiredQty);
         }
 
-        // 3-2) “완제품별로 중복 제거 & 부족수량 계산 후 (shortageQty>0)만 노출”
+        // ───────────────────────────────────────────────────────────
+        // 6) 중복된 제품 코드를 제거하면서 DTO 생성
         Set<String> seenCodes = new HashSet<>();
         List<MrpViewDto> dtoList = new ArrayList<>();
+
         for (Mrp mrp : mrpPage.getContent()) {
-            Item parentItem = mrp.getPlan().getItem();
-            if (parentItem == null) continue;
-            String itemCode = parentItem.getCode();
+            // ◀ 반드시 “완제품 parent”를 꺼냅니다.
+            Item parent = mrp.getPlan().getItem();
+            if (parent == null) continue;
+
+            String itemCode = parent.getCode();
             if (seenCodes.contains(itemCode)) {
+                // 이미 한 번 처리한 제품코드는 건너뜀
                 continue;
             }
             seenCodes.add(itemCode);
 
-            // → “완제품 현재고 합산”
-            int stockQty = allStocks.stream()
-                .filter(s -> s.getItem()!=null && s.getItem().getCode().equals(itemCode))
-                .mapToInt(s -> Optional.ofNullable(s.getQuantity()).orElse(0))
-                .sum();
+            // 6-1) ‘제품 현재고’ 꺼내기
+            int stockQty = stockByItemCode.getOrDefault(itemCode, 0);
 
-            // → “완제품 최신 주문수량(orderQty)” ← 맵에서 꺼냄
-            int orderQty = totalOrderQtyByItemCode.getOrDefault(itemCode, 0);
+            // 6-2) ‘제품별 MRP 필요수량(requiredQty)’ 꺼내기
+            int requiredQty = totalRequiredByItemCode.getOrDefault(itemCode, 0);
 
-            // → 부족수량 계산
-            int shortageQty = orderQty - stockQty;
-
-            // “부족수량 <= 0” 이면 화면에서 제외
+            // 6-3) 부족수량 계산
+            int shortageQty = requiredQty - stockQty;
             if (shortageQty <= 0) {
+                // 재고가 충분하면 화면에서 제외
                 continue;
             }
 
-            // — 나머지 DTO 속성
-            String itemName = parentItem.getName();
-            String itemType = (parentItem.getType() != null
-                               ? parentItem.getType().toString()
-                               : "");
-            String unit     = parentItem.getUnit();
-            String spec     = parentItem.getSpec();
-            String custName = mrpRepository.findLatestCompanyNameByItemId(parentItem.getId());
-            String dueDateStr = (mrp.getDueDate() != null) ? mrp.getDueDate().toString() : "";
-            String mrpStatus = (mrp.getStatus() != null)   ? mrp.getStatus().toString()   : "";
+            // ───────────── 나머지 DTO 항목들 세팅 ─────────────
+            String itemName   = parent.getName();   // 완제품명
+            String itemType   = (parent.getType() != null ? parent.getType().toString() : "");
+            String unit       = parent.getUnit();
+            String spec       = parent.getSpec();
+            // “가장 최근 거래처명”은 기존 메서드를 그대로 활용 (단, parent.getId())
+            String custName   = mrpRepository.findLatestCompanyNameByItemId(parent.getId());
+            String dueDateStr = (mrp.getDueDate() != null ? mrp.getDueDate().toString() : "");
+            String mrpStatus  = (mrp.getStatus() != null ? mrp.getStatus().toString() : "");
 
+            // 6-4) DTO 생성
             MrpViewDto dto = new MrpViewDto(
-                mrp.getMrpId(),
-                itemCode,
-                itemName,
-                itemType,
-                unit,
-                Optional.ofNullable(mrp.getBaseDate()).map(Object::toString).orElse(""),
-                orderQty,
-                stockQty,
-                shortageQty,
-                mrp.getSource(),
-                Optional.ofNullable(mrp.getLeadTime()).orElse(0),
-                mrp.getComment(),
-                custName,
-                spec,
-                dueDateStr,
-                mrpStatus
+                    mrp.getMrpId(),                       // MRP ID
+                    itemCode,                             // 완제품 코드
+                    itemName,                             // 완제품명
+                    itemType,                             // 완제품 유형
+                    unit,                                 // 단위
+                    Optional.ofNullable(mrp.getBaseDate())
+                            .map(Object::toString).orElse(""), // 기준 일자
+                    requiredQty,                          // ◀ 합산된 수량 (예: 7110)
+                    stockQty,                             // ◀ 현재고 (예: 620)
+                    shortageQty,                          // ◀ 부족수량 (예: 6490)
+                    mrp.getSource(),                      // 소스(PURCHASE/PRODUCTION)
+                    Optional.ofNullable(mrp.getLeadTime()).orElse(0), // 리드타임
+                    mrp.getComment(),                     // 코멘트
+                    custName,                             // 가장 최근 거래처명
+                    spec,                                 // 사양
+                    dueDateStr,                           // 납기 요청일
+                    mrpStatus                             // MRP 상태(PLANNED)
             );
+
             dtoList.add(dto);
         }
 
@@ -215,8 +242,7 @@ public class MrpServiceImpl implements MrpService {
 
                 // → “원자재 현재고”
                 int childStockQty = allStocks.stream()
-                    .filter(s -> s.getItem() != null
-                              && child.getCode().equals(s.getItem().getCode()))
+                    .filter(s -> s.getItem() != null && child.getCode().equals(s.getItem().getCode()))
                     .mapToInt(s -> Optional.ofNullable(s.getQuantity()).orElse(0))
                     .sum();
 
@@ -230,9 +256,7 @@ public class MrpServiceImpl implements MrpService {
                 int remainingAfterUse = childStockQty - totalQty;
 
                 // → “발주필요수량(purchaseQty)”
-                int purchaseQty = (remainingAfterUse >= safetyStock)
-                                  ? 0
-                                  : (safetyStock - remainingAfterUse);
+                int purchaseQty = (remainingAfterUse >= safetyStock) ? 0 : (safetyStock - remainingAfterUse);
 
                 // → “구매리드타임”
                 int purchaseLeadTime = Optional.ofNullable(child.getPurchaseLeadTime()).orElse(0);
@@ -297,7 +321,7 @@ public class MrpServiceImpl implements MrpService {
 
         String itemCode    = (parentItem != null ? parentItem.getCode() : "");
         String itemName    = (parentItem != null ? parentItem.getName() : "");
-        String itemType    = (parentItem != null && parentItem.getType() != null)
+        String itemType    = (parentItem != null && parentItem.getType() != null) 
                              ? parentItem.getType().toString() : "";
         String unit        = (parentItem != null ? parentItem.getUnit() : "");
         String spec        = (parentItem != null ? parentItem.getSpec() : "");
@@ -307,8 +331,7 @@ public class MrpServiceImpl implements MrpService {
         // (B2) “완제품” 현재 재고 합산
         List<Stock> allStocks = stockRepository.findAll();
         int parentStockQty = allStocks.stream()
-            .filter(s -> s.getItem() != null
-                      && itemCode.equals(s.getItem().getCode()))
+            .filter(s -> s.getItem() != null && itemCode.equals(s.getItem().getCode()))
             .mapToInt(s -> Optional.ofNullable(s.getQuantity()).orElse(0))
             .sum();
 
@@ -331,11 +354,12 @@ public class MrpServiceImpl implements MrpService {
 
         // ───────────────────────────────────────────────────────────
         // (C) “수량·리드타임” – “최신 주문수량(unitQty)”을 가져오도록 수정
-        final int requestQty = (parentItem != null
-                ? Optional.ofNullable(mrpRepository.findLatestOrderQtyByItemId(parentItem.getId()))
-                          .orElse(0)
-                : 0
+           // → 메인 리스트와 동일하게 PLANNED 상태의 MRP(requiredQty)를 모두 합산해서 요청수량으로 사용
+        Integer sumRequired = (parentItem != null
+            ? mrpRepository.sumRequiredQtyByItemIdAndStatus(parentItem.getId(), MrpStatus.PLANNED)
+            : 0
         );
+        final int requestQty = (sumRequired != null ? sumRequired : 0);
 
         int shortageQty = Math.max(requestQty - parentStockQty, 0);
 
@@ -356,8 +380,7 @@ public class MrpServiceImpl implements MrpService {
                 int totalQty = perParentQty * requestQty;
 
                 int childStockQty = allStocks.stream()
-                    .filter(s -> s.getItem() != null 
-                              && child.getCode().equals(s.getItem().getCode()))
+                    .filter(s -> s.getItem() != null && child.getCode().equals(s.getItem().getCode()))
                     .mapToInt(s -> Optional.ofNullable(s.getQuantity()).orElse(0))
                     .sum();
 
@@ -423,8 +446,8 @@ public class MrpServiceImpl implements MrpService {
             safetyStock,         // safetyStock
             parentStockQty,      // stockQty
             location,            // location
-            requestQty,          // requiredQty  (이제 실제 주문량)
-            shortageQty,         // shortageQty  (5,000−530=4,470)
+            requestQty,          // requiredQty
+            shortageQty,         // shortageQty
             purchaseLeadTime,    // purchaseLeadTime
             productionLeadTime,  // productionLeadTime
             orderableDate,       // orderableDate
@@ -436,7 +459,7 @@ public class MrpServiceImpl implements MrpService {
     }
 
     // ──────────────────────────────────────────────────────────
-    // (4) 새로 추가된 메서드: 주문(orderId)에 따라 ProdPlan과 BOM을 탐색하여 MRP 엔티티 생성 (변경 없음)
+    // (4) (기존) 주문 전체에 대해 MRP 생성
     @Override
     @Transactional
     public void generateMrpForOrder(Long orderId) {
@@ -512,6 +535,71 @@ public class MrpServiceImpl implements MrpService {
                 }
                 mrpRepository.save(mrp);
             }
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────
+    // (5) (추가) 단일 OrderLineItem 기준으로 부족량만큼 MRP 생성
+    @Override
+    @Transactional
+    public void generateMrpForOrderLineItem(Long orderLineItemId, int neededQty) {
+        // 1) OrderLineItem 엔티티 조회
+        OrderLineItem oli = mrpOrderLineItemRepository.findById(orderLineItemId)
+            .orElseThrow(() -> new IllegalArgumentException("주문상세가 없습니다. id=" + orderLineItemId));
+
+        Item product = oli.getItem();
+        LocalDate today = LocalDate.now();
+
+        // 2) ProdPlan 생성 (완제품 기준)
+        ProdPlan prodPlan = new ProdPlan();
+        prodPlan.setItem(product);
+        prodPlan.setPlanQty(neededQty);
+        prodPlan.setUnit(product.getUnit());
+        prodPlan.setPlanDate(today);
+        prodPlan.setDueDate(oli.getCompanyOrder().getOrderDate()); // 주문 납기일을 ProdPlan 납기로 사용
+        prodPlan.setStatus(PlanStatus.PLANNED);
+        prodPlan.setPriority(1);
+        prodPlanRepository.save(prodPlan);
+
+        // 3) 해당 완제품의 BOM(원자재) 조회
+        List<com.team.berp.domain.Bom> bomList = bomRepository.findByParentItem(product);
+
+        // 4) 각 원자재별로 MRP 엔티티 생성
+        for (com.team.berp.domain.Bom bom : bomList) {
+            Item component = bom.getChildItem();
+            int perParentQty = bom.getQty();                   // 모품 1대당 필요한 자재 수량
+            int totalRequiredQty = perParentQty * neededQty;   // 예: perParentQty=1, neededQty=70 → 70
+
+            // 4-1) 원자재 현재 재고 조회
+            int componentStockQty = stockRepository.findByItemIdAndQuantityGreaterThan(
+                    component.getId(), 0
+                ).stream()
+                .mapToInt(s -> Optional.ofNullable(s.getQuantity()).orElse(0))
+                .sum();
+
+            int compShortage = Math.max(totalRequiredQty - componentStockQty, 0);
+
+            // 4-2) MRP 엔티티 생성 & 저장
+            Mrp mrp = new Mrp();
+            mrp.setPlan(prodPlan);
+            mrp.setItem(component);
+            mrp.setRequiredQty(totalRequiredQty);
+            mrp.setBaseDate(today);
+            mrp.setStatus(MrpStatus.PLANNED);
+
+            if (compShortage <= 0) {
+                // 재고 충분 → “생산(Production)” 소요처
+                mrp.setSource("PRODUCTION");
+                mrp.setDueDate(prodPlan.getDueDate());
+            } else {
+                // 재고 부족 → “발주(Purchase)” 소요처
+                int purchaseLeadTime = Optional.ofNullable(component.getPurchaseLeadTime()).orElse(0);
+                mrp.setSource("PURCHASE");
+                mrp.setLeadTime(purchaseLeadTime);
+                mrp.setDueDate(today.plusDays(purchaseLeadTime));
+            }
+
+            mrpRepository.save(mrp);
         }
     }
 }

@@ -105,10 +105,95 @@
   </div>
    <!-- 공통 푸터 -->
   <div th:replace="~{/layouts/footer :: footer}"></div>
-
   <!-- ✅ 모달 삽입용 div -->
  <div th:replace="~{place/place-detail-modal :: place-detail-modal}"></div>
  <div th:replace="~{place/place-register-modal :: place-register-modal}"></div>
+ 
+ <script th:inline="javascript">
+  document.addEventListener('DOMContentLoaded', function() {
+    const itemsParam = /*[[${itemsParam}]]*/ null;
+
+    if (itemsParam) {
+      // (1) 폼 초기화
+      openplaceAddModal();
+
+      // (2) 실제 Bootstrap 모달을 화면에 띄움
+      const modalEl = document.getElementById('placeRegisterModal');
+      const modal = new bootstrap.Modal(modalEl);
+      modal.show();
+
+      // (3) itemsParam 파싱 & 테이블에 행 채우기
+      const parsedList = itemsParam.split(',')
+                            .map(pair => pair.trim())
+                            .map(pair => {
+                              const [code, qty] = pair.split(':');
+                              return { itemCode: code, quantity: parseInt(qty, 10) };
+                            });
+
+      const container = document.getElementById('itemListContainer');
+      container.innerHTML = '';
+      parsedList.forEach((item, idx) => {
+        const newRow = document.createElement('tr');
+        newRow.className = 'item-row';
+        newRow.innerHTML = `
+          <td>
+            <select name="lineItems[${idx}].itemType" class="form-select item-type">
+              <option value="자재" selected>자재</option>
+              <option value="완제품">완제품</option>
+            </select>
+          </td>
+          <td>
+            <select name="lineItems[${idx}].itemId" class="form-select item-name">
+              <option value="">-- 품목 선택 --</option>
+            </select>
+          </td>
+          <td>
+            <input type="text" class="form-control item-code" name="lineItems[${idx}].itemCode" readonly />
+          </td>
+          <td>
+            <input type="number" class="form-control unit-qty" name="lineItems[${idx}].unitQty" min="1" />
+          </td>
+          <td>
+            <input type="text" class="form-control item-unit" name="lineItems[${idx}].unit" readonly />
+          </td>
+          <td>
+            <input type="text" class="form-control unit-price" name="lineItems[${idx}].unitPrice" readonly />
+          </td>
+          <td>
+            <input type="hidden" name="lineItems[${idx}].orderLineItemId" class="order-line-item-id" value="" />
+          </td>
+          <td>
+            <button type="button" class="btn btn-danger btn-sm" onclick="removeItemRow(this)">삭제</button>
+          </td>
+        `;
+        container.appendChild(newRow);
+
+        // item-type을 “자재”로 고정
+        newRow.querySelector('.item-type').value = '자재';
+
+        // 옵션 채워넣고, itemCode가 일치하는 option 선택
+        loadItems(newRow.querySelector('.item-type')).then(() => {
+          const selectElem = newRow.querySelector('.item-name');
+          Array.from(selectElem.options).forEach(opt => {
+            if (opt.dataset.code === item.itemCode) {
+              selectElem.value = opt.value;
+              fillItemDetails(selectElem);
+            }
+          });
+        });
+
+        // 품목코드, 수량 필드에 값 채우기
+        newRow.querySelector('.item-code').value = item.itemCode;
+        newRow.querySelector('.unit-qty').value = item.quantity;
+      });
+
+      // 총합계 계산
+      calculateTotals();
+    }
+  });
+</script>
+  
+  
 
 <script src="/js/place/place.js"></script>
 </body>

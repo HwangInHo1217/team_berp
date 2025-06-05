@@ -38,7 +38,7 @@ public class ClientApiController {
         @RequestParam(value = "searchType", required = false, defaultValue = "name") String searchType,
         @RequestParam(value = "keyword", required = false) String keyword,
         @RequestParam(value = "page", defaultValue = "0") int page,
-        @RequestParam(value = "size", defaultValue = "5") int size,
+        @RequestParam(value = "size", defaultValue = "10") int size,
         @RequestParam(value = "sort", required = false, defaultValue = "companyId,desc") String sort // 정렬 옵션 추가
     ) {
         String[] sortArr = sort.split(",");
