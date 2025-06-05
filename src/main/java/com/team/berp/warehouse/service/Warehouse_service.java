@@ -115,6 +115,7 @@ public class Warehouse_service {
         return WarehouseResponseDTO.from(updated);
     }
 
+
     /**
      * ✅ 창고에 재고가 있는지 검증하는 메서드 (새로 추가)
      * @param warehouseId 검증할 창고 ID
