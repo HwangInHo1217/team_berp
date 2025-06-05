@@ -1,15 +1,40 @@
 package com.team.berp.mrp.service;
 
+import com.team.berp.mrp.dto.MrpDetailDto;
 import com.team.berp.mrp.dto.MrpViewDto;
-import com.team.berp.bom.dto.BomListViewResponse; // (네가 올린 DTO 활용)
+import com.team.berp.mrp.dto.ExtendedBomListViewResponse;
 import org.springframework.data.domain.Page;
+
 import java.util.List;
 
 public interface MrpService {
+    /**
+     * 상단 MRP 목록 조회
+     */
     Page<MrpViewDto> findMrpList(
-        int page, int size, String sortKey, String sortDir,
-        String startDate, String endDate, String itemSearch, String custSearch
+        int page,
+        int size,
+        String sortKey,
+        String sortDir,
+        String startDate,
+        String endDate,
+        String itemSearch  
     );
 
-    List<BomListViewResponse> findBomByItemCode(String itemCode);
+    /**
+     * 하단 BOM(투입자재) 리스트 조회
+     * → 반환 타입을 List<ExtendedBomListViewResponse>로 맞춥니다.
+     */
+    List<ExtendedBomListViewResponse> findBomByItemCode(String itemCode);
+
+    /**
+     * 특정 MRP 상세 정보 조회
+     */
+    MrpDetailDto findMrpDetailById(Long mrpId);
+    
+    /**
+     * 주문(orderId)이 들어왔을 때, 해당 주문에 따라 ProdPlan과 그에 속한 BOM을 조회하여
+     * 자동으로 mrp 테이블에 INSERT를 수행합니다.
+     */
+    void generateMrpForOrder(Long orderId);
 }

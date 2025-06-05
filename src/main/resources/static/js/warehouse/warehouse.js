@@ -332,6 +332,9 @@ const dataManager = {
     createTableRow(whs, index, currentPage) { // 한 줄씩 테이블 행 생성
         const rowNumber = ((currentPage || 1) - 1) * state.pageSize + index + 1;
         
+		// JSON 데이터를 HTML 속성에 안전하게 삽입하기 위해 이스케이프 처리
+		const whsDataJson = JSON.stringify(whs).replace(/"/g, '&quot;');
+		
 		// HTML 문자열 기반으로 <tr> 요소 생성
         return utils.createEl('tr', {
             html: `
@@ -347,8 +350,16 @@ const dataManager = {
                 <td>${whs.description || ''}</td>
                 <td>${whs.useYn || ''}</td>
                 <td>
+				<!-- 🆕 재고보기 버튼 (JavaScript에서도 포함) -->
+				    <button type="button" 
+						class="btn btn-sm btn-info me-1 stock-view-btn"
+				        data-whs='${whsDataJson}' 
+						title="재고 보기">
+				       <i class="fas fa-boxes"></i>
+				    </button>
+					<!-- 기존 수정 버튼 -->
                     <button type="button" class="btn btn-sm btn-warning edit-btn"
-                        data-whs='${JSON.stringify(whs)}'>
+                        //data-whs='${whsDataJson}'>
                         수정
                     </button>
                 </td>
@@ -901,13 +912,77 @@ document.addEventListener("DOMContentLoaded", function() {
 		// 모달이 닫힐 때 폼 리셋
         [selectors.modal, 'hidden.bs.modal', modalManager.resetForm]
     ]);
+	
+	
+	// 🆕 초기 로딩된 테이블에서도 재고보기 버튼이 작동하도록 확인
+	setTimeout(() => {
+	    const initialStockBtns = document.querySelectorAll('.stock-view-btn');
+	    console.log('🔍 초기 로딩된 재고보기 버튼 수:', initialStockBtns.length);
+	    
+	    if (initialStockBtns.length > 0) {
+	        console.log('✅ 초기 재고보기 버튼들이 정상적으로 로드됨');
+	    } else {
+	        console.warn('⚠️ 초기 재고보기 버튼이 없습니다. HTML 템플릿을 확인하세요.');
+	    }
+	}, 500);
 
     // 수정 버튼 클릭 (이벤트 위임)
 	// 수정 버튼 클릭 시 이벤트 위임 (동적으로 추가되는 행을 위해 document에 위임)
     document.addEventListener('click', function(e) {
+		
         if (e.target.classList.contains('edit-btn')) {
             const whsData = JSON.parse(e.target.getAttribute('data-whs')) // 버튼의 data-whs 속성(JSON);
             modalManager.show('edit', whsData); // 수정 모드로 모달 열기
         }
+		// 재고보기 버튼 처리 (개선됨)
+		if (e.target.classList.contains('stock-view-btn') || e.target.closest('.stock-view-btn')) {
+			e.preventDefault();
+			e.stopPropagation();
+			
+		    const stockBtn = e.target.classList.contains('stock-view-btn') ? 
+							e.target : e.target.closest('.stock-view-btn');
+			console.log('🏢 재고보기 버튼 클릭됨!', stockBtn); 
+							
+			const whsDataStr = stockBtn.getAttribute('data-whs');
+			console.log('📋 data-whs 속성:', whsDataStr);
+		    
+			try{
+				const whsData = JSON.parse(whsDataStr);
+				console.log('🏢 재고보기 버튼 클릭:', whsData);
+				
+				// WarehouseStockModal이 로드되었는지 확인
+				if (typeof WarehouseStockModal !== 'undefined' && WarehouseStockModal.open) {
+					console.log('🚀 모달 열기 시도...');
+					WarehouseStockModal.open(whsData.warehouseId, whsData);
+				} else {
+				    console.error('❌ WarehouseStockModal이 로드되지 않았습니다.');
+					console.log('현재 WarehouseStockModal:', typeof WarehouseStockModal);
+					alert('재고 모달을 불러올 수 없습니다. 페이지를 새로고침해 주세요.');
+				}
+			}catch{
+				console.error('❌ JSON 파싱 오류:', error);
+				console.log('원본 데이터:', whsDataStr);
+				alert('창고 정보를 읽을 수 없습니다.');
+			}
+		}
+
     });
+});
+
+// 🆕 창고 테이블 행 더블클릭으로도 재고 모달 열기 (선택사항)
+document.addEventListener('DOMContentLoaded', function() {
+    // 테이블 body에 더블클릭 이벤트 추가
+    const tableBody = utils.$(selectors.tbody);
+    if (tableBody) {
+        tableBody.addEventListener('dblclick', function(e) {
+            const row = e.target.closest('tr');
+            if (row && !row.classList.contains('no-data-row')) {
+                const stockBtn = row.querySelector('.stock-view-btn');
+                if (stockBtn) {
+					console.log('🖱️ 테이블 행 더블클릭으로 재고보기 실행');
+                    stockBtn.click(); // 재고보기 버튼 클릭 트리거
+                }
+            }
+        });
+    }
 });

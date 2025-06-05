@@ -8,7 +8,7 @@ import lombok.Data;
 public class AddBomRequestDTO {
 
     // 🔹 추가: 버전 코드 (예: V1, V-PORK)
-    private String versionCode;
+    //private String versionCode;
     private String description;
     private String useYn;
     // 완제품의 ID (item 테이블의 item_id)

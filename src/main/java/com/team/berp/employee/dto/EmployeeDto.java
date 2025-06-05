@@ -12,13 +12,40 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class EmployeeDto {
-    private Long employeeId;
+	private Long employeeId;
     private String empName;
-
-    public static EmployeeDto fromEntity(Employee e) {
-        return EmployeeDto.builder()
-                .employeeId(e.getEmployeeId())
-                .empName(e.getEmpName())
-                .build();
+    private String empEmail;
+    private String empTel;
+    private String empHp;
+    
+    //builder + static
+    public static EmployeeDto fromEntity(Employee e) {      // Employee 엔티티를 받아서
+        return EmployeeDto.builder()                        // 빌더 패턴으로 EmployeeDto 생성
+                .employeeId(e.getEmployeeId())              // 엔티티의 employeeId를 dto에 복사
+                .empName(e.getEmpName())                    // 엔티티의 empName을 dto에 복사
+                .empEmail(e.getEmpEmail())					// 엔티티의 empEmail을 dto에 복사
+                .empTel(e.getEmpTel())						// 엔티티의 empTel을 dto에 복사
+                .empHp(e.getEmpHp())						// 엔티티의 empHp를 dto에 복사
+                .build();                                   // 완성된 EmployeeDto 객체 반환
     }
 }
+
+/*
+ 
+전통적인 방식
+// 사용법
+public EmployeeDto(Employee e) {
+    this.employeeId = e.getEmployeeId();
+    this.empName = e.getEmpName();
+}
+EmployeeDto dto = new EmployeeDto(employee);
+
+//builder 없이
+public static EmployeeDto fromEntity(Employee e) {
+    EmployeeDto dto = new EmployeeDto();
+    dto.setEmployeeId(e.getEmployeeId());
+    dto.setEmpName(e.getEmpName());
+    return dto;
+}
+
+*/

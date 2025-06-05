@@ -17,6 +17,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -26,6 +27,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class CompanyOrder {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -35,7 +37,7 @@ public class CompanyOrder {
     @JoinColumn(name = "company_id")
     private Company company;
 
-    @OneToMany(mappedBy = "companyOrder", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "companyOrder", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderLineItem> lineItems;
     
     public enum OrderType { CUSTOMER, SUPPLIER }
@@ -54,8 +56,9 @@ public class CompanyOrder {
     private String note;
 
     @Column
-    private Long orderQty;
+    private Integer orderQty;
     
     @Column(name = "order_num")
     private String orderNum;
+    
 }

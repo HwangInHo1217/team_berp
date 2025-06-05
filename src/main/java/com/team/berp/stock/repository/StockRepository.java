@@ -13,16 +13,11 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
-//=============================================================================
-//🗄️ StockRepository.java - 데이터 접근 계층
-//=============================================================================
-
 @Repository
 public interface StockRepository extends JpaRepository<Stock, Long> {
  
- /**
-  * 🔍 품목명/코드 검색
-  */
+ // === 기존 메서드들 ===
+ 
  @Query("SELECT s FROM Stock s " +
         "JOIN s.item i " +
         "JOIN s.warehouse w " +
@@ -30,9 +25,6 @@ public interface StockRepository extends JpaRepository<Stock, Long> {
         "   OR LOWER(i.code) LIKE LOWER(CONCAT('%', :keyword, '%'))")
  Page<Stock> searchByItem(@Param("keyword") String keyword, Pageable pageable);
  
- /**
-  * 🔍 창고명/코드 검색
-  */
  @Query("SELECT s FROM Stock s " +
         "JOIN s.item i " +
         "JOIN s.warehouse w " +
@@ -40,9 +32,6 @@ public interface StockRepository extends JpaRepository<Stock, Long> {
         "   OR LOWER(w.warehouseCode) LIKE LOWER(CONCAT('%', :keyword, '%'))")
  Page<Stock> searchByWarehouse(@Param("keyword") String keyword, Pageable pageable);
  
- /**
-  * 🔍 통합 키워드 검색 (가장 많이 사용)
-  */
  @Query("SELECT s FROM Stock s " +
         "JOIN s.item i " +
         "JOIN s.warehouse w " +
@@ -52,48 +41,257 @@ public interface StockRepository extends JpaRepository<Stock, Long> {
         "   OR LOWER(w.warehouseCode) LIKE LOWER(CONCAT('%', :keyword, '%'))")
  Page<Stock> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
  
- /**
-  * 🔧 품목+창고로 재고 조회 (입출고시 사용)
-  */
  Optional<Stock> findByItemAndWarehouse(Item item, Warehouse warehouse);
  
- /**
-  * 🔧 창고코드로 검색
-  */
  @Query("SELECT s FROM Stock s WHERE s.warehouse.warehouseCode = :whsCode")
  Page<Stock> findByWarehouseCode(@Param("whsCode") String whsCode, Pageable pageable);
  
- /**
-  * 🔧 창고ID로 검색
-  */
  Page<Stock> findByWarehouse_Id(Long warehouseId, Pageable pageable);
  
- /**
-  * 🔧 품목유형별 검색
-  */
  @Query("SELECT s FROM Stock s WHERE s.item.type = :itemType")
  Page<Stock> findByItemType(@Param("itemType") com.team.berp.domain.ItemType itemType, Pageable pageable);
  
- /**
-  * 🔧 품목유형+창고 조합
-  */
  @Query("SELECT s FROM Stock s WHERE s.item.type = :itemType AND s.warehouse.warehouseCode = :whsCode")
  Page<Stock> findByItemTypeAndWarehouseCode(@Param("itemType") com.team.berp.domain.ItemType itemType, 
                                            @Param("whsCode") String whsCode, Pageable pageable);
  
- /**
-  * 📊 재고 상태별 검색
-  */
  @Query("SELECT s FROM Stock s WHERE s.quantity = 0")
  Page<Stock> findOutOfStock(Pageable pageable);
  
  @Query("SELECT s FROM Stock s WHERE s.quantity > 0")
  Page<Stock> findInStock(Pageable pageable);
  
+ @Query("SELECT s FROM Stock s WHERE s.quantity < 10 AND s.quantity > 0")
+ Page<Stock> findBelowSafety(Pageable pageable);
+
+ @Query("SELECT s FROM Stock s " +
+        "JOIN s.item i " +
+        "JOIN s.warehouse w " +
+        "WHERE (LOWER(i.name) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+        "    OR LOWER(i.code) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+        "  AND w.warehouseCode = :whsCode")
+ Page<Stock> searchByKeywordAndWarehouse(@Param("keyword") String keyword, 
+                                        @Param("whsCode") String whsCode, 
+                                        Pageable pageable);
+
+ @Query("SELECT s FROM Stock s " +
+        "JOIN s.item i " +
+        "WHERE (LOWER(i.name) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+        "    OR LOWER(i.code) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+        "  AND i.type = :itemType")
+ Page<Stock> searchByKeywordAndItemType(@Param("keyword") String keyword, 
+                                       @Param("itemType") com.team.berp.domain.ItemType itemType, 
+                                       Pageable pageable);
+
+ @Query("SELECT s FROM Stock s " +
+        "JOIN s.item i " +
+        "JOIN s.warehouse w " +
+        "WHERE (LOWER(i.name) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+        "    OR LOWER(i.code) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+        "  AND w.warehouseCode = :whsCode " +
+        "  AND i.type = :itemType")
+ Page<Stock> searchByKeywordAndWarehouseAndItemType(@Param("keyword") String keyword,
+                                                   @Param("whsCode") String whsCode,
+                                                   @Param("itemType") com.team.berp.domain.ItemType itemType,
+                                                   Pageable pageable);
+
+ // === ⭐ 새로 추가되는 재고상태 조합 메서드들 ⭐ ===
+ 
  /**
-  * 🔍 기타 검색
+  * 🔧 키워드 + 재고상태 조합
   */
+ @Query("SELECT s FROM Stock s " +
+        "JOIN s.item i " +
+        "JOIN s.warehouse w " +
+        "WHERE (LOWER(i.name) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+        "    OR LOWER(i.code) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+        "  AND (" +
+        "    (:stockStatus = 'inStock' AND s.quantity > 0) OR " +
+        "    (:stockStatus = 'outOfStock' AND s.quantity = 0) OR " +
+        "    (:stockStatus = 'belowSafety' AND s.quantity < 10 AND s.quantity > 0)" +
+        "  )")
+ Page<Stock> searchByKeywordAndStockStatus(@Param("keyword") String keyword,
+                                          @Param("stockStatus") String stockStatus,
+                                          Pageable pageable);
+
+ /**
+  * 🔧 창고 + 재고상태 조합
+  */
+ @Query("SELECT s FROM Stock s " +
+        "WHERE s.warehouse.warehouseCode = :whsCode " +
+        "  AND (" +
+        "    (:stockStatus = 'inStock' AND s.quantity > 0) OR " +
+        "    (:stockStatus = 'outOfStock' AND s.quantity = 0) OR " +
+        "    (:stockStatus = 'belowSafety' AND s.quantity < 10 AND s.quantity > 0)" +
+        "  )")
+ Page<Stock> findByWarehouseCodeAndStockStatus(@Param("whsCode") String whsCode,
+                                              @Param("stockStatus") String stockStatus,
+                                              Pageable pageable);
+
+ /**
+  * 🔧 품목유형 + 재고상태 조합
+  */
+ @Query("SELECT s FROM Stock s " +
+        "WHERE s.item.type = :itemType " +
+        "  AND (" +
+        "    (:stockStatus = 'inStock' AND s.quantity > 0) OR " +
+        "    (:stockStatus = 'outOfStock' AND s.quantity = 0) OR " +
+        "    (:stockStatus = 'belowSafety' AND s.quantity < 10 AND s.quantity > 0)" +
+        "  )")
+ Page<Stock> findByItemTypeAndStockStatus(@Param("itemType") com.team.berp.domain.ItemType itemType,
+                                         @Param("stockStatus") String stockStatus,
+                                         Pageable pageable);
+
+ /**
+  * 🔧 키워드 + 창고 + 재고상태 조합  
+  */
+ @Query("SELECT s FROM Stock s " +
+        "JOIN s.item i " +
+        "JOIN s.warehouse w " +
+        "WHERE (LOWER(i.name) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+        "    OR LOWER(i.code) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+        "  AND w.warehouseCode = :whsCode " +
+        "  AND (" +
+        "    (:stockStatus = 'inStock' AND s.quantity > 0) OR " +
+        "    (:stockStatus = 'outOfStock' AND s.quantity = 0) OR " +
+        "    (:stockStatus = 'belowSafety' AND s.quantity < 10 AND s.quantity > 0)" +
+        "  )")
+ Page<Stock> searchByKeywordAndWarehouseAndStockStatus(@Param("keyword") String keyword,
+                                                      @Param("whsCode") String whsCode,
+                                                      @Param("stockStatus") String stockStatus,
+                                                      Pageable pageable);
+
+ /**
+  * 🔧 키워드 + 품목유형 + 재고상태 조합
+  */
+ @Query("SELECT s FROM Stock s " +
+        "JOIN s.item i " +
+        "WHERE (LOWER(i.name) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+        "    OR LOWER(i.code) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+        "  AND i.type = :itemType " +
+        "  AND (" +
+        "    (:stockStatus = 'inStock' AND s.quantity > 0) OR " +
+        "    (:stockStatus = 'outOfStock' AND s.quantity = 0) OR " +
+        "    (:stockStatus = 'belowSafety' AND s.quantity < 10 AND s.quantity > 0)" +
+        "  )")
+ Page<Stock> searchByKeywordAndItemTypeAndStockStatus(@Param("keyword") String keyword,
+                                                     @Param("itemType") com.team.berp.domain.ItemType itemType,
+                                                     @Param("stockStatus") String stockStatus,
+                                                     Pageable pageable);
+
+ /**
+  * 🔧 창고 + 품목유형 + 재고상태 조합 (기존 메서드 수정)
+  */
+ @Query("SELECT s FROM Stock s " +
+        "WHERE s.item.type = :itemType " +
+        "  AND s.warehouse.warehouseCode = :whsCode " +
+        "  AND (" +
+        "    (:stockStatus = 'inStock' AND s.quantity > 0) OR " +
+        "    (:stockStatus = 'outOfStock' AND s.quantity = 0) OR " +
+        "    (:stockStatus = 'belowSafety' AND s.quantity < 10 AND s.quantity > 0)" +
+        "  )")
+ Page<Stock> findByItemTypeAndWarehouseCodeAndStockStatus(@Param("itemType") com.team.berp.domain.ItemType itemType,
+                                                         @Param("whsCode") String whsCode,
+                                                         @Param("stockStatus") String stockStatus,
+                                                         Pageable pageable);
+
+ /**
+  * 🔧 키워드 + 창고 + 품목유형 + 재고상태 조합 (최종 복합 조건)
+  */
+ @Query("SELECT s FROM Stock s " +
+        "JOIN s.item i " +
+        "JOIN s.warehouse w " +
+        "WHERE (LOWER(i.name) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
+        "    OR LOWER(i.code) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+        "  AND w.warehouseCode = :whsCode " +
+        "  AND i.type = :itemType " +
+        "  AND (" +
+        "    (:stockStatus = 'inStock' AND s.quantity > 0) OR " +
+        "    (:stockStatus = 'outOfStock' AND s.quantity = 0) OR " +
+        "    (:stockStatus = 'belowSafety' AND s.quantity < 10 AND s.quantity > 0)" +
+        "  )")
+ Page<Stock> searchByAllConditions(@Param("keyword") String keyword,
+                                  @Param("whsCode") String whsCode,
+                                  @Param("itemType") com.team.berp.domain.ItemType itemType,
+                                  @Param("stockStatus") String stockStatus,
+                                  Pageable pageable);
+
+ 
+
+/**
+* 재고 수량별 카운트 조회 (재고 없는 품목 수)
+*/
+long countByQuantity(Integer quantity);
+
+/**
+* 재고 수량 범위별 카운트 조회 (안전재고 미달용)
+* 예: 1개 이상 9개 이하 = 안전재고 미달
+*/
+long countByQuantityBetween(Integer minQty, Integer maxQty);
+
+/**
+* 창고별 재고 현황 통계 (필요시 사용)
+*/
+@Query("SELECT w.warehouseName, COUNT(s) FROM Stock s " +
+     "JOIN s.warehouse w " +
+     "GROUP BY w.warehouseName")
+List<Object[]> getStockCountByWarehouse();
+
+/**
+* 전체 재고 아이템 수 (중복 제거)
+*/
+@Query("SELECT COUNT(DISTINCT s.item.id) FROM Stock s")
+long countDistinctItems();
+ 
+
+
+ // === 기타 메서드들 ===
+ 
  List<Stock> findByItem(Item item);
  List<Stock> findByWarehouse(Warehouse warehouse);
  List<Stock> findByLotNumber(String lotNumber);
+ 
+ /**
+  * 특정 창고의 재고 품목 수 조회
+  */
+ long countByWarehouse_Id(Long warehouseId);
+
+ /**
+  * 특정 창고의 특정 수량인 재고 품목 수 조회 (재고 없는 품목용)
+  */
+ long countByWarehouse_IdAndQuantity(Long warehouseId, Integer quantity);
+
+ /**
+  * 특정 창고의 수량 범위별 재고 품목 수 조회 (안전재고 미달용)
+  */
+ long countByWarehouse_IdAndQuantityBetween(Long warehouseId, Integer minQty, Integer maxQty);
+
+ /**
+  * 특정 창고의 총 재고량 합계
+  */
+ @Query("SELECT SUM(s.quantity) FROM Stock s WHERE s.warehouse.id = :warehouseId")
+ Long sumQuantityByWarehouse_Id(@Param("warehouseId") Long warehouseId);
+
+ /**
+  * 특정 창고의 품목 유형별 재고 통계
+  */
+ @Query("SELECT s.item.type, COUNT(s), SUM(s.quantity) FROM Stock s " +
+        "WHERE s.warehouse.id = :warehouseId " +
+        "GROUP BY s.item.type")
+ List<Object[]> getStockStatsByItemType(@Param("warehouseId") Long warehouseId);
+
+ /**
+  * 특정 창고의 재고 상태별 통계
+  */
+ @Query("SELECT " +
+        "SUM(CASE WHEN s.quantity = 0 THEN 1 ELSE 0 END) as outOfStock, " +
+        "SUM(CASE WHEN s.quantity > 0 AND s.quantity < 10 THEN 1 ELSE 0 END) as belowSafety, " +
+        "SUM(CASE WHEN s.quantity >= 10 THEN 1 ELSE 0 END) as normalStock " +
+        "FROM Stock s WHERE s.warehouse.id = :warehouseId")
+ Object[] getStockStatusStats(@Param("warehouseId") Long warehouseId);
+ 
+ 
+ 
+ 
+ 
 }

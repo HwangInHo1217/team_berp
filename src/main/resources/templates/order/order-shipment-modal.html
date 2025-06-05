@@ -1,0 +1,47 @@
+<!-- order-shipment-modal.html -->
+<div th:fragment="shipmentModal">
+  <div class="modal fade" id="shipmentModal" tabindex="-1" aria-labelledby="shipmentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl"><!-- modal-xl: 테이블이 많아질 경우 가로 스크롤 방지 -->
+      <div class="modal-content">
+
+        <!-- ────────── 모달 헤더 ────────── -->
+        <div class="modal-header">
+          <h5 class="modal-title" id="shipmentModalLabel">출고 등록</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <!-- ────────── 모달 바디 ────────── -->
+        <div class="modal-body">
+          <!-- 1) 재고가 하나도 없는 경우 보여줄 경고 메시지 -->
+          <p id="shipmentModalMsg" class="text-danger d-none">
+            해당 주문의 모든 상품이 현재 재고가 없습니다.
+          </p>
+
+          <!-- 2) 주문아이템과 “창고별 출고 수량”을 표시할 테이블 -->
+          <div class="table-responsive">
+            <table class="table table-bordered" id="shipmentItemTable">
+              <thead class="table-light">
+                <tr>
+                  <th scope="col">품목 코드</th>
+                  <th scope="col">품목 이름</th>
+                  <th scope="col">주문 수량</th>
+                  <th scope="col">창고별 출고 수량</th>
+                </tr>
+              </thead>
+              <tbody id="shipmentItemTableBody">
+                <!-- JS에서 동적으로 <tr>을 생성하여 추가 -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ────────── 모달 푸터 ────────── -->
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
+          <button type="button" class="btn btn-primary" id="shipmentSaveBtn">출고 등록</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>

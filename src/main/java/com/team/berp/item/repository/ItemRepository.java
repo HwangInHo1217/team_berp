@@ -33,11 +33,9 @@ public interface ItemRepository extends JpaRepository<Item, Long>{
     Page<Item> findByCodeContaining(String keyword, Pageable pageable);
     List<Item> findByType(ItemType type); // ✅ ENUM 타입으로 받기
     
-    // ✅ 1. 이름 검색 + 제품
-    Page<Item> findByNameContainingAndType(String name, String type, Pageable pageable);
+ 
 
-    // ✅ 2. 코드 검색 + 제품
-    Page<Item> findByCodeContainingAndType(String code, String type, Pageable pageable);
+    
 
     // ✅ 3. 이름 검색 + 제품 + 사용여부
     Page<Item> findByNameContainingAndTypeAndUse(String name, String type, String use, Pageable pageable);

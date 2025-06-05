@@ -25,73 +25,79 @@
     <div class="container py-4">
       <h2 class="mb-4">발주 관리</h2>
 
-      <!-- 🔍 검색 + 버튼 -->
-      <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
-        <input type="text" class="form-control w-auto" placeholder="품목명" />
-        <input type="date" class="form-control w-auto" />
-        <span class="align-self-center">~</span>
-        <input type="date" class="form-control w-auto" />
-        <button class="btn btn-outline-secondary">검색</button>
-        <button class="btn btn-outline-success ms-auto">엑셀 다운로드</button>
-        <button class="btn btn-danger">삭제</button>
-        <button class="btn btn-primary" onclick="openplaceAddModal()" data-bs-toggle="modal" data-bs-target="#placeRegisterModal">
-          + 발주 등록
-        </button>
-      </div>
+<!-- 🔍 검색 + 버튼 -->
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+  <!-- 왼쪽: 검색창 + 검색 버튼 + 초기화 버튼 -->
+  <div class="d-flex align-items-center gap-2">
+    <!-- ✅ 검색어 유지 -->
+    <input type="text" class="form-control w-auto" placeholder="품목명을 입력하세요" 
+           id="searchKeyword" th:value="${searchKeyword}" />
+    <button class="btn btn-outline-secondary" onclick="searchOrders()">검색</button>
+    <button class="btn btn-outline-danger" onclick="clearSearch()">초기화</button>
+    
+    <!-- ✅ 검색 결과 표시 (선택사항) -->
+    <span th:if="${searchKeyword != null and !searchKeyword.isEmpty()}" 
+          class="badge bg-info">
+      '<span th:text="${searchKeyword}"></span>' 검색 결과
+    </span>
+  </div>
+
+  <!-- 오른쪽: 상세 / 수정 / 삭제 / 발주 등록 / 입고 이동 버튼 -->
+  <!-- 기존 코드 -->
+<div class="d-flex align-items-center gap-2">
+    <!-- onclick 속성 제거 -->
+    <button class="btn btn-info" id="detailBtn">상세</button>
+    <button class="btn btn-warning" id="editBtn">수정</button>
+    <button class="btn btn-primary" id="addBtn">+ 발주 등록</button>
+    <button class="btn btn-primary" onclick="goToInboundPage()">입고 페이지로 이동</button>
+</div>
+</div>
+
 
       <!-- 📋 발주 테이블 -->
       <div class="table-responsive">
         <table class="table table-bordered text-center align-middle">
           <thead class="table-light">
             <tr>
-              <th><input type="checkbox" /></th>
               <th>순번</th>
               <th>발주일자</th>
               <th>거래처</th>
+              <th><input type="checkbox" id="checkAll"/></th>
+              <th>주문번호</th>
               <th>품목코드</th>
               <th>품목명</th>
               <th>수량</th>
               <th>단위</th>
               <th>담당자</th>
+              <!-- 
               <th>상세</th>
               <th>수정</th>
-              <th>입고등록</th>
+               -->
             </tr>
           </thead>
           
+          <!-- order: company_order, company: Company, lineItems: order_line_items, item: item -->
          <tbody>
-			<tr th:each="order, stat : ${orderList}">
-			  <td><input type="checkbox" th:value="${order.orderId}" /></td>
-			  <td th:text="${stat.count}">1</td> <!-- 순번 -->
-			  <td th:text="${#temporals.format(order.orderDate, 'yyyy-MM-dd')}">2024-01-01</td> <!-- 발주일자 -->
-			  <td th:text="${order.company.companyName}">거래처명</td>
-			
-			  <!-- 가장 첫 번째 품목 기준 출력 -->
-			  <td th:text="${order.lineItems[0].item.code}">품목코드</td>
-			  <td th:text="${order.lineItems[0].item.name}">품목명</td>
-			  <td th:text="${order.lineItems[0].unitQty}">수량</td>
-			  <td th:text="${order.lineItems[0].item.unit}">단위</td>
-			
-			  <td th:text="${order.company.employee.empName}">담당자</td> <!-- employee 엔티티 연결된 경우 -->
-			
-			  <td>
-			    <button class="btn btn-info btn-sm"
-			            th:onclick="'openplaceDetailModal(' + ${order.orderId} + ')'"
-			            data-bs-toggle="modal"
-			            data-bs-target="#placeDetailModal">상세</button>
-			  </td>
-			  <td>
-			    <button class="btn btn-warning btn-sm"
-			            th:onclick="'openplaceEditModal(' + ${order.orderId} + ')'"
-			            data-bs-toggle="modal"
-			            data-bs-target="#placeEditModal">수정</button>
-			  </td>
-			  <td>
-			    <button type="submit" class="btn btn-warning btn-sm"
-			            th:onclick="'registerInbound(' + ${order.orderId} + ')'">입고 등록</button>
-			  </td>
-			</tr>
-			</tbody>
+  <th:block th:each="order, orderStat : ${orderList}">
+    <tr th:each="item, iterStat : ${order.lineItems}">
+      <!-- 첫 번째 품목일 때만 rowspan 칼럼 출력 -->
+      <td th:if="${iterStat.index == 0}" th:rowspan="${order.lineItems.size()}" th:text="${orderStat.count}">1</td>
+      <td th:if="${iterStat.index == 0}" th:rowspan="${order.lineItems.size()}" th:text="${#temporals.format(order.orderDate, 'yyyy-MM-dd')}">2024-01-01</td>
+      <td th:if="${iterStat.index == 0}" th:rowspan="${order.lineItems.size()}" th:text="${order.company.companyName}">거래처명</td>
+
+      <!-- ✅ 품목 정보 (항상 출력) -->
+      <td><input type="checkbox" name="lineItemIds" th:value="${item.orderLineItemId}" /></td>
+      <td th:text="${order.orderNum}">주문번호</td>
+      <td th:text="${item.item.code}">품목코드</td>
+      <td th:text="${item.item.name}">품목명</td>
+      <td th:text="${item.unitQty}">수량</td>
+      <td th:text="${item.item.unit}">단위</td>
+
+      <td th:if="${iterStat.index == 0}" th:rowspan="${order.lineItems.size()}" th:text="${order.company.employee.empName}">담당자</td>
+    </tr>
+  </th:block>
+</tbody>
+
 
         </table>
       </div>
@@ -103,6 +109,7 @@
   <!-- ✅ 모달 삽입용 div -->
  <div th:replace="~{place/place-detail-modal :: place-detail-modal}"></div>
  <div th:replace="~{place/place-register-modal :: place-register-modal}"></div>
-</body>
+
 <script src="/js/place/place.js"></script>
+</body>
 </html>

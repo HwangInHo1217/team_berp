@@ -1,9 +1,13 @@
 // File: com/team/berp/item/dto/UpdateItemRequestDTO.java
 package com.team.berp.item.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class UpdateItemRequestDTO {
     private String name;
     private String type;

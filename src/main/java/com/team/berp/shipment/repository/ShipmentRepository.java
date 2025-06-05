@@ -1,18 +1,14 @@
-/*
- * Repository: ShipmentRepository.java
- * Purpose: JPA repository for InventoryLog entity, customized for shipment operations.
- */
 package com.team.berp.shipment.repository;
 
-import com.team.berp.domain.InventoryLog;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
+import java.util.List;
 
-/**
- * Repository for InventoryLog (shipment records).
- */
-@Repository
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.team.berp.domain.InventoryLog;
+import com.team.berp.domain.LogType;
+
 public interface ShipmentRepository extends JpaRepository<InventoryLog, Long> {
-    // We use standard findAll and findById;
-    // custom filtering is handled in service layer.
+	  // OUT(출고) 타입만 조회할 수 있도록 메서드 추가
+	// InventoryLogRepository 인터페이스 안에 다음 메서드를 추가합니다.
+	List<InventoryLog> findByLogTypeInOrderByLogDatetimeDesc(List<LogType> types);
 }

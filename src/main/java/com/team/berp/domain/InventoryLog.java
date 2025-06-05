@@ -2,6 +2,7 @@ package com.team.berp.domain;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -14,9 +15,12 @@ import java.time.LocalDateTime;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class InventoryLog {
 
-    @Id
+    
+
+	@Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "log_id")
     private Long id;
@@ -39,8 +43,6 @@ public class InventoryLog {
     @Column(name = "log_datetime")
     private LocalDateTime logDatetime;
     
-    @Column(name="use_yn") // 출고 여부
-	private String useYn;
 
     @Column(columnDefinition = "TEXT")
     private String comment;

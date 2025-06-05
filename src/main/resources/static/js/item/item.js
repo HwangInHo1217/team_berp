@@ -67,27 +67,33 @@ function renderItemTable(items) {
   container.innerHTML = '';
 
   if (items.length === 0) {
-    container.innerHTML = `<tr><td colspan="8">등록된 품목이 없습니다.</td></tr>`;
+    container.innerHTML = `<tr><td colspan="11">등록된 품목이 없습니다.</td></tr>`;
     return;
   }
 
   items.forEach(item => {
     container.insertAdjacentHTML('beforeend', `
-      <tr>
-        <td><input type="checkbox" name="ids" value="${item.id}" /></td>
-        <td>${item.code}</td>
-        <td>${item.name}</td>
-        ${currentTab === 'all' ? `<td>${item.type}</td>` : ''}
-        <td>${item.spec || '-'}</td>
-        <td>${item.unit || '-'}</td>
-        <td>${item.use}</td>
-        <td>
-          <button type="button" class="btn btn-sm btn-outline-primary"
-            data-id="${item.id}" data-name="${item.name}" data-type="${item.type}"
-            data-spec="${item.spec}" data-unit="${item.unit}" data-use="${item.use}"
-            onclick="openEditModal(this)">수정</button>
-        </td>
-      </tr>
+		<tr>
+		  <td><input type="checkbox" name="ids" value="${item.id}" /></td>
+		  <td>${item.code}</td>
+		  <td>${item.name}</td>
+		  ${currentTab === 'all' ? `<td>${item.type}</td>` : ''}
+		  <td>${item.spec || '-'}</td>
+		  <td>${item.unit || '-'}</td>
+		  <td>${item.itemPrice ?? '-'}</td>
+		  <td>${item.safetyStock ?? '-'}</td>
+		  <td>${item.purchaseLeadTime ?? '-'}</td>
+		  <td>${item.use}</td>
+		  <td>
+		    <button type="button" class="btn btn-sm btn-outline-primary"
+		      data-id="${item.id}" data-name="${item.name}" data-type="${item.type}"
+		      data-spec="${item.spec}" data-unit="${item.unit}" data-use="${item.use}"
+		      data-item-price="${item.itemPrice}" 
+		      data-safety-stock="${item.safetyStock}" 
+		      data-purchase-lead-time="${item.purchaseLeadTime}"
+		      onclick="openEditModal(this)">수정</button>
+		  </td>
+		</tr>
     `);
   });
 }
@@ -117,7 +123,17 @@ function renderPagination(totalPages, currentPage) {
 function submitItem() {
   const form = document.getElementById('addItemForm');
   const formData = new FormData(form);
-  const jsonData = {};
+  const jsonData = {
+    name: formData.get("name"),
+    type: formData.get("type"),
+    spec: formData.get("spec"),
+    unit: formData.get("unit"),
+    use: formData.get("use"),
+    itemPrice: Number(formData.get("itemPrice")),
+    safetyStock: Number(formData.get("safetyStock")),
+    purchaseLeadTime: Number(formData.get("purchaseLeadTime"))
+  };
+
   formData.forEach((value, key) => jsonData[key] = value);
 
   fetch('/item/item', {
@@ -148,8 +164,12 @@ function submitItemUpdate() {
     type: document.getElementById("editItemType").value,
     spec: document.getElementById("editItemSpec").value,
     unit: document.getElementById("editItemUnit").value,
-    use: document.getElementById("editItemUse").value
+    use: document.getElementById("editItemUse").value,
+    itemPrice: Number(document.getElementById("editItemPrice").value),
+    safetyStock: Number(document.getElementById("editItemSafetyStock").value),
+    purchaseLeadTime: Number(document.getElementById("editItemPurchaseLeadTime").value)
   };
+
 
   fetch(`/item/${id}`, {
     method: 'PUT',
@@ -199,6 +219,10 @@ function openEditModal(btn) {
   document.getElementById("editItemType").value = btn.dataset.type;
   document.getElementById("editItemSpec").value = btn.dataset.spec;
   document.getElementById("editItemUnit").value = btn.dataset.unit;
+  document.getElementById("editItemPrice").value = btn.dataset.itemPrice;
+  document.getElementById("editItemSafetyStock").value = btn.dataset.safetyStock;
+  document.getElementById("editItemPurchaseLeadTime").value = btn.dataset.purchaseLeadTime;
+
   document.getElementById("editItemUse").value = btn.dataset.use;
 
   bootstrap.Modal.getOrCreateInstance(document.getElementById("itemEditModal")).show();

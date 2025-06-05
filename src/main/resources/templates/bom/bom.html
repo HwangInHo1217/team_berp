@@ -33,15 +33,17 @@
 							placeholder="검색어 입력" />
 						<button class="btn btn-outline-secondary" type="submit">검색</button>
 					</div>
-
+					
 					<div class="col-md-6 d-flex justify-content-end align-items-center">
+					
 						<select id="searchUseYn" class="form-select w-auto me-2">
 							<option value="">전체</option>
 							<option value="Y">Y (사용중)</option>
 							<option value="N">N (미사용)</option>
-						</select>
+						</select> 
+						<!--  
 						<button class="btn btn-danger me-2" type="button"
-							onclick="deleteSelectedBoms()">삭제</button>
+							onclick="deleteSelectedBoms()">삭제</button>-->
 						<button type="button" class="btn btn-primary"
 							data-bs-toggle="modal" data-bs-target="#bomRegisterModal">+
 							BOM 등록</button>
@@ -53,7 +55,7 @@
 					<table class="table table-bordered text-center align-middle">
 						<thead class="table-light">
 							<tr>
-								<th><input type="checkbox" /></th>
+								
 								<th>품목코드</th>
 								<th>품목명</th>
 								<th>품목유형</th>
@@ -61,8 +63,9 @@
 								<th>단위</th>
 								<th>사용여부</th>
 								<th>구성보기</th>
-								<th>자재 상세 보기</th>
+								
 								<th>수정</th>
+								<th>삭제</th>
 							</tr>
 						</thead>
 						<tbody id="bomTableBody">
@@ -104,10 +107,11 @@
 										<!-- JS에서 채워주는 부분이라서 지움 -->
 									</select>
 								</div>
+								<!-- versionCode 입력란 대신, 숨겨진 input + 표시용 텍스트 -->
 								<div class="mb-3">
-									<label class="form-label">버전 코드 (예: V1, V-PORK)</label> <input
-										type="text" class="form-control" name="version_code"
-										id="versionCodeInput" required />
+									<label class="form-label">버전 코드</label> <input type="text"
+										class="form-control" id="versionCodeInput" name="version_code"
+										readonly placeholder="자동 생성 대기 중..." />
 								</div>
 								<!-- 🔽 설명 -->
 								<div class="mb-3">
@@ -182,81 +186,91 @@
 		</div>
 		<!-- BOM 수정 모달 -->
 		<!-- ✅ BOM 수정 모달 -->
-<div class="modal fade" id="bomEditModal" tabindex="-1" aria-labelledby="bomEditModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-xl modal-dialog-scrollable">
-    <div class="modal-content">
-      <form id="bomEditForm">
-        <div class="modal-header">
-          <h5 class="modal-title">BOM 수정</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-        </div>
+		<div class="modal fade" id="bomEditModal" tabindex="-1"
+			aria-labelledby="bomEditModalLabel" aria-hidden="true">
+			<div class="modal-dialog modal-xl modal-dialog-scrollable">
+				<div class="modal-content">
+					<form id="bomEditForm">
+						<div class="modal-header">
+							<h5 class="modal-title">BOM 수정</h5>
+							<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+						</div>
 
-        <div class="modal-body">
-          <!-- 숨김: 버전 ID -->
-          <input type="hidden" id="editVersionId" />
+						<div class="modal-body">
+							<!-- 숨김: 버전 ID -->
+							<input type="hidden" id="editVersionId" />
 
-          <div class="mb-3">
-            <label class="form-label">완제품 (Parent Item)</label>
-            <select id="editParentItemSelect" class="form-select" required>
-              <!-- JS에서 채워짐 -->
-            </select>
-          </div>
+							<!-- 완제품 (수정 불가) -->
+							<div class="mb-3">
+								<label class="form-label">완제품 (Parent Item)</label> <input
+									type="text" id="editParentItemDisplay" class="form-control"
+									readonly />
+							</div>
 
-          <div class="mb-3">
-            <label class="form-label">버전 코드</label>
-            <input type="text" id="editVersionCode" class="form-control" required />
-          </div>
+							<!-- 버전 코드 (수정 불가) -->
+							<div class="mb-3">
+								<label class="form-label">버전 코드</label> <input type="text"
+									id="editVersionCode" class="form-control" readonly />
+							</div>
 
-          <div class="mb-3">
-            <label class="form-label">설명</label>
-            <input type="text" id="editDescription" class="form-control" />
-          </div>
+							<!-- 설명 -->
+							<div class="mb-3">
+								<label class="form-label">설명</label> <input type="text"
+									id="editDescription" class="form-control" />
+							</div>
 
-          <div class="mb-3">
-            <label class="form-label">사용 여부</label>
-            <select id="editUseYn" class="form-select">
-              <option value="Y">Y</option>
-              <option value="N">N</option>
-            </select>
-          </div>
+							<!-- 사용 여부 -->
+							<div class="mb-3">
+								<label class="form-label">사용 여부</label> <select id="editUseYn"
+									class="form-select">
+									<option value="Y">Y</option>
+									<option value="N">N</option>
+								</select>
+							</div>
 
-          <!-- 자재 테이블 렌더링 영역 -->
-          <div id="bomEditTableArea"></div>
-        </div>
 
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
-          <button type="submit" class="btn btn-primary">저장</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
+							<!-- 자재 테이블 렌더링 영역 -->
+							<div id="bomEditTableArea"></div>
+						</div>
+
+						<div class="modal-footer">
+							<button type="button" class="btn btn-secondary"
+								data-bs-dismiss="modal">닫기</button>
+							<button type="submit" class="btn btn-primary">저장</button>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
 
 		<!-- ✅ BOM 버전 선택 모달 -->
-<!-- BOM 버전 선택 모달 -->
-<div class="modal fade" id="bomVersionSelectModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">BOM 버전 선택</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <select id="bomVersionSelect" class="form-select">
-          <!-- JS에서 동적으로 버전 목록을 채움 -->
-        </select>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
-        <button type="button" class="btn btn-danger" onclick="deleteBomVersion()">버전 삭제</button>
-        <button type="button" class="btn btn-primary" onclick="loadBomByVersion()">선택</button>
-      </div>
-    </div>
-  </div>
-</div>
+		<!-- BOM 버전 선택 모달 -->
+		<div class="modal fade" id="bomVersionSelectModal" tabindex="-1"
+			aria-hidden="true">
+			<div class="modal-dialog modal-dialog-centered">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title">BOM 버전 선택</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+					</div>
+					<div class="modal-body">
+						<select id="bomVersionSelect" class="form-select">
+							<!-- JS에서 동적으로 버전 목록을 채움 -->
+						</select>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-secondary"
+							data-bs-dismiss="modal">취소</button>
+						<button type="button" class="btn btn-danger"
+							onclick="deleteBomVersion()">버전 삭제</button>
+						<button type="button" class="btn btn-primary"
+							onclick="loadBomByVersion()">선택</button>
+					</div>
+				</div>
+			</div>
+		</div>
 
-		
+
 		<!-- BOM 구성 상세 보기 모달 -->
 		<div id="bomViewModalWrapper">
 			<div class="modal fade" id="bomViewModal" tabindex="-1"
@@ -270,55 +284,56 @@
 
 						<div class="modal-body">
 							<div class="container-fluid">
-								<div class="row gx-4">
+								<div class="row gx-4 design1"
+									style="display: flex; flex-direction: column;">
 									<div class="col-md-3">
 										<!-- 품목 리스트 -->
-										<div class="card mb-3">
-											<div class="card-header text-center fw-bold">품목 리스트</div>
-											<div class="card-body card-body-scrollable p-2">
-												<table
-													class="table table-sm table-bordered text-center table-fixed">
-													<thead class="table-light">
-														<tr>
-															<th>No</th>
-															<th>코드</th>
-															<th>명</th>
-															<th>규격</th>
-															<th>단위</th>
-														</tr>
-													</thead>
-													<tbody id="bomProductList">
-														<!-- JS에서 채워주는 부분이라서 지움 -->
-													</tbody>
-												</table>
-											</div>
-										</div>
+										<!-- 										<div class="card mb-3"> -->
+										<!-- 											<div class="card-header text-center fw-bold" style="width: 100%">품목 리스트</div> -->
+										<!-- 											<div class="card-body card-body-scrollable p-2"> -->
+										<!-- 												<table -->
+										<!-- 													class="table table-sm table-bordered text-center table-fixed"> -->
+										<!-- 													<thead class="table-light"> -->
+										<!-- 														<tr> -->
+										<!-- 															<th>No</th> -->
+										<!-- 															<th>코드</th> -->
+										<!-- 															<th>명</th> -->
+										<!-- 															<th>규격</th> -->
+										<!-- 															<th>단위</th> -->
+										<!-- 														</tr> -->
+										<!-- 													</thead> -->
+										<!-- 													<tbody id="bomProductList"> -->
+										<!-- 														JS에서 채워주는 부분이라서 지움 -->
+										<!-- 													</tbody> -->
+										<!-- 												</table> -->
+										<!-- 											</div> -->
+										<!-- 										</div> -->
 
 										<!-- 자재 리스트 -->
-										<div class="card mb-4">
-											<div class="card-header text-center fw-bold">자재 리스트</div>
-											<div class="card-body card-body-scrollable p-2">
-												<table
-													class="table table-sm table-bordered text-center table-fixed">
-													<thead class="table-light">
-														<tr>
-															<th>No</th>
-															<th>코드</th>
-															<th>명</th>
-															<th>규격</th>
-															<th>단위</th>
-														</tr>
-													</thead>
-													<tbody id="bomMaterialList">
-														<!-- JS에서 채워주는 부분이라서 지움 -->
-													</tbody>
-												</table>
-											</div>
-										</div>
+										<!-- 										<div class="card mb-4"> -->
+										<!-- 											<div class="card-header text-center fw-bold">자재 리스트</div> -->
+										<!-- 											<div class="card-body card-body-scrollable p-2"> -->
+										<!-- 												<table -->
+										<!-- 													class="table table-sm table-bordered text-center table-fixed"> -->
+										<!-- 													<thead class="table-light"> -->
+										<!-- 														<tr> -->
+										<!-- 															<th>No</th> -->
+										<!-- 															<th>코드</th> -->
+										<!-- 															<th>명</th> -->
+										<!-- 															<th>규격</th> -->
+										<!-- 															<th>단위</th> -->
+										<!-- 														</tr> -->
+										<!-- 													</thead> -->
+										<!-- 													<tbody id="bomMaterialList"> -->
+										<!-- 														JS에서 채워주는 부분이라서 지움 -->
+										<!-- 													</tbody> -->
+										<!-- 												</table> -->
+										<!-- 											</div> -->
+										<!-- 										</div> -->
 									</div>
 
 									<!-- BOM 트리 구조 -->
-									<div class="col-md-9">
+									<div class="col-md-9" style="width: 100%">
 										<div class="card mb-4">
 											<div class="card-header fw-bold">BOM 트리 구조</div>
 											<div class="card-body">

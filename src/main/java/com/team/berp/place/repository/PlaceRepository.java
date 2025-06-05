@@ -4,35 +4,52 @@ import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.team.berp.domain.CompanyOrder;
 
 public interface PlaceRepository extends JpaRepository<CompanyOrder, Long> {
 
-	
-	
-    /**
-     * 거래처명과 발주일자 범위로 발주 내역과 관련된 모든 연관 데이터를 한 번에 조회
+    /*거래처명과 발주일자 범위로 발주 내역과 관련된 모든 연관 데이터를 한 번에 조회
      * - CompanyOrder + Company + OrderLineItem + Item을 JOIN FETCH 해서 N+1 문제 방지
      * - LIKE 연산으로 거래처명 부분 검색 가능
      * - 날짜 범위 조건 포함
     일반 Join: SQL조인, 지연로딩 그대로, 조건 조회, 기준 엔티티만 가져옴
     Join FETCH: 연관된 엔티티를 즉시 함께 조회, 즉시 로딩처럼 연관 객체도 함께 가져옴, 
-    조회 + N + 1 문제 해결, 기준 + 연관된 엔티티도 함께 가져옴
-     */
-
-	// PlaceRepository.java
-//	@Query("SELECT DISTINCT o FROM CompanyOrder o " +
-//	       "JOIN FETCH o.lineItems li " +
-//	       "JOIN FETCH li.item")
-//	List<CompanyOrder> findAllWithItems();
+    조회 + N + 1 문제 해결, 기준 + 연관된 엔티티도 함께 가져옴*/
 
 	@Query("SELECT DISTINCT o FROM CompanyOrder o " +
-		       "JOIN FETCH o.company c " + //companyorder가 연관된 company를 같이 가져옴
-		       "JOIN FETCH c.employee e " +  // 회사 → 직원까지 fetch
-		       "JOIN FETCH o.lineItems li " + //주문 상세 항목을 가져옴
-		       "JOIN FETCH li.item") //품목 항목을 가져옴
+		       "LEFT JOIN FETCH o.company c " +
+		       "LEFT JOIN FETCH c.employee e " +
+		       "JOIN FETCH o.lineItems li " +
+		       "JOIN FETCH li.item " +
+		       "WHERE o.orderType = com.team.berp.domain.CompanyOrder.OrderType.SUPPLIER")
 		List<CompanyOrder> findAllWithItems();
+	
+	// ✅ 품목명으로 발주 검색하는 메서드 추가
+	@Query("SELECT DISTINCT co FROM CompanyOrder co " +
+	           "JOIN FETCH co.lineItems li " +
+	           "JOIN FETCH li.item i " +
+	           "JOIN FETCH co.company comp " +
+	           "LEFT JOIN FETCH comp.employee " +
+	           "WHERE LOWER(i.name) LIKE LOWER(CONCAT('%', :itemName, '%'))")
+	    List<CompanyOrder> findOrdersByItemName(@Param("itemName") String itemName);
+	
+	// ✅ 메서드명 기반 검색 (더 간단함)
+//    @Query("SELECT DISTINCT co FROM CompanyOrder co " +
+//           "JOIN FETCH co.lineItems li " +
+//           "JOIN FETCH li.item i " +
+//           "JOIN FETCH co.company comp " +
+//           "LEFT JOIN FETCH comp.employee " +
+//           "WHERE i.name LIKE %:itemName%")
+//    List<CompanyOrder> findByLineItemsItemNameContainingIgnoreCase(@Param("itemName") String itemName);
 
-
+	// ✅ Native Query 사용 (가장 확실함)
+//    @Query(value = "SELECT DISTINCT co.* FROM company_order co " +
+//                   "JOIN order_line_item oli ON co.order_id = oli.company_order_id " +
+//                   "JOIN item i ON oli.item_id = i.id " +
+//                   "WHERE LOWER(i.name) LIKE LOWER(CONCAT('%', :itemName, '%'))", 
+//           nativeQuery = true)
+//    List<CompanyOrder> findOrdersByItemNameNative(@Param("itemName") String itemName);
+	
 }
