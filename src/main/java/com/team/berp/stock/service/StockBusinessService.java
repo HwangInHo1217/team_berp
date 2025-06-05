@@ -257,8 +257,6 @@ public class StockBusinessService {
             default -> stockRepo.findAll(page);
         };
     }
-    
- // StockBusinessService.java - transferStock 메서드 수정
 
     /**
      * 창고간 재고 이동 처리 (🔧 이력 기록 개선 버전)

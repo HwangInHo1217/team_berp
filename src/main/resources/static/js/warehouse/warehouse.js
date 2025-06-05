@@ -926,7 +926,6 @@ document.addEventListener('DOMContentLoaded', function() {
 	    }
 	}, 500);
 
-    // 수정 버튼 클릭 (이벤트 위임)
 	// 수정 버튼 클릭 (이벤트 위임)
 	document.addEventListener('click', function(e) {
 	    
