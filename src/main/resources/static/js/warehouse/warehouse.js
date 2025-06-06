@@ -933,10 +933,10 @@ document.addEventListener('DOMContentLoaded', function() {
 	        const whsData = JSON.parse(e.target.getAttribute('data-whs'));
 	        
 	        // 🆕 미사용 창고 체크
-	        if (whsData.useYn === 'N') {
-	            alert('사용하지 않는 창고입니다.\n창고를 다시 사용하고 싶으시면 사용여부를 수정해주세요.');
-	            return; // 모달 열기 차단
-	        }
+	        //if (whsData.useYn === 'N') {
+	        //   alert('사용하지 않는 창고입니다.\n창고를 다시 사용하고 싶으시면 사용여부를 수정해주세요.');
+	            //return; // 모달 열기 차단
+	        //}
 	        
 	        modalManager.show('edit', whsData);
 	    }

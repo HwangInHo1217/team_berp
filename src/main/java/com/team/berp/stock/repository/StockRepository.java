@@ -46,6 +46,7 @@ Page<Stock> searchByWarehouse(@Param("keyword") String keyword, Pageable pageabl
      "   OR LOWER(w.warehouseCode) LIKE LOWER(CONCAT('%', :keyword, '%')))")
 Page<Stock> searchByKeyword(@Param("keyword") String keyword, Pageable pageable);
 
+
 Optional<Stock> findByItemAndWarehouse(Item item, Warehouse warehouse);
 
 @Query("SELECT s FROM Stock s WHERE s.warehouse.warehouseCode = :whsCode AND s.warehouse.useYn = 'Y'")
