@@ -127,7 +127,7 @@ function placeSubmit() {
             }
             
             // 목록 새로고침
-            loadPlaceList();
+          //  loadPlaceList();
         })
         .catch(err => {
             console.error('저장 오류:', err);
