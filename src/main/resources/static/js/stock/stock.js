@@ -2733,4 +2733,4 @@ setTimeout(() => {
     console.log('  - currentItemName:', StockModal.currentItemName);
     console.log('  - currentItemType:', StockModal.currentItemType);
 }, 1000); // 1초 후 실행
-//아니 왜 안되냐고
+

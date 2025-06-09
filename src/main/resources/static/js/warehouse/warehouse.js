@@ -843,7 +843,7 @@ DOMContentLoaded 시:
 - 이벤트들 바인딩
 - 수정 버튼 위임
 */
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener('DOMContentLoaded', function() {
     // 페이지 정보 초기화
 	// 📌 현재 페이지 번호 초기화 (hidden input으로 전달된 값 기준)
     const pageInput = utils.$('#currentPage');
@@ -926,52 +926,63 @@ document.addEventListener("DOMContentLoaded", function() {
 	    }
 	}, 500);
 
-    // 수정 버튼 클릭 (이벤트 위임)
-	// 수정 버튼 클릭 시 이벤트 위임 (동적으로 추가되는 행을 위해 document에 위임)
-    document.addEventListener('click', function(e) {
-		
-        if (e.target.classList.contains('edit-btn')) {
-            const whsData = JSON.parse(e.target.getAttribute('data-whs')) // 버튼의 data-whs 속성(JSON);
-            modalManager.show('edit', whsData); // 수정 모드로 모달 열기
-        }
-		// 재고보기 버튼 처리 (개선됨)
-		if (e.target.classList.contains('stock-view-btn') || e.target.closest('.stock-view-btn')) {
-			e.preventDefault();
-			e.stopPropagation();
-			
-		    const stockBtn = e.target.classList.contains('stock-view-btn') ? 
-							e.target : e.target.closest('.stock-view-btn');
-			console.log('🏢 재고보기 버튼 클릭됨!', stockBtn); 
-							
-			const whsDataStr = stockBtn.getAttribute('data-whs');
-			console.log('📋 data-whs 속성:', whsDataStr);
-		    
-			try{
-				const whsData = JSON.parse(whsDataStr);
-				console.log('🏢 재고보기 버튼 클릭:', whsData);
-				
-				// WarehouseStockModal이 로드되었는지 확인
-				if (typeof WarehouseStockModal !== 'undefined' && WarehouseStockModal.open) {
-					console.log('🚀 모달 열기 시도...');
-					WarehouseStockModal.open(whsData.warehouseId, whsData);
-				} else {
-				    console.error('❌ WarehouseStockModal이 로드되지 않았습니다.');
-					console.log('현재 WarehouseStockModal:', typeof WarehouseStockModal);
-					alert('재고 모달을 불러올 수 없습니다. 페이지를 새로고침해 주세요.');
-				}
-			}catch{
-				console.error('❌ JSON 파싱 오류:', error);
-				console.log('원본 데이터:', whsDataStr);
-				alert('창고 정보를 읽을 수 없습니다.');
-			}
-		}
-
-    });
+	// 수정 버튼 클릭 (이벤트 위임)
+	document.addEventListener('click', function(e) {
+	    
+	    if (e.target.classList.contains('edit-btn')) {
+	        const whsData = JSON.parse(e.target.getAttribute('data-whs'));
+	        
+	        // 🆕 미사용 창고 체크
+	        //if (whsData.useYn === 'N') {
+	        //   alert('사용하지 않는 창고입니다.\n창고를 다시 사용하고 싶으시면 사용여부를 수정해주세요.');
+	            //return; // 모달 열기 차단
+	        //}
+	        
+	        modalManager.show('edit', whsData);
+	    }
+	    
+	    // 재고보기 버튼 처리
+	    if (e.target.classList.contains('stock-view-btn') || e.target.closest('.stock-view-btn')) {
+	        e.preventDefault();
+	        e.stopPropagation();
+	        
+	        const stockBtn = e.target.classList.contains('stock-view-btn') ? 
+	                        e.target : e.target.closest('.stock-view-btn');
+	        console.log('🏢 재고보기 버튼 클릭됨!', stockBtn); 
+	                        
+	        const whsDataStr = stockBtn.getAttribute('data-whs');
+	        console.log('📋 data-whs 속성:', whsDataStr);
+	        
+	        try{
+	            const whsData = JSON.parse(whsDataStr);
+	            console.log('🏢 재고보기 버튼 클릭:', whsData);
+	            
+	            // 🆕 미사용 창고 체크
+	            if (whsData.useYn === 'N') {
+	                alert('사용하지 않는 창고입니다.\n창고를 다시 사용하고 싶으시면 사용여부를 수정해주세요.');
+	                return; // 재고 모달 열기 차단
+	            }
+	            
+	            // WarehouseStockModal이 로드되었는지 확인
+	            if (typeof WarehouseStockModal !== 'undefined' && WarehouseStockModal.open) {
+	                console.log('🚀 모달 열기 시도...');
+	                WarehouseStockModal.open(whsData.warehouseId, whsData);
+	            } else {
+	                console.error('❌ WarehouseStockModal이 로드되지 않았습니다.');
+	                console.log('현재 WarehouseStockModal:', typeof WarehouseStockModal);
+	                alert('재고 모달을 불러올 수 없습니다. 페이지를 새로고침해 주세요.');
+	            }
+	        }catch(error){
+	            console.error('❌ JSON 파싱 오류:', error);
+	            console.log('원본 데이터:', whsDataStr);
+	            alert('창고 정보를 읽을 수 없습니다.');
+	        }
+	    }
+	});
 });
 
-// 🆕 창고 테이블 행 더블클릭으로도 재고 모달 열기 (선택사항)
+// 🆕 창고 테이블 행 더블클릭으로도 재고 모달 열기 (미사용 창고 체크 포함)
 document.addEventListener('DOMContentLoaded', function() {
-    // 테이블 body에 더블클릭 이벤트 추가
     const tableBody = utils.$(selectors.tbody);
     if (tableBody) {
         tableBody.addEventListener('dblclick', function(e) {
@@ -979,8 +990,21 @@ document.addEventListener('DOMContentLoaded', function() {
             if (row && !row.classList.contains('no-data-row')) {
                 const stockBtn = row.querySelector('.stock-view-btn');
                 if (stockBtn) {
-					console.log('🖱️ 테이블 행 더블클릭으로 재고보기 실행');
-                    stockBtn.click(); // 재고보기 버튼 클릭 트리거
+                    const whsDataStr = stockBtn.getAttribute('data-whs');
+                    try {
+                        const whsData = JSON.parse(whsDataStr);
+                        
+                        // 🆕 미사용 창고 체크
+                        if (whsData.useYn === 'N') {
+                            alert('사용하지 않는 창고입니다.\n창고를 다시 사용하고 싶으시면 사용여부를 수정해주세요.');
+                            return; // 더블클릭 재고보기 차단
+                        }
+                        
+                        console.log('🖱️ 테이블 행 더블클릭으로 재고보기 실행');
+                        stockBtn.click(); // 재고보기 버튼 클릭 트리거
+                    } catch (error) {
+                        console.error('❌ 더블클릭 시 데이터 파싱 오류:', error);
+                    }
                 }
             }
         });

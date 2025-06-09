@@ -19,6 +19,7 @@ import org.springframework.util.StringUtils;
 
 import com.team.berp.domain.Warehouse;
 import com.team.berp.domain.WarehouseType;
+import com.team.berp.stock.repository.StockRepository; // ✅ StockRepository 추가
 import com.team.berp.warehouse.dto.WarehouseCreateRequestDTO;
 import com.team.berp.warehouse.dto.WarehouseResponseDTO;
 import com.team.berp.warehouse.repository.Warehouse_repository;
@@ -28,11 +29,13 @@ public class Warehouse_service {
     
     private static final Logger log = LoggerFactory.getLogger(Warehouse_service.class);
     private final Warehouse_repository repo;
+    private final StockRepository stockRepo; // ✅ StockRepository 의존성 주입 추가
     private static final int PAGE_SIZE = 10;
     
     @Autowired
-    public Warehouse_service(Warehouse_repository repo) {
+    public Warehouse_service(Warehouse_repository repo, StockRepository stockRepo) {
         this.repo = repo;
+        this.stockRepo = stockRepo; // ✅ 생성자에 stockRepo 추가
     }
     
     // ========== ✅ 창고 코드 생성 및 중복 확인 ==========
@@ -91,7 +94,8 @@ public class Warehouse_service {
     }
     
     /**
-     * 창고 수정 - 컨트롤러에서 updateWhs 호출됨
+     * ✅ 창고 수정 - 재고 검증 로직 추가
+     * 컨트롤러에서 updateWhs 호출됨
      */    
     @Transactional
     public WarehouseResponseDTO updateWhs(Long id, WarehouseCreateRequestDTO dto) {
@@ -100,10 +104,46 @@ public class Warehouse_service {
         Warehouse whs = repo.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("수정할 창고를 찾을 수 없습니다. ID: " + id));
 
+        // ✅ 사용여부를 Y -> N으로 변경하려는 경우 재고 검증
+        if ("Y".equals(whs.getUseYn()) && "N".equals(dto.getUseYn())) {
+            validateWarehouseHasNoStock(id, whs.getWarehouseName());
+        }
+
         updateWhsFields(whs, dto, id);
         Warehouse updated = repo.save(whs);
         log.info("창고 수정 완료: {}", updated.getWarehouseCode());
         return WarehouseResponseDTO.from(updated);
+    }
+
+    /**
+     * ✅ 창고에 재고가 있는지 검증하는 메서드 (새로 추가)
+     * @param warehouseId 검증할 창고 ID
+     * @param warehouseName 오류 메시지용 창고명
+     * @throws IllegalArgumentException 재고가 있으면 예외 발생
+     */
+    private void validateWarehouseHasNoStock(Long warehouseId, String warehouseName) {
+        log.debug("창고 재고 검증 시작 - 창고 ID: {}, 창고명: {}", warehouseId, warehouseName);
+        
+        // 해당 창고의 총 재고 품목 수 조회
+        long totalStockItems = stockRepo.countByWarehouse_Id(warehouseId);
+        
+        if (totalStockItems > 0) {
+            // 재고가 있는 경우, 실제 재고량이 있는 품목 수도 확인
+            Long totalStockQuantity = stockRepo.sumQuantityByWarehouse_Id(warehouseId);
+            
+            if (totalStockQuantity != null && totalStockQuantity > 0) {
+                String errorMessage = String.format(
+                    "창고 '%s'에 재고가 %,d개 남아있어 사용여부를 '미사용'으로 변경할 수 없습니다. " +
+                    "재고를 모두 이동하거나 출고한 후 다시 시도해주세요.",
+                    warehouseName, totalStockQuantity
+                );
+                
+                log.warn("창고 사용 중지 실패 - 재고 존재: 창고={}, 재고량={}", warehouseName, totalStockQuantity);
+                throw new IllegalArgumentException(errorMessage);
+            }
+        }
+        
+        log.debug("창고 재고 검증 통과 - 창고에 재고가 없음");
     }
 
     /**
@@ -124,6 +164,13 @@ public class Warehouse_service {
         if (!repo.existsById(id)) {
             throw new RuntimeException("창고를 찾을 수 없습니다. ID: " + id);
         }
+        
+        // ✅ 삭제 시에도 재고 검증 추가
+        Warehouse warehouse = repo.findById(id).orElse(null);
+        if (warehouse != null) {
+            validateWarehouseHasNoStock(id, warehouse.getWarehouseName());
+        }
+        
         repo.deleteById(id);
     }
     

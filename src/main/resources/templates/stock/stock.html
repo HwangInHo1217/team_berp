@@ -123,6 +123,44 @@ input[type="checkbox"] {
 .pagination .page-link i {
     font-size: 12px;
 }        
+
+
+/* 창고이동 입고 이력 강조 */
+.transfer-incoming-row {
+    background-color: #f8fff8 !important;
+    border-left: 4px solid #28a745;
+}
+
+
+/* 미사용 창고 스타일 */
+.warehouse-disabled {
+    color: #6c757d !important;
+    text-decoration: line-through;
+    opacity: 0.6;
+}
+
+.warehouse-disabled .btn {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+/* 이력 조회 모달 개선 */
+.history-modal .table-success {
+    background-color: #f8fff8 !important;
+}
+
+.history-modal .badge {
+    font-size: 0.75em;
+}
+
+/* 토스트 메시지 위치 조정 */
+.toast-container {
+    z-index: 9999;
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+}
+
     </style>
 </head>
 <body class="d-flex flex-column" style="min-height: 100vh;">

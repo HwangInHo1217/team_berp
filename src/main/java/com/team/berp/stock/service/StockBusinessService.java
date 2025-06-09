@@ -257,9 +257,9 @@ public class StockBusinessService {
             default -> stockRepo.findAll(page);
         };
     }
-    
+
     /**
-     * 창고간 재고 이동 처리 (수정된 버전 - TRANSFER 로그 사용)
+     * 창고간 재고 이동 처리 (🔧 이력 기록 개선 버전)
      */
     @Transactional
     public void transferStock(StockTransferRequestDTO req) {
@@ -329,23 +329,38 @@ public class StockBusinessService {
             System.out.println("✅ 새로운 재고 생성 완료");
         }
         
-        // 🔧 7. TRANSFER 로그 기록 (수정됨 - 하나의 TRANSFER 로그로 통합)
+        // 🆕 7. 개선된 이력 기록 - 출발지와 도착지 모두 기록
         String reasonText = getReasonText(req.getReason());
-        String comment = String.format("[창고이동] %s → %s (수량: %d개), 사유: %s", 
-                                      fromWhs.getWarehouseName(), 
-                                      toWhs.getWarehouseName(),
-                                      req.getQuantity(),
-                                      reasonText);
+        
+        // 🔧 출발지 이력 (기존과 동일)
+        String fromComment = String.format("[창고이동-출고] %s → %s (수량: %d개), 사유: %s", 
+                                          fromWhs.getWarehouseName(), 
+                                          toWhs.getWarehouseName(),
+                                          req.getQuantity(),
+                                          reasonText);
         
         if (req.getComment() != null && !req.getComment().trim().isEmpty()) {
-            comment += ", 비고: " + req.getComment();
+            fromComment += ", 비고: " + req.getComment();
         }
         
-        // 🔧 TRANSFER 로그 하나만 기록 (기존 createLog 메서드 사용)
-        // LogType.TRANSFER를 사용하여 창고이동 로그로 기록
-        logSvc.createLog(LogType.TRANSFER, item, fromWhs, req.getQuantity(), comment);
+        // 🆕 도착지 이력 (새로 추가)
+        String toComment = String.format("[창고이동-입고] %s ← %s (수량: %d개), 사유: %s", 
+                                        toWhs.getWarehouseName(),
+                                        fromWhs.getWarehouseName(), 
+                                        req.getQuantity(),
+                                        reasonText);
         
-        System.out.println("✅ 창고 이동 완료!");
+        if (req.getComment() != null && !req.getComment().trim().isEmpty()) {
+            toComment += ", 비고: " + req.getComment();
+        }
+        
+        // 🔧 출발지 OUT 로그 (기존)
+        logSvc.createLog(LogType.OUT, item, fromWhs, req.getQuantity(), fromComment);
+        
+        // 🆕 도착지 IN 로그 (새로 추가) - IN 타입으로 기록
+        logSvc.createLog(LogType.IN, item, toWhs, req.getQuantity(), toComment);
+        
+        System.out.println("✅ 창고 이동 완료! (출발지/도착지 모두 이력 기록됨)");
     }
 
     /**
