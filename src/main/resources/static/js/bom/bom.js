@@ -118,7 +118,7 @@ function renderBomTable(items) {
 	          onclick="bomEditMode = false; openBomVersionSelectModal(${item.id})">
 	    보기
 	  </button>
-      <td><button class="btn btn-sm btn-outline-secondary" onclick="openBomEditVersionSelectModal(${item.id})">수정</button></td>
+      <!--<td><button class="btn btn-sm btn-outline-secondary" onclick="openBomEditVersionSelectModal(${item.id})">수정</button></td>-->
 	  <td>
 	    <button class="btn btn-sm btn-danger"
 	            onclick="deleteBomGroup(${item.id})">

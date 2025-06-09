@@ -322,7 +322,7 @@ public class StockApiController {
 
     /**
      * 창고 목록 조회 - GET /api/stocks/warehouses
-     * 기존 창고 서비스와 연동
+     * 🔧 미사용 창고 필터링 개선
      */
     @GetMapping("/warehouses")
     public ResponseEntity<List<Map<String, Object>>> getWarehouses(
@@ -330,11 +330,20 @@ public class StockApiController {
         try {
             System.out.println("🏢 창고 목록 조회 요청 - useYn: " + useYn);
             
-            // 기존 창고 서비스 활용
-            List<WarehouseResponseDTO> warehouses = whsSvc.getWhsByFilter(useYn);
+            // 🔧 기존 창고 서비스 활용 + 사용 중인 창고만 필터링
+            List<WarehouseResponseDTO> warehouses;
+            
+            if ("ALL".equals(useYn)) {
+                // 전체 조회 시에도 기본적으로는 사용 중인 창고만 (특별한 경우가 아니면)
+                warehouses = whsSvc.getWhsByFilter("Y");
+                System.out.println("⚠️ 재고 관리에서는 사용 중인 창고만 표시 (useYn=ALL이지만 Y로 필터링)");
+            } else {
+                warehouses = whsSvc.getWhsByFilter(useYn);
+            }
             
             // Warehouse DTO → Map 변환 (JavaScript 호환성)
             List<Map<String, Object>> result = warehouses.stream()
+                .filter(wh -> "Y".equals(wh.getUseYn())) // 🔧 추가 안전장치: 사용 중인 창고만
                 .map(wh -> {
                     Map<String, Object> whMap = new HashMap<>();
                     whMap.put("id", wh.getWarehouseId());
@@ -342,11 +351,18 @@ public class StockApiController {
                     whMap.put("warehouseName", wh.getWarehouseName());
                     whMap.put("warehouseType", wh.getWarehouseType().name());
                     whMap.put("useYn", wh.getUseYn());
+                    
+                    // 🆕 미사용 창고 표시용 추가 정보
+                    whMap.put("isActive", "Y".equals(wh.getUseYn()));
+                    whMap.put("displayName", "Y".equals(wh.getUseYn()) ? 
+                        wh.getWarehouseName() : 
+                        wh.getWarehouseName() + " (미사용)");
+                    
                     return whMap;
                 })
                 .collect(Collectors.toList());
                 
-            System.out.println("✅ 창고 목록 조회 성공: " + result.size() + "개");
+            System.out.println("✅ 창고 목록 조회 성공: " + result.size() + "개 (사용 중인 창고만)");
             return ResponseEntity.ok(result);
             
         } catch (Exception e) {
@@ -354,7 +370,6 @@ public class StockApiController {
             return ResponseEntity.ok(List.of()); // 빈 리스트 반환
         }
     }
- 
     /**
      * 품목 목록 조회 - GET /api/stocks/items
      * Entity → Map 변환으로 필요 필드만 선택

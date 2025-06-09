@@ -66,6 +66,13 @@ const WarehouseStockModal = {
             return;
         }
         
+		// 🔧 미사용 창고 체크
+		if (warehouseData && warehouseData.useYn === 'N') {
+		    console.warn('⚠️ 미사용 창고 접근 시도:', warehouseData.warehouseName);
+		    StockUtils.showError(`'${warehouseData.warehouseName}'은(는) 사용하지 않는 창고입니다.\n재고 조회가 제한됩니다.`);
+		    return;
+		}
+		
         this.currentWarehouseId = warehouseId;
         this.currentWarehouseData = warehouseData;
         this.currentPage = 0;
@@ -97,8 +104,24 @@ const WarehouseStockModal = {
             const element = document.getElementById(id);
             if (element) {
                 element.textContent = value;
+				
+				// 🔧 미사용 창고인 경우 스타일 변경
+				if (warehouseData.useYn === 'N') {
+				    element.style.color = '#6c757d';
+				    element.style.textDecoration = 'line-through';
+				}
+				
             }
         });
+		
+		// 🔧 미사용 창고 경고 메시지 추가
+		if (warehouseData.useYn === 'N') {
+		    const modalTitle = document.querySelector('#warehouseStockModal .modal-title');
+		    if (modalTitle) {
+		        modalTitle.innerHTML += ' <span class="badge bg-secondary ms-2">미사용</span>';
+		    }
+		}
+		
     },
     
     // 창고 유형 라벨 변환
@@ -127,6 +150,12 @@ const WarehouseStockModal = {
             console.error('❌ 창고 ID가 설정되지 않음');
             return;
         }
+		
+		// 🔧 미사용 창고 재체크
+		if (this.currentWarehouseData && this.currentWarehouseData.useYn === 'N') {
+		    this.showError('사용하지 않는 창고의 재고는 조회할 수 없습니다.');
+		    return;
+		}
         
         // 검색 조건 수집
         const keyword = document.getElementById('modalSearchInput')?.value.trim() || '';
@@ -164,10 +193,17 @@ const WarehouseStockModal = {
                 this.updateSummaryInfo(pageData);
                 this.updatePagination(pageData);
             })
-            .catch(error => {
-                console.error('❌ 재고 데이터 로드 실패:', error);
-                this.showError('재고 데이터를 불러오는데 실패했습니다: ' + error.message);
-            });
+			.catch(error => {
+			    console.error('❌ 재고 데이터 로드 실패:', error);
+			    
+			    // 🔧 미사용 창고 접근 시 특별 처리
+			    if (error.message.includes('사용하지 않는 창고') || 
+			        error.message.includes('제한됩니다')) {
+			        this.showError('사용하지 않는 창고입니다. 재고 조회가 제한됩니다.');
+			    } else {
+			        this.showError('재고 데이터를 불러오는데 실패했습니다: ' + error.message);
+			    }
+			});
     },
     
     // 로딩 상태 표시
