@@ -26,7 +26,7 @@ public class PlaceDTO {
     private List<OrderLineItemDTO> lineItems;
     private String orderNum;
     private Long amount;         // 해당 품목 총 금액 (unitPrice * unitQty)
-
+    private String orderStatus; // WAITING, CONFIRMED, COMPLETED
 
     @Data
     @NoArgsConstructor

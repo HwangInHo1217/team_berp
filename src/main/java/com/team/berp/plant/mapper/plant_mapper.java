@@ -25,4 +25,7 @@ public interface plant_mapper {
 	
 	//목록 삭제
 	int workplace_list_del(long workplace_id);
+	
+	//목록 수정
+	int updateWorkplace(plant_DTO dto);
 }

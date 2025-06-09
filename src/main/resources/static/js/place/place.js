@@ -1,9 +1,7 @@
 // 검색 함수
 function searchOrders() {
     const keyword = document.getElementById('searchKeyword').value.trim();
-    
     console.log("✅ 검색 실행 - 키워드:", keyword);
-    
     // 검색어가 있으면 검색 URL로, 없으면 기본 URL로 이동
     if (keyword) {
         window.location.href = `/place/search?keyword=${encodeURIComponent(keyword)}`;
@@ -65,24 +63,26 @@ function placeReset(){
     }
 }
 
-// ✅ 발주 등록/수정 함수 (AJAX 방식)
-// ✅ 발주 등록/수정 함수 (AJAX 방식) - 수정됨
+// ✅ 발주 등록/수정 함수 (AJAX 방식) (자동 새로고침 추가)
 function placeSubmit() {
-    // 폼 기본 제출 이벤트 차단
     event.preventDefault();
     
     if (confirm("입력한 정보를 저장하시겠습니까?")) {
-        const formData = collectFormData(); // 폼 데이터 수집
+        const formData = collectFormData();
         const orderId = document.querySelector('#order_id').value;
         
-        // URL과 메시지 결정
         const url = orderId ? '/place/update' : '/place/add';
         const successMessage = orderId ? '수정되었습니다.' : '등록되었습니다.';
+        
+        // 저장 버튼 비활성화 및 로딩 표시
+        const saveBtn = document.querySelector('#placeRegisterModal .btn-primary');
+        const originalText = saveBtn.textContent;
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>처리중...';
         
         console.log('전송할 데이터:', formData);
         console.log('전송 URL:', url);
         
-        // AJAX 전송
         fetch(url, {
             method: 'POST',
             headers: {
@@ -93,30 +93,26 @@ function placeSubmit() {
         .then(res => {
             console.log('응답 상태:', res.status);
             
-            // ✅ 응답 타입 확인
             const contentType = res.headers.get('content-type');
             if (contentType && contentType.includes('application/json')) {
-                return res.json(); // JSON으로 파싱
+                return res.json();
             } else {
-                return res.text(); // 텍스트로 파싱
+                return res.text();
             }
         })
         .then(result => {
             console.log('성공 응답:', result);
             
-            // ✅ 응답 타입에 따라 처리
             if (typeof result === 'object' && result.success) {
-                // JSON 응답 처리
                 alert(result.message);
             } else if (typeof result === 'string') {
-                // 텍스트 응답 처리
                 alert(successMessage);
             } else if (typeof result === 'object' && !result.success) {
-                // 에러 JSON 응답 처리
                 alert(result.message);
-                return; // 모달을 닫지 않음
+                saveBtn.disabled = false;
+                saveBtn.textContent = originalText;
+                return;
             } else {
-                // 기본 처리
                 alert(successMessage);
             }
             
@@ -126,12 +122,16 @@ function placeSubmit() {
                 modal.hide();
             }
             
-            // 목록 새로고침
-            loadPlaceList();
+            // 페이지 새로고침
+            setTimeout(() => {
+                window.location.reload();
+            }, 500);
         })
         .catch(err => {
             console.error('저장 오류:', err);
             alert('저장 중 오류가 발생했습니다: ' + err.message);
+            saveBtn.disabled = false;
+            saveBtn.textContent = originalText;
         });
     } else {
         alert("저장이 취소되었습니다.");
@@ -379,138 +379,237 @@ function calculateTotals() {
     document.getElementById("amount").textContent = totalAmount.toLocaleString();
 }
 
+// 🚀 스마트 삭제 함수
+function smartDeleteItem(button) {
+    const lineItemId = button.getAttribute('data-lineItemId');
+    const orderId = button.getAttribute('data-orderId');
+    const itemCount = parseInt(button.getAttribute('data-itemCount'));
+    const itemName = button.getAttribute('data-itemName');
+    const orderNum = button.getAttribute('data-orderNum');
+    
+    let confirmMessage = '';
+    let warningMessage = '';
+    
+    if (itemCount > 1) {
+        // 여러 품목 중 하나만 삭제
+        confirmMessage = `품목 '${itemName}'을(를) 삭제하시겠습니까?`;
+        warningMessage = `이 품목이 발주서 ${orderNum}에서 제거됩니다.\n남은 품목: ${itemCount - 1}개`;
+    } else {
+        // 마지막 품목 삭제 = 발주서 전체 삭제
+        confirmMessage = `마지막 품목입니다.\n발주서 ${orderNum}을(를) 완전히 삭제하시겠습니까?`;
+        warningMessage = '발주서와 모든 관련 데이터가 영구적으로 삭제됩니다.';
+    }
+    
+    // 확인 대화상자
+    if (!confirm(`${confirmMessage}\n\n⚠️ 주의: ${warningMessage}\n\n계속하시겠습니까?`)) {
+        return;
+    }
+    
+    // 버튼 비활성화 (중복 클릭 방지)
+    button.disabled = true;
+    const originalHTML = button.innerHTML;
+    button.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+    
+    // 삭제 실행
+    fetch(`/place/item/${lineItemId}/delete`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('서버 통신 오류: ' + response.status);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            // 페이지 새로고침
+            window.location.reload();
+        } else {
+            alert('삭제 실패: ' + data.message);
+            // 버튼 복원
+            button.disabled = false;
+            button.innerHTML = originalHTML;
+        }
+    })
+    .catch(error => {
+        console.error('삭제 오류:', error);
+        alert('삭제 중 오류가 발생했습니다: ' + error.message);
+        // 버튼 복원
+        button.disabled = false;
+        button.innerHTML = originalHTML;
+    });
+}
+
 // ✅ 발주 수정 모달 열기
-function openplaceEditModal() {
-    const checkedItems = document.querySelectorAll('input[name="lineItemIds"]:checked');
+function openPlaceEditModal(lineItemId) {
+    console.log("✅ 개별 품목 수정 요청 - lineItemId:", lineItemId);
 
-    if (checkedItems.length === 0) {
-        alert("수정할 품목을 선택하세요.");
-        return;
-    }
+    // 먼저 해당 발주의 상태를 확인
+    fetch(`/place/detail/${lineItemId}`)
+        .then(res => {
+            if (!res.ok) throw new Error('서버 통신 오류');
+            return res.json();
+        })
+        .then(data => {
+            // 수정 가능 상태인지 체크
+            if (data.orderStatus !== 'WAITING') {
+                const targetItem = data.lineItems.find(item => item.orderLineItemId == lineItemId);
+                const itemName = targetItem ? targetItem.itemName : '해당 품목';
+                
+                alert(`'${itemName}'을(를) 수정할 수 없습니다.\n\n현재 상태: ${getStatusText(data.orderStatus)}\n\n발주 대기 상태에서만 수정이 가능합니다.`);
+                return;
+            }
+            
+            // 수정 가능한 상태면 수정 모달 로드
+            loadRestrictedEditModalData(lineItemId);
+        })
+        .catch(err => {
+            console.error("상태 확인 오류:", err);
+            alert("발주 상태를 확인할 수 없습니다: " + err.message);
+        });
+}
 
-    if (checkedItems.length > 1) {
-        alert("하나의 품목만 선택하세요.");
-        return;
-    }
-
-    const lineItemId = checkedItems[0].value;
-
-    // 서버에서 수정할 발주 데이터 요청
+// 기존 수정 로직을 별도 함수로 분리
+function loadRestrictedEditModalData(lineItemId) {
     fetch(`/place/edit/${lineItemId}`)
         .then(res => {
             if (!res.ok) throw new Error('서버 통신 오류');
             return res.json();
         })
         .then(data => {
-            console.log("불러온 데이터: ", data);
+            console.log("불러온 수정 데이터: ", data);
             
-            // ✅ orderId 설정 (수정 시 가장 중요!)
+            // orderId 설정 (수정 시 가장 중요!)
             document.querySelector('#order_id').value = data.orderId || '';
             
-            // 발주일자
-            document.querySelector('#placeForm [name="orderDate"]').value = data.orderDate;
+            // 🔒 발주 기본 정보는 읽기 전용으로 설정
+            const orderDateField = document.querySelector('#placeForm [name="orderDate"]');
+            const orderTypeField = document.querySelector('#placeForm [name="orderType"]');
+            const companyIdField = document.querySelector('#placeForm [name="companyId"]');
+            const empNameField = document.querySelector('#placeForm [name="empName"]');
+            const empEmailField = document.querySelector('#placeForm [name="empEmail"]');
+            const empHpField = document.querySelector('#placeForm [name="empHp"]');
+            const noteField = document.querySelector('#placeForm [name="note"]');
+            
+            // 기본 정보 설정 (읽기 전용)
+            orderDateField.value = data.orderDate;
+            orderDateField.readOnly = true;
+            orderDateField.style.backgroundColor = '#f8f9fa';
+            
+            orderTypeField.value = data.orderType;
+            orderTypeField.disabled = true;
+            orderTypeField.style.backgroundColor = '#f8f9fa';
+            
+            if (typeof filterCompanies === 'function') {
+                filterCompanies();
+            }
+            companyIdField.value = data.companyId;
+            companyIdField.disabled = true;
+            companyIdField.style.backgroundColor = '#f8f9fa';
+            
+            empNameField.value = data.employeeName || '';
+            empNameField.readOnly = true;
+            empNameField.style.backgroundColor = '#f8f9fa';
+            
+            empEmailField.value = data.employeeEmail || '';
+            empEmailField.readOnly = true;
+            empEmailField.style.backgroundColor = '#f8f9fa';
+            
+            empHpField.value = data.employeeTel || '';
+            empHpField.readOnly = true;
+            empHpField.style.backgroundColor = '#f8f9fa';
+            
+            noteField.value = data.note || '';
+            noteField.readOnly = true;
+            noteField.style.backgroundColor = '#f8f9fa';
 
-            // 사업장 유형 및 이름
-            document.querySelector('#placeForm [name="orderType"]').value = data.orderType;
-            filterCompanies(); // 사업장 필터링 적용
-            document.querySelector('#placeForm [name="companyId"]').value = data.companyId;
-
-            // 담당자 정보
-            document.querySelector('#placeForm [name="empName"]').value = data.employeeName || '';
-            document.querySelector('#placeForm [name="empEmail"]').value = data.employeeEmail || '';
-            document.querySelector('#placeForm [name="empHp"]').value = data.employeeTel || '';
-
-            // 비고
-            document.querySelector('#placeForm [name="note"]').value = data.note || '';
-
-            // 품목 리스트 반복 처리
+            // 품목 리스트 처리 (수정 대상만 편집 가능)
             const itemListContainer = document.getElementById("itemListContainer");
             itemListContainer.innerHTML = "";
             
             data.lineItems.forEach((item, index) => {
                 const row = document.createElement("tr");
                 row.className = "item-row";
+                
+                // ✅ 수정 대상 품목인지 확인
+                const isTargetItem = item.orderLineItemId == lineItemId;
+                const highlightClass = isTargetItem ? ' table-warning' : ' table-light';
+                const readonlyAttr = isTargetItem ? '' : 'readonly';
+                const disabledAttr = isTargetItem ? '' : 'disabled';
+                const editableStyle = isTargetItem ? '' : 'background-color: #f8f9fa; cursor: not-allowed;';
+                
                 row.innerHTML = `
-                    <td>
-                        <select name="lineItems[${index}].itemType" class="form-select item-type">
+                    <td class="${highlightClass}">
+                        <select name="lineItems[${index}].itemType" class="form-select item-type" ${disabledAttr} style="${editableStyle}">
                             <option value="자재" ${item.itemType === '자재' ? 'selected' : ''}>자재</option>
-                            <option value="완제품" ${item.itemType === '완제품' ? 'selected' : ''}>완제품</option>
                         </select>
                     </td>
-                    <td>
-                        <select name="lineItems[${index}].itemId" class="form-select item-name">
+                    <td class="${highlightClass}">
+                        <select name="lineItems[${index}].itemId" class="form-select item-name" ${disabledAttr} style="${editableStyle}">
                             <option value="${item.itemId}" selected>${item.itemName}</option>
                         </select>
+                        ${isTargetItem ? '<small class="text-warning fw-bold">⭐ 수량만 수정 가능</small>' : '<small class="text-muted">🔒 수정 제한</small>'}
                     </td>
-                    <td><input type="text" class="form-control item-code" name="lineItems[${index}].itemCode" value="${item.itemCode}" readonly /></td>
-                    <td><input type="number" class="form-control unit-qty" name="lineItems[${index}].unitQty" value="${item.unitQty}" /></td>
-                    <td><input type="text" class="form-control item-unit" name="lineItems[${index}].unit" value="${item.unit}" readonly /></td>
-                    <td><input type="text" class="form-control unit-price" name="lineItems[${index}].unitPrice" value="${item.unitPrice}" readonly /></td>
-                    <td><input type="text" class="form-control unit-price-all" name="lineItems[${index}].unitPriceAll" value="${item.unitPriceAll}" readonly /></td>
+                    <td class="${highlightClass}"><input type="text" class="form-control item-code" name="lineItems[${index}].itemCode" value="${item.itemCode}" readonly style="${editableStyle}" /></td>
+                    <td class="${highlightClass}"><input type="number" class="form-control unit-qty" name="lineItems[${index}].unitQty" value="${item.unitQty}" ${readonlyAttr} style="${editableStyle}" /></td>
+                    <td class="${highlightClass}"><input type="text" class="form-control item-unit" name="lineItems[${index}].unit" value="${item.unit}" readonly style="${editableStyle}" /></td>
+                    <td class="${highlightClass}"><input type="text" class="form-control unit-price" name="lineItems[${index}].unitPrice" value="${item.unitPrice}" readonly style="${editableStyle}" /></td>
+                    <td class="${highlightClass}"><input type="text" class="form-control unit-price-all" name="lineItems[${index}].unitPriceAll" value="${item.unitPriceAll}" readonly style="${editableStyle}" /></td>
                     <input type="hidden" name="lineItems[${index}].orderLineItemId" class="order-line-item-id" value="${item.orderLineItemId || ''}" />
-                    <td><button type="button" class="btn btn-danger btn-sm" onclick="removeItemRow(this)">삭제</button></td>
+                    <td class="${highlightClass}">
+                        ${isTargetItem ? 
+                            '<button type="button" class="btn btn-danger btn-sm" onclick="removeItemRow(this)">삭제</button>' : 
+                            '<button type="button" class="btn btn-secondary btn-sm" disabled>삭제</button>'
+                        }
+                    </td>
                 `;
                 itemListContainer.appendChild(row);
                 
-                // 각 행 생성 후 즉시 합계 계산
-                calculateItemTotal(row);
+                if (typeof calculateItemTotal === 'function') {
+                    calculateItemTotal(row);
+                }
             });
 
-            // 전체 합계 계산
-            calculateTotals();
+            if (typeof calculateTotals === 'function') {
+                calculateTotals();
+            }
             
-            // 모달 타이틀 변경
-            document.querySelector('#placeRegisterModal .modal-title').textContent = '발주 수정';
+            // ✅ 모달 타이틀을 수정 대상 품목명으로 변경
+            const targetItem = data.lineItems.find(item => item.orderLineItemId == lineItemId);
+            const itemName = targetItem ? targetItem.itemName : '품목';
+            document.querySelector('#placeRegisterModal .modal-title').textContent = `개별 수정: ${itemName}`;
+            
+            // 안내 메시지 추가
+            const modalBody = document.querySelector('#placeRegisterModal .modal-body');
+            let alertDiv = modalBody.querySelector('.edit-restriction-alert');
+            if (!alertDiv) {
+                alertDiv = document.createElement('div');
+                alertDiv.className = 'alert alert-warning edit-restriction-alert';
+                modalBody.insertBefore(alertDiv, modalBody.firstChild);
+            }
+            alertDiv.innerHTML = `
+                <i class="bi bi-info-circle"></i>
+                <strong>개별 수정 모드:</strong> '${itemName}' 품목만 수정할 수 있습니다. 
+                다른 품목과 발주 기본 정보는 변경할 수 없습니다.
+            `;
             
             const modal = new bootstrap.Modal(document.getElementById('placeRegisterModal'));
             modal.show();
         })
         .catch(err => {
             console.error("수정 모달 데이터 불러오기 오류:", err);
-            alert("수정 정보를 불러오는 데 실패했습니다.");
+            alert("수정 정보를 불러오는 데 실패했습니다: " + err.message);
         });
 }
 
 //상세 모달 오픈 - 발주 상세정보를 표시하는 모달을 여는 함수
-//data로 전달된 값들을 모달 내 span 요소에 출력
-/*function openplaceDetailModal(data) {
-    const modalEl = document.getElementById('placeDetailModal');
-    const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+function openPlaceDetailModal(lineItemId) {
+    console.log("✅ 개별 품목 상세 조회 - lineItemId:", lineItemId);
 
-    // 데이터 채우기
-    document.getElementById('placeDetailDate').textContent = data.date;
-    document.getElementById('placeDetailCustomer').textContent = data.customer;
-    document.getElementById('placeDetailItemCode').textContent = data.itemCode;
-    document.getElementById('placeDetailItemName').textContent = data.itemName;
-    document.getElementById('placeDetailQty').textContent = data.quantity;
-    document.getElementById('placeDetailUnit').textContent = data.unit;
-    document.getElementById('placeDetailWarehouse').textContent = data.warehouse;
-    document.getElementById('placeDetailEmployee').textContent = data.employee;
-    document.getElementById('placeDetailNote').textContent = data.note || '';
-
-    modal.show();
-}*/
-
-//상세 모달 오픈 - 발주 상세정보를 표시하는 모달을 여는 함수
-//상세 모달 오픈 - 발주 상세정보를 표시하는 모달을 여는 함수
-//상세 모달 오픈 - 발주 상세정보를 표시하는 모달을 여는 함수
-function openplaceDetailModal() {
-    const checkedItems = document.querySelectorAll('input[name="lineItemIds"]:checked');
-
-    if (checkedItems.length === 0) {
-        alert("상세 정보를 볼 품목을 선택하세요.");
-        return;
-    }
-
-    if (checkedItems.length > 1) {
-        alert("하나의 품목만 선택하세요.");
-        return;
-    }
-
-    const lineItemId = checkedItems[0].value;
-    console.log("✅ 상세 조회 요청 - lineItemId:", lineItemId);
-
-    // 서버에서 상세 데이터 요청
     fetch(`/place/detail/${lineItemId}`)
         .then(res => {
             console.log("✅ 응답 상태:", res.status);
@@ -518,28 +617,19 @@ function openplaceDetailModal() {
             return res.json();
         })
         .then(data => {
-            console.log("✅ 받은 상세 데이터:", data);
-            console.log("✅ companyName 값:", data.companyName);
-            console.log("✅ orderType 값:", data.orderType);
+            console.log("✅ 받은 품목 상세 데이터:", data);
             
-            // ✅ 기본 정보
+            // 기본 정보
             document.getElementById('placeDetailDate').textContent = data.orderDate || '-';
             
-            // 주문번호 (HTML 수정 필요시)
+            // 주문번호
             const orderNumElement = document.getElementById('placeDetailOrderNum');
             if (orderNumElement) {
                 orderNumElement.textContent = data.orderNum || '-';
-            } else {
-                // id가 없다면 3번째 li의 span을 찾아서 설정
-                const orderNumSpan = document.querySelector('#placeDetailModal .list-group-item:nth-child(3) span');
-                if (orderNumSpan) {
-                    orderNumSpan.textContent = data.orderNum || '-';
-                }
             }
             
-            // ✅ 고객사/거래처명
+            // 고객사/거래처명
             let companyText = '-';
-            
             if (data.companyName && data.companyName.trim() !== '') {
                 companyText = data.companyName;
                 if (data.orderType === 'SUPPLIER') {
@@ -548,31 +638,40 @@ function openplaceDetailModal() {
                     companyText += ' (고객사)';
                 }
             } else {
-                console.warn("⚠️ companyName이 비어있거나 없습니다");
                 companyText = '회사명 없음';
             }
-            
-            console.log("✅ 설정할 companyText:", companyText);
             document.getElementById('placeDetailCustomer').textContent = companyText;
             
-            // ✅ 품목 정보 (첫 번째 품목)
+            // ✅ 핵심: 클릭한 품목의 정보만 표시
             if (data.lineItems && data.lineItems.length > 0) {
-                const firstItem = data.lineItems[0];
-                console.log("✅ 첫 번째 품목:", firstItem);
+                // lineItemId와 일치하는 특정 품목 찾기
+                const targetItem = data.lineItems.find(item => 
+                    item.orderLineItemId == lineItemId
+                );
                 
-                document.getElementById('placeDetailItemCode').textContent = firstItem.itemCode || '-';
-                document.getElementById('placeDetailItemName').textContent = firstItem.itemName || '-';
-                document.getElementById('placeDetailQty').textContent = firstItem.unitQty || 0;
-                document.getElementById('placeDetailUnit').textContent = firstItem.unit || '-';
-            } else {
-                console.warn("⚠️ 품목 정보가 없습니다");
-                document.getElementById('placeDetailItemCode').textContent = '-';
-                document.getElementById('placeDetailItemName').textContent = '-';
-                document.getElementById('placeDetailQty').textContent = '-';
-                document.getElementById('placeDetailUnit').textContent = '-';
+                if (targetItem) {
+                    document.getElementById('placeDetailItemCode').textContent = targetItem.itemCode || '-';
+                    document.getElementById('placeDetailItemName').textContent = targetItem.itemName || '-';
+                    document.getElementById('placeDetailQty').textContent = targetItem.unitQty || 0;
+                    document.getElementById('placeDetailUnit').textContent = targetItem.unit || '-';
+                    
+                    // 모달 타이틀도 품목명으로 변경
+                    const modalTitle = document.querySelector('#placeDetailModal .modal-title');
+                    if (modalTitle) {
+                        modalTitle.textContent = `품목 상세: ${targetItem.itemName}`;
+                    }
+                } else {
+                    console.warn("⚠️ 해당 lineItemId의 품목을 찾을 수 없음:", lineItemId);
+                    // 첫 번째 품목으로 대체
+                    const firstItem = data.lineItems[0];
+                    document.getElementById('placeDetailItemCode').textContent = firstItem.itemCode || '-';
+                    document.getElementById('placeDetailItemName').textContent = firstItem.itemName || '-';
+                    document.getElementById('placeDetailQty').textContent = firstItem.unitQty || 0;
+                    document.getElementById('placeDetailUnit').textContent = firstItem.unit || '-';
+                }
             }
             
-            // ✅ 담당자 및 비고
+            // 담당자 및 비고
             document.getElementById('placeDetailManager').textContent = data.employeeName || '-';
             document.getElementById('placeDetailNote').textContent = data.note || '-';
 
@@ -582,21 +681,62 @@ function openplaceDetailModal() {
             modal.show();
         })
         .catch(err => {
-            console.error("❌ 상세 정보 불러오기 오류:", err);
-            alert("상세 정보를 불러오는 데 실패했습니다: " + err.message);
+            console.error("❌ 품목 상세 정보 불러오기 오류:", err);
+            alert("품목 상세 정보를 불러오는 데 실패했습니다: " + err.message);
         });
 }
 
 // ✅ 모달이 닫힐 때 기본 상태로 초기화
-const modalEl = document.getElementById('placeRegisterModal');
-if (modalEl) {
-    modalEl.addEventListener('hidden.bs.modal', () => {
-        document.getElementById('placeForm').reset();
-        document.querySelector('#order_id').value = '';
-        document.querySelector('#placeRegisterModal .modal-title').textContent = '발주 등록';
-    });
-}
-
+// ✅ 모달 초기화 이벤트
+// ✅ 발주 등록 버튼 클릭 시 품목 테이블 완전 재생성
+document.addEventListener('DOMContentLoaded', function() {
+    const addBtn = document.getElementById('addBtn');
+    if (addBtn) {
+        addBtn.addEventListener('click', function() {
+            // 폼 리셋
+            document.getElementById('placeForm').reset();
+            document.querySelector('#order_id').value = '';
+            
+            // 🔥 품목 테이블 완전히 새로 생성
+            const itemListContainer = document.getElementById("itemListContainer");
+            itemListContainer.innerHTML = `
+                <tr class="item-row">
+                    <td>
+                        <select name="lineItems[0].itemType" class="form-select item-type">
+                            <option value="자재" selected>자재</option>
+                            <option value="완제품">완제품</option>
+                        </select>
+                    </td>
+                    <td>
+                        <select name="lineItems[0].itemId" class="form-select item-name">
+                            <option value="">-- 품목 선택 --</option>
+                        </select>
+                    </td>
+                    <td><input type="text" class="form-control item-code" name="lineItems[0].itemCode" readonly /></td>
+                    <td><input type="number" class="form-control unit-qty" name="lineItems[0].unitQty" value="1" /></td>
+                    <td><input type="text" class="form-control item-unit" name="lineItems[0].unit" readonly /></td>
+                    <td><input type="text" class="form-control unit-price" name="lineItems[0].unitPrice" readonly /></td>
+                    <td><input type="text" class="form-control unit-price-all" name="lineItems[0].unitPriceAll" readonly /></td>
+                    <input type="hidden" name="lineItems[0].orderLineItemId" value="" />
+                    <td><button type="button" class="btn btn-danger btn-sm" onclick="removeItemRow(this)">삭제</button></td>
+                </tr>
+            `;
+            
+            // 전체 폼 필드 제한 해제
+            document.querySelectorAll('#placeForm input, #placeForm select, #placeForm textarea').forEach(field => {
+                field.readOnly = false;
+                field.disabled = false;
+                field.style.backgroundColor = '';
+            });
+            
+            // 모달 타이틀 및 알림 초기화
+            document.querySelector('#placeRegisterModal .modal-title').textContent = '발주 등록';
+            const alert = document.querySelector('.edit-restriction-alert');
+            if (alert) alert.remove();
+        });
+    }
+});
+	
 // ✅ 엔터키로 폼 제출 방지
 document.addEventListener('DOMContentLoaded', function() {
     const placeForm = document.getElementById('placeForm');
@@ -612,34 +752,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // ✅ DOM이 로드된 후 이벤트 리스너 등록
 document.addEventListener('DOMContentLoaded', function() {
-    // 상세 버튼 이벤트
-    const detailBtn = document.getElementById('detailBtn');
-    if (detailBtn) {
-        detailBtn.addEventListener('click', function() {
-            // 선택된 항목이 있는지 확인하고 상세 모달 열기
-            const checkedItems = document.querySelectorAll('input[name="lineItemIds"]:checked');
-            if (checkedItems.length === 0) {
-                alert("상세 정보를 볼 품목을 선택하세요.");
-                return;
-            }
-            if (checkedItems.length > 1) {
-                alert("하나의 품목만 선택하세요.");
-                return;
-            }
-            
-            // 상세 모달 열기 (구현 필요시)
-            openplaceDetailModal();
-        });
-    }
-
-    // 수정 버튼 이벤트
-    const editBtn = document.getElementById('editBtn');
-    if (editBtn) {
-        editBtn.addEventListener('click', function() {
-            openplaceEditModal();
-        });
-    }
-
     // 등록 버튼 이벤트
     const addBtn = document.getElementById('addBtn');
     if (addBtn) {
@@ -650,7 +762,7 @@ document.addEventListener('DOMContentLoaded', function() {
             modal.show();
         });
     }
-
+	
     // 엔터키로 폼 제출 방지
     const placeForm = document.getElementById('placeForm');
     if (placeForm) {
@@ -661,15 +773,250 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+});
 
-    // 전체 선택 체크박스 기능
-    const checkAll = document.getElementById("checkAll");
-    if (checkAll) {
-        checkAll.addEventListener("change", function () {
-            const checkboxes = document.querySelectorAll('input[name="lineItemIds"]');
-            checkboxes.forEach(cb => {
-                cb.checked = checkAll.checked;
-            });
+//발주 처리현황 변경
+// 발주 확정 함수
+// ✅ 발주 확정 함수 (자동 새로고침 추가)
+function confirmOrder(button) {
+    if (!confirm('등록확정하시겠습니까?')) {
+        return;
+    }
+    
+    const orderId = button.getAttribute('data-orderId');
+    
+    // 버튼 비활성화 (중복 클릭 방지)
+    button.disabled = true;
+    button.textContent = '처리중...';
+    
+    fetch(`/place/${orderId}/confirm`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            window.location.reload();
+        } else {
+            alert('오류: ' + data.message);
+            button.disabled = false;
+            button.textContent = '발주 대기';
+        }
+    })
+    .catch(error => {
+        console.error('발주 확정 오류:', error);
+        alert('발주 확정 중 오류가 발생했습니다.');
+        button.disabled = false;
+        button.textContent = '발주 대기';
+    });
+}
+
+// 입고 처리 함수 (입고 페이지에서 사용)
+function completeOrder(orderId) {
+    if (!confirm('입고 처리하시겠습니까?')) {
+        return;
+    }
+    
+    fetch(`/place/${orderId}/complete`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message);
+            location.reload(); // 페이지 새로고침
+        } else {
+            alert('오류: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('입고 처리 오류:', error);
+        alert('입고 처리 중 오류가 발생했습니다.');
+    });
+}
+
+// ✅ 전체 선택/해제 토글
+function toggleSelectAll(selectAllCheckbox) {
+    const itemCheckboxes = document.querySelectorAll('.item-checkbox:not(:disabled)');
+    
+    itemCheckboxes.forEach(checkbox => {
+        checkbox.checked = selectAllCheckbox.checked;
+    });
+    
+    updateBatchDeleteButton();
+}
+
+// ✅ 전체 선택/해제 토글
+function toggleSelectAll(selectAllCheckbox) {
+    const itemCheckboxes = document.querySelectorAll('.item-checkbox:not(:disabled)');
+    
+    itemCheckboxes.forEach(checkbox => {
+        checkbox.checked = selectAllCheckbox.checked;
+    });
+    
+    updateBatchDeleteButton();
+}
+
+// ✅ 일괄 삭제 버튼 상태 업데이트 (항상 표시, 활성화/비활성화만 변경)
+function updateBatchDeleteButton() {
+    const checkedBoxes = document.querySelectorAll('.item-checkbox:checked');
+    const totalBoxes = document.querySelectorAll('.item-checkbox:not(:disabled)');
+    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+    const batchDeleteBtn = document.getElementById('batchDeleteBtn');
+    
+    // 전체 선택 체크박스 상태 업데이트
+    if (checkedBoxes.length === 0) {
+        selectAllCheckbox.indeterminate = false;
+        selectAllCheckbox.checked = false;
+    } else if (checkedBoxes.length === totalBoxes.length) {
+        selectAllCheckbox.indeterminate = false;
+        selectAllCheckbox.checked = true;
+    } else {
+        selectAllCheckbox.indeterminate = true;
+        selectAllCheckbox.checked = false;
+    }
+    
+    // ✅ 삭제 버튼 상태 업데이트 (항상 표시)
+    if (checkedBoxes.length > 0) {
+        // 활성화
+        batchDeleteBtn.disabled = false;
+        batchDeleteBtn.className = 'btn btn-danger';
+        batchDeleteBtn.innerHTML = `<i class="bi bi-trash"></i> 선택 삭제 (${checkedBoxes.length}개)`;
+    } else {
+        // 비활성화
+        batchDeleteBtn.disabled = true;
+        batchDeleteBtn.className = 'btn btn-outline-danger';
+        batchDeleteBtn.innerHTML = '<i class="bi bi-trash"></i> 선택 삭제';
+    }
+}
+
+// ✅ HTML에서 호출하는 함수명과 일치시키기 위한 별칭 함수
+function updateDeleteButtons() {
+    updateBatchDeleteButton();
+}
+
+// ✅ DOM이 로드된 후 이벤트 리스너 등록 (개별 체크박스용)
+document.addEventListener('DOMContentLoaded', function() {
+    // 모든 개별 체크박스에 이벤트 리스너 추가
+    const itemCheckboxes = document.querySelectorAll('.item-checkbox');
+    itemCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updateBatchDeleteButton();
+        });
+    });
+    
+    // 전체 선택 체크박스에도 이벤트 리스너 추가
+    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            toggleSelectAll(this);
         });
     }
+    
+    // 초기 상태 설정
+    updateBatchDeleteButton();
 });
+
+// ✅ 선택된 품목들 일괄 삭제
+function deleteSelectedItems() {
+    const checkedBoxes = document.querySelectorAll('.item-checkbox:checked');
+    
+    if (checkedBoxes.length === 0) {
+        alert('삭제할 품목을 선택해주세요.');
+        return;
+    }
+    
+    // 선택된 품목 정보 수집
+    const selectedItems = Array.from(checkedBoxes).map(checkbox => ({
+        lineItemId: checkbox.value,
+        itemName: checkbox.getAttribute('data-itemName'),
+        orderNum: checkbox.getAttribute('data-orderNum'),
+        orderId: checkbox.getAttribute('data-orderId'),
+        itemCount: parseInt(checkbox.getAttribute('data-itemCount'))
+    }));
+    
+    // 발주서별로 그룹화
+    const orderGroups = {};
+    selectedItems.forEach(item => {
+        if (!orderGroups[item.orderId]) {
+            orderGroups[item.orderId] = [];
+        }
+        orderGroups[item.orderId].push(item);
+    });
+    
+    // 확인 메시지 생성
+    let confirmMessage = `선택된 ${selectedItems.length}개 품목을 삭제하시겠습니까?\n\n`;
+    
+    Object.entries(orderGroups).forEach(([orderId, items]) => {
+        const orderNum = items[0].orderNum;
+        const totalItemsInOrder = items[0].itemCount;
+        
+        if (items.length === totalItemsInOrder) {
+            confirmMessage += `📋 ${orderNum}: 전체 삭제 (발주서 삭제)\n`;
+        } else {
+            confirmMessage += `📋 ${orderNum}: ${items.length}/${totalItemsInOrder}개 품목 삭제\n`;
+        }
+        
+        items.forEach(item => {
+            confirmMessage += `   • ${item.itemName}\n`;
+        });
+    });
+    
+    confirmMessage += `\n⚠️ 삭제된 데이터는 복구할 수 없습니다.`;
+    
+    if (!confirm(confirmMessage)) {
+        return;
+    }
+    
+    // 일괄 삭제 실행
+    batchDeleteItems(selectedItems);
+}
+
+// ✅ 실제 일괄 삭제 처리
+function batchDeleteItems(selectedItems) {
+    const batchDeleteBtn = document.getElementById('batchDeleteBtn');
+    
+    // 버튼 로딩 상태로 변경
+    batchDeleteBtn.disabled = true;
+    batchDeleteBtn.className = 'btn btn-secondary';
+    batchDeleteBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>삭제 중...';
+    
+    // 삭제 요청 배열
+    const deletePromises = selectedItems.map(item => 
+        fetch(`/place/item/${item.lineItemId}/delete`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }).then(response => response.json())
+    );
+    
+    // 모든 삭제 요청 병렬 처리
+    Promise.all(deletePromises)
+        .then(results => {
+            const successCount = results.filter(result => result.success).length;
+            const failCount = results.length - successCount;
+            
+            if (failCount === 0) {
+                alert(`${successCount}개 품목이 성공적으로 삭제되었습니다.`);
+            } else {
+                alert(`${successCount}개 성공, ${failCount}개 실패\n일부 품목 삭제에 실패했습니다.`);
+            }
+            
+            // 페이지 새로고침
+            window.location.reload();
+        })
+        .catch(error => {
+            console.error('일괄 삭제 오류:', error);
+            alert('일괄 삭제 중 오류가 발생했습니다.');
+            
+            // 버튼 상태 복원
+            updateBatchDeleteButton();
+        });
+}

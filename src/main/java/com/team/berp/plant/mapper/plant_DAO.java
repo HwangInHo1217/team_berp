@@ -33,4 +33,9 @@ public class plant_DAO implements plant_service {
 	public int workplace_list_del(long workplace_id) {
 		return pm.workplace_list_del(workplace_id);
 	}
+	
+	@Override
+	public int updateWorkplace(plant_DTO dto) {
+		return pm.updateWorkplace(dto);
+	}
 }

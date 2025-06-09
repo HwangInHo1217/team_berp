@@ -580,7 +580,7 @@ window.onload = function() {
         const confirmMsg = "발주가 필요한 자재들이 선택되었습니다.\n발주 등록하시겠습니까?";        if (!window.confirm(confirmMsg)) {
             return;
         }
-        window.location.href = `/purchase-order?items=${encodeURIComponent(uniquePairs.join(","))}`;
+        window.location.href = `/place?items=${encodeURIComponent(uniquePairs.join(","))}`;
     });
 
     // ■ 엔터키 → calculateMrp() 호출
