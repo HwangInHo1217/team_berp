@@ -61,4 +61,11 @@ public class CompanyOrder {
     @Column(name = "order_num")
     private String orderNum;
     
+    public enum OrderStatus {
+        WAITING, CONFIRMED, COMPLETED
+    }
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "order_status", nullable = true) // NULL 허용
+    private OrderStatus orderStatus;
 }

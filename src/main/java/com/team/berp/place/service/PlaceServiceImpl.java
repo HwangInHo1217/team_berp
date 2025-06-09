@@ -3,7 +3,6 @@ package com.team.berp.place.service;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -76,6 +75,9 @@ public class PlaceServiceImpl implements PlaceService{ //실제 구현
          //주문번호 생성 및 세팅
          String orderNum = generateOrderNum();
          order.setOrderNum(orderNum);
+         
+      // 2. 주문 상태 기본값 세팅
+         order.setOrderStatus(CompanyOrder.OrderStatus.WAITING); // ✅ 이 줄 추가
          
         //발주 등록
         //발주 저장
@@ -221,6 +223,10 @@ public class PlaceServiceImpl implements PlaceService{ //실제 구현
             CompanyOrder order = companyOrderRepository.findById(dto.getOrderId())
                 .orElseThrow(() -> new RuntimeException("존재하지 않는 발주입니다."));
 
+            if (!canEdit(order.getOrderStatus())) {
+                throw new RuntimeException("현재 상태에서는 수정할 수 없습니다. 상태: " + order.getOrderStatus());
+            }
+            
             System.out.println("✅ 수정할 발주 조회 성공: " + order.getOrderId());
 
             // 2. 회사 정보 변경
@@ -401,6 +407,7 @@ public class PlaceServiceImpl implements PlaceService{ //실제 구현
                 .orderNum(order.getOrderNum())
                 .orderDate(order.getOrderDate().format(formatter))
                 .orderType(order.getOrderType().name())
+                .orderStatus(order.getOrderStatus().name())
                 .companyId(company.getCompanyId())
                 .companyName(companyName) // ✅ 처리된 회사명 사용
                 .note(order.getNote())
@@ -443,4 +450,198 @@ public class PlaceServiceImpl implements PlaceService{ //실제 구현
             return new ArrayList<>();
         }
     }
+    
+//    @Override
+//    @Transactional
+//    public CompanyOrder updateOrderStatus(Long orderId, String nextStatus) {
+//        CompanyOrder order = companyOrderRepository.findById(orderId)
+//                .orElseThrow(() -> new RuntimeException("해당 발주가 존재하지 않습니다."));
+//
+//        CompanyOrder.OrderStatus currentStatus = order.getOrderStatus();
+//        CompanyOrder.OrderStatus newStatus;
+//
+//        try {
+//            newStatus = CompanyOrder.OrderStatus.valueOf(nextStatus);
+//        } catch (IllegalArgumentException e) {
+//            throw new RuntimeException("잘못된 상태값입니다: " + nextStatus);
+//        }
+//
+//        // 상태 전이 허용 조건 확인
+//        if ((currentStatus == CompanyOrder.OrderStatus.WAITING && newStatus == CompanyOrder.OrderStatus.CONFIRMED) ||
+//            (currentStatus == CompanyOrder.OrderStatus.CONFIRMED && newStatus == CompanyOrder.OrderStatus.COMPLETED)) {
+//            order.setOrderStatus(newStatus);
+//        } else {
+//            throw new RuntimeException("허용되지 않은 상태 전이입니다: " + currentStatus + " → " + newStatus);
+//        }
+//
+//        return companyOrderRepository.save(order);
+//    }
+    
+    @Transactional
+    @Override
+    public CompanyOrder updateOrderStatusEnum(Long orderId, CompanyOrder.OrderStatus status) {
+        CompanyOrder order = companyOrderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("해당 발주를 찾을 수 없습니다. orderId: " + orderId));
+
+        order.setOrderStatus(status);
+
+        return companyOrderRepository.save(order);
+    }
+
+    
+    /* 상태 변경 메서드 (예: 발주 대기 → 발주 등록) */
+    @Transactional
+    @Override
+    public boolean changeOrderStatus(Long orderId, String newStatus) {
+        Optional<CompanyOrder> optionalOrder = companyOrderRepository.findById(orderId);
+        if (optionalOrder.isEmpty()) {
+            return false;
+        }
+
+        CompanyOrder order = optionalOrder.get();
+
+        try {
+            // 🔽 문자열을 enum으로 변환
+            CompanyOrder.OrderStatus statusEnum = CompanyOrder.OrderStatus.valueOf(newStatus.toUpperCase());
+
+            // 🔽 enum으로 상태 설정
+            order.setOrderStatus(statusEnum);
+
+            // 🔽 저장
+            companyOrderRepository.save(order);
+            return true;
+
+        } catch (IllegalArgumentException e) {
+            // 잘못된 상태값이 들어오면 예외 발생 → 실패 처리
+            System.err.println("❌ 상태값 변환 실패: " + newStatus);
+            return false;
+        }
+    }
+
+ // 상태별 액션 가능 여부 체크
+    @Override
+    public boolean canEdit(CompanyOrder.OrderStatus status) {
+        return status == CompanyOrder.OrderStatus.WAITING;
+    }
+
+    @Override
+    public boolean canConfirm(CompanyOrder.OrderStatus status) {
+        return status == CompanyOrder.OrderStatus.WAITING;
+    }
+
+    @Override
+    public boolean canReceive(CompanyOrder.OrderStatus status) {
+        return status == CompanyOrder.OrderStatus.CONFIRMED;
+    }
+
+    // 발주 확정 (WAITING → CONFIRMED)
+    @Override
+    @Transactional
+    public CompanyOrder confirmOrder(Long orderId) {
+        CompanyOrder order = companyOrderRepository.findById(orderId)
+            .orElseThrow(() -> new RuntimeException("해당 발주를 찾을 수 없습니다."));
+            
+        if (!canConfirm(order.getOrderStatus())) {
+            throw new RuntimeException("발주 확정할 수 없는 상태입니다. 현재 상태: " + order.getOrderStatus());
+        }
+        
+        order.setOrderStatus(CompanyOrder.OrderStatus.CONFIRMED);
+        return companyOrderRepository.save(order);
+    }
+
+    // 입고 완료 (CONFIRMED → COMPLETED)
+    @Override
+    @Transactional
+    public CompanyOrder completeOrder(Long orderId) {
+        CompanyOrder order = companyOrderRepository.findById(orderId)
+            .orElseThrow(() -> new RuntimeException("해당 발주를 찾을 수 없습니다."));
+            
+        if (!canReceive(order.getOrderStatus())) {
+            throw new RuntimeException("입고 처리할 수 없는 상태입니다. 현재 상태: " + order.getOrderStatus());
+        }
+        
+        order.setOrderStatus(CompanyOrder.OrderStatus.COMPLETED);
+        return companyOrderRepository.save(order);
+    }
+    
+ // PlaceServiceImpl.java에 추가할 메서드
+
+    @Override
+    @Transactional
+    public String deleteOrderLineItem(Long lineItemId) {
+        try {
+            System.out.println("✅ 스마트 삭제 시작 - lineItemId: " + lineItemId);
+            
+            // 1. 삭제할 품목 조회
+            OrderLineItem lineItem = orderLineItemRepository.findById(lineItemId)
+                .orElseThrow(() -> new RuntimeException("존재하지 않는 품목입니다. ID: " + lineItemId));
+            
+            CompanyOrder order = lineItem.getCompanyOrder();
+            System.out.println("✅ 발주서 조회 완료 - orderId: " + order.getOrderId());
+            
+            // 2. 삭제 가능 상태인지 체크
+            if (!canEdit(order.getOrderStatus())) {
+                throw new RuntimeException("현재 상태에서는 삭제할 수 없습니다. 상태: " + order.getOrderStatus());
+            }
+            
+            // 3. 해당 발주의 전체 품목 개수 확인
+            List<OrderLineItem> allItems = order.getLineItems();
+            System.out.println("✅ 전체 품목 개수: " + allItems.size());
+            
+            if (allItems.size() <= 1) {
+                // 📌 마지막 품목인 경우 발주 전체 삭제
+                System.out.println("✅ 마지막 품목 삭제 - 발주서 전체 삭제 실행");
+                
+                String orderNum = order.getOrderNum();
+                companyOrderRepository.delete(order);
+                
+                System.out.println("✅ 발주서 삭제 완료 - orderNum: " + orderNum);
+                return String.format("발주서 %s가 완전히 삭제되었습니다.", orderNum);
+                
+            } else {
+                // 📌 품목만 삭제 (발주서는 유지)
+                System.out.println("✅ 개별 품목 삭제 실행");
+                
+                String itemName = lineItem.getItem().getName();
+                
+                // 품목 삭제
+                orderLineItemRepository.delete(lineItem);
+                System.out.println("✅ 품목 삭제 완료 - itemName: " + itemName);
+                
+                // 4. 발주의 총 수량과 금액 재계산
+                order.getLineItems().remove(lineItem); // 컬렉션에서도 제거
+                
+                int totalQty = 0;
+                long totalAmount = 0;
+                
+                for (OrderLineItem remainingItem : order.getLineItems()) {
+                    int qty = remainingItem.getUnitQty() != null ? remainingItem.getUnitQty() : 0;
+                    long price = remainingItem.getUnitPrice() != null ? remainingItem.getUnitPrice() : 0L;
+                    
+                    totalQty += qty;
+                    totalAmount += (qty * price);
+                }
+                
+                // 5. 발주서 업데이트
+                order.setOrderQty(totalQty);
+                order.setAmount(totalAmount);
+                companyOrderRepository.save(order);
+                
+                System.out.println("✅ 발주서 업데이트 완료 - 총 수량: " + totalQty + ", 총 금액: " + totalAmount);
+                
+                return String.format("품목 '%s'이(가) 삭제되었습니다. (남은 품목: %d개)", 
+                                   itemName, order.getLineItems().size());
+            }
+            
+        } catch (RuntimeException e) {
+            System.err.println("❌ 스마트 삭제 중 비즈니스 오류: " + e.getMessage());
+            throw e; // 비즈니스 예외는 그대로 전달
+            
+        } catch (Exception e) {
+            System.err.println("❌ 스마트 삭제 중 시스템 오류: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("삭제 처리 중 시스템 오류가 발생했습니다: " + e.getMessage());
+        }
+    }
+
 }

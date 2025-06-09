@@ -1,6 +1,7 @@
 package com.team.berp.place.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -37,4 +38,40 @@ public interface PlaceRepository extends JpaRepository<CompanyOrder, Long> {
 	           "AND co.orderType = com.team.berp.domain.CompanyOrder.OrderType.SUPPLIER " +
 	           "ORDER BY co.orderDate DESC, co.id DESC")
 	    List<CompanyOrder> findOrdersByItemName(@Param("itemName") String itemName);
+
+	 // 🆕 발주 번호로 조회
+    Optional<CompanyOrder> findByOrderNum(String orderNum);
+    
+    // 🆕 발주 상태별 조회
+    List<CompanyOrder> findByOrderStatus(CompanyOrder.OrderStatus orderStatus);
+    
+    // 🆕 발주 유형별 조회
+    List<CompanyOrder> findByOrderType(CompanyOrder.OrderType orderType);
+    
+    // 🆕 공급업체 발주 중 CONFIRMED 상태인 것들만 조회 (입고 처리 가능한 발주)
+    @Query("SELECT DISTINCT co FROM CompanyOrder co " +
+           "LEFT JOIN FETCH co.company c " +
+           "LEFT JOIN FETCH c.employee e " +
+           "JOIN FETCH co.lineItems li " +
+           "JOIN FETCH li.item " +
+           "WHERE co.orderType = com.team.berp.domain.CompanyOrder.OrderType.SUPPLIER " +
+           "AND co.orderStatus = com.team.berp.domain.CompanyOrder.OrderStatus.CONFIRMED")
+    List<CompanyOrder> findConfirmedSupplierOrders();
+    
+    // 🆕 회사별 발주 조회
+    @Query("SELECT co FROM CompanyOrder co WHERE co.company.companyId = :companyId")
+    List<CompanyOrder> findByCompanyId(@Param("companyId") Long companyId);
+    
+    // 🆕 발주 상태별 + 발주 유형별 조회 (입고 관리에서 사용)
+    @Query("SELECT DISTINCT co FROM CompanyOrder co " +
+           "LEFT JOIN FETCH co.company c " +
+           "LEFT JOIN FETCH c.employee e " +
+           "JOIN FETCH co.lineItems li " +
+           "JOIN FETCH li.item " +
+           "WHERE co.orderType = :orderType AND co.orderStatus = :orderStatus")
+    List<CompanyOrder> findByOrderTypeAndOrderStatus(
+        @Param("orderType") CompanyOrder.OrderType orderType,
+        @Param("orderStatus") CompanyOrder.OrderStatus orderStatus);
 }
+
+
