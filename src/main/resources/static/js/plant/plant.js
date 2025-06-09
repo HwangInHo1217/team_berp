@@ -1,37 +1,41 @@
 function handlePlantEdit(button) {
-  // 버튼의 data 속성에서 값 추출
-  const work_name = button.dataset.workName;           // data-workplace-name
-  const work_ceonm = button.dataset.workCeonm; // data-workplace-president-nm
-  const work_no = button.dataset.workNo;
-  const work_cond = button.dataset.workCond;
-  const work_item = button.dataset.workItem;
-  const work_tel = button.dataset.workTel;
-  const work_fax = button.dataset.workFax;
-  const work_addr = button.dataset.workAddr;
-  const work_mainadd = button.dataset.workMainadd;  // 여기도 데이터 속성 이름 맞춰야함
-  const work_detailadd = button.dataset.workDetailadd; // 마찬가지
-  const work_manname = button.dataset.workManname;
-  const work_manemail = button.dataset.workManemail;
-  const work_mantel = button.dataset.workMantel;
+    // 버튼의 data 속성에서 값들을 가져오기
+    const workId = button.closest('tr').querySelector('input[name="work_id"]').value;
+    const workName = button.getAttribute('data-work-name');
+    const workCeonm = button.getAttribute('data-work-ceonm');
+    const workNo = button.getAttribute('data-work-no');
+    const workCond = button.getAttribute('data-work-cond');
+    const workItem = button.getAttribute('data-work-item');
+    const workTel = button.getAttribute('data-work-tel');
+    const workFax = button.getAttribute('data-work-fax');
+    const workAddr = button.getAttribute('data-work-addr');
+    const workMainadd = button.getAttribute('data-work-mainadd');
+    const workDetailadd = button.getAttribute('data-work-detailadd');
+    const workManname = button.getAttribute('data-work-manname');
+    const workManemail = button.getAttribute('data-work-manemail');
+    const workMantel = button.getAttribute('data-work-mantel');
 
-  // 모달 폼 입력값 설정
-  document.getElementById("modal_work_name").value = work_name;
-  document.getElementById("modal_work_ceonm").value = work_ceonm;
-  document.getElementById("modal_work_no").value = work_no;
-  document.getElementById("modal_work_cond").value = work_cond;
-  document.getElementById("modal_work_item").value = work_item;
-  document.getElementById("modal_work_tel").value = work_tel;
-  document.getElementById("modal_work_fax").value = work_fax;
-  document.getElementById("modal_work_addr").value = work_addr;
-  document.getElementById("modal_work_mainadd").value = work_mainadd;
-  document.getElementById("modal_work_detailadd").value = work_detailadd;
-  document.getElementById("modal_work_manname").value = work_manname;
-  document.getElementById("modal_work_manemail").value = work_manemail;
-  document.getElementById("modal_work_mantel").value = work_mantel;
+    console.log('수정할 work_id:', workId); // 디버깅용
 
-  // 모달 열기
-  const modal = new bootstrap.Modal(document.getElementById("plantRegisterModal"));
-  modal.show();
+    // 모달의 input 필드에 값 설정
+    document.getElementById('modal_work_id').value = workId || '';
+    document.getElementById('modal_work_name').value = workName || '';
+    document.getElementById('modal_work_ceonm').value = workCeonm || '';
+    document.getElementById('modal_work_no').value = workNo || '';
+    document.getElementById('modal_work_cond').value = workCond || '';
+    document.getElementById('modal_work_item').value = workItem || '';
+    document.getElementById('modal_work_tel').value = workTel || '';
+    document.getElementById('modal_work_fax').value = workFax || '';
+    document.getElementById('modal_work_addr').value = workAddr || '';
+    document.getElementById('modal_work_mainadd').value = workMainadd || '';
+    document.getElementById('modal_work_detailadd').value = workDetailadd || '';
+    document.getElementById('modal_work_manname').value = workManname || '';
+    document.getElementById('modal_work_manemail').value = workManemail || '';
+    document.getElementById('modal_work_mantel').value = workMantel || '';
+
+    // 모달 열기
+    const modal = new bootstrap.Modal(document.getElementById('plantRegisterModal'));
+    modal.show();
 }
 
 
@@ -83,22 +87,6 @@ function resetcheck(){
           alert("초기화가 취소되었습니다.");
       }
 }
-  
-/*function submitcheck() {
-    if (confirm("입력한 정보를 저장하시겠습니까?")) {
-        const inputs = document.querySelectorAll('input[required]');
-        for (let input of inputs) { //필수 input 요소 검사
-            if (!input.value.trim()) { //input.value: 해당 입력값, trim: 공백 제거
-                alert("모든 필수 항목을 입력해주세요."); //입력이 비어있을시 출력
-                return; //return으로 종료 -> submit 실행되지 않음
-            }
-        }
-        alert("저장이 완료되었습니다.");
-        document.querySelector('form[action="/plant/insert"]').submit();
-    } else {
-        alert("저장이 취소되었습니다.");
-    }
-}*/
 
 //등록
 function submitcheck() {
