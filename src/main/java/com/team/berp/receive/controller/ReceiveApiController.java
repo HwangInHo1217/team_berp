@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * 입고 관리 REST API 컨트롤러 - 독립적 입고 상세 정보 개선
+ * 입고 관리 REST API 컨트롤러 - 발주 상태 관리 및 필터링 개선
  */
 @RestController
 @RequestMapping("/api/receive")
@@ -149,15 +149,16 @@ public class ReceiveApiController {
     }
 
     /**
-     * 미완료 발주 목록 조회 - GET /api/receive/pending-orders (수정된 버전)
+     * 🆕 미완료 발주 목록 조회 - 발주 상태 관리 개선
+     * CONFIRMED 상태인 발주만 입고 가능하도록 필터링
      */
     @GetMapping("/pending-orders")
     public ResponseEntity<List<Map<String, Object>>> getPendingOrders() {
         try {
-            System.out.println("📋 미완료 발주 목록 조회 시작");
+            System.out.println("📋 미완료 발주 목록 조회 시작 (CONFIRMED 상태만)");
             
-            // 최근 30일 내 발주만 조회하여 성능 향상
-            LocalDateTime thirtyDaysAgo = LocalDateTime.now().minusDays(30);
+            // 최근 60일 내 발주만 조회하여 성능 향상
+            LocalDateTime sixtyDaysAgo = LocalDateTime.now().minusDays(60);
             
             List<Map<String, Object>> result = orderLineItemRepo.findAll().stream()
                 .filter(oli -> {
@@ -167,10 +168,17 @@ public class ReceiveApiController {
                         return false;
                     }
                     
-                    // 최근 30일 내 발주만
+                    // 🆕 CONFIRMED 상태인 발주만 입고 가능
+                    if (oli.getCompanyOrder().getOrderStatus() != CompanyOrder.OrderStatus.CONFIRMED) {
+                        System.out.println("❌ 발주 상태 필터링: " + oli.getCompanyOrder().getOrderNum() + 
+                                         " - 상태: " + oli.getCompanyOrder().getOrderStatus());
+                        return false;
+                    }
+                    
+                    // 최근 60일 내 발주만
                     if (oli.getCompanyOrder().getOrderDate() != null) {
                         LocalDateTime orderDateTime = oli.getCompanyOrder().getOrderDate().atStartOfDay();
-                        if (orderDateTime.isBefore(thirtyDaysAgo)) {
+                        if (orderDateTime.isBefore(sixtyDaysAgo)) {
                             return false;
                         }
                     }
@@ -187,9 +195,15 @@ public class ReceiveApiController {
                         .mapToInt(log -> log.getQuantity() != null ? log.getQuantity() : 0)
                         .sum();
                     
-                    return orderQty > receivedQty;
+                    boolean hasRemaining = orderQty > receivedQty;
+                    if (hasRemaining) {
+                        System.out.println("✅ 입고 가능한 발주: " + oli.getCompanyOrder().getOrderNum() + 
+                                         " - 주문: " + orderQty + ", 입고: " + receivedQty);
+                    }
+                    
+                    return hasRemaining;
                 })
-                .limit(20) // 성능을 위해 20개로 제한
+                .limit(30) // 성능을 위해 30개로 제한
                 .map(oli -> {
                     Map<String, Object> orderMap = new HashMap<>();
                     
@@ -240,7 +254,7 @@ public class ReceiveApiController {
                 })
                 .collect(Collectors.toList());
             
-            System.out.println("✅ 미완료 발주 목록 조회 완료: " + result.size() + "개");
+            System.out.println("✅ 미완료 발주 목록 조회 완료: " + result.size() + "개 (CONFIRMED 상태만)");
             return ResponseEntity.ok(result);
             
         } catch (Exception e) {
@@ -251,7 +265,7 @@ public class ReceiveApiController {
     }
 
     /**
-     * 입고 이력 조회 - GET /api/receive (독립적 입고 정보 개선)
+     * 🆕 입고 이력 조회 - 필터링 및 전체 조회 기능 개선
      */
     @GetMapping
     public ResponseEntity<?> getReceiveHistory(
@@ -262,19 +276,20 @@ public class ReceiveApiController {
             @RequestParam(name = "size", defaultValue = "10") int size) {
         
         try {
-            System.out.println("📦 입고 이력 조회 API - 날짜: " + startDate + " ~ " + endDate);
+            System.out.println("📦 입고 이력 조회 API - 날짜: " + startDate + " ~ " + endDate + ", 타입: " + type);
             
-            // 날짜 파싱 (단일 날짜 지원)
+            // 날짜 파싱 (전체 조회 지원)
             LocalDateTime searchStartDate = null;
             LocalDateTime searchEndDate = null;
             
-            if (startDate != null && !startDate.isEmpty()) {
+            // 🆕 날짜가 지정된 경우에만 날짜 필터링 적용
+            if (startDate != null && !startDate.trim().isEmpty()) {
                 try {
                     LocalDate date = LocalDate.parse(startDate);
                     searchStartDate = date.atStartOfDay();
                     
                     // endDate가 없으면 같은 날의 끝으로 설정
-                    if (endDate == null || endDate.isEmpty()) {
+                    if (endDate == null || endDate.trim().isEmpty()) {
                         searchEndDate = date.atTime(23, 59, 59);
                     }
                 } catch (DateTimeParseException e) {
@@ -282,7 +297,7 @@ public class ReceiveApiController {
                 }
             }
             
-            if (endDate != null && !endDate.isEmpty()) {
+            if (endDate != null && !endDate.trim().isEmpty()) {
                 try {
                     searchEndDate = LocalDate.parse(endDate).atTime(23, 59, 59);
                 } catch (DateTimeParseException e) {
@@ -290,29 +305,49 @@ public class ReceiveApiController {
                 }
             }
             
-            // 날짜가 지정되지 않으면 오늘 날짜로 설정
-            if (searchStartDate == null && searchEndDate == null) {
-                LocalDate today = LocalDate.now();
-                searchStartDate = today.atStartOfDay();
-                searchEndDate = today.atTime(23, 59, 59);
-            }
-            
             // 페이징 설정
             Pageable pageable = PageRequest.of(page, size, 
                 Sort.by(Sort.Direction.DESC, "logDatetime"));
             
-            // 입고 로그만 조회 (빠른 쿼리)
+            // 🆕 조건에 따른 쿼리 실행
             Page<InventoryLog> logPage;
             
             if (searchStartDate != null && searchEndDate != null) {
-                logPage = inventoryLogRepo.findByLogTypeAndLogDatetimeBetweenOrderByLogDatetimeDesc(
-                    LogType.IN, searchStartDate, searchEndDate, pageable);
+                // 날짜 범위가 지정된 경우
+                if (type != null && !type.trim().isEmpty()) {
+                    // 날짜 + 타입 필터링
+                    System.out.println("📅 날짜 + 타입 필터링 조회");
+                    logPage = inventoryLogRepo.findByLogTypeAndLogDatetimeBetweenOrderByLogDatetimeDesc(
+                        LogType.IN, searchStartDate, searchEndDate, pageable);
+                } else {
+                    // 날짜만 필터링
+                    System.out.println("📅 날짜만 필터링 조회");
+                    logPage = inventoryLogRepo.findByLogTypeAndLogDatetimeBetweenOrderByLogDatetimeDesc(
+                        LogType.IN, searchStartDate, searchEndDate, pageable);
+                }
             } else {
+                // 전체 조회
+                System.out.println("📅 전체 기간 조회");
                 logPage = inventoryLogRepo.findByLogTypeOrderByLogDatetimeDesc(LogType.IN, pageable);
             }
             
-            // 빠른 데이터 변환 (독립적 입고 정보 개선)
-            List<Map<String, Object>> receiveList = logPage.getContent().stream()
+            // 🆕 타입 필터링은 메모리에서 처리 (DB 쿼리 복잡도 감소)
+            List<InventoryLog> filteredLogs = logPage.getContent();
+            if (type != null && !type.trim().isEmpty()) {
+                filteredLogs = filteredLogs.stream()
+                    .filter(log -> {
+                        if ("ORDER_BASED".equals(type)) {
+                            return log.getOrderLineItem() != null;
+                        } else if ("INDEPENDENT".equals(type)) {
+                            return log.getOrderLineItem() == null;
+                        }
+                        return true; // 전체 유형
+                    })
+                    .collect(Collectors.toList());
+            }
+            
+            // 빠른 데이터 변환 (단위 표시 개선)
+            List<Map<String, Object>> receiveList = filteredLogs.stream()
                 .map(log -> {
                     Map<String, Object> receiveMap = new HashMap<>();
                     
@@ -328,7 +363,7 @@ public class ReceiveApiController {
                     } else {
                         receiveMap.put("itemCode", "-");
                         receiveMap.put("itemName", "-");
-                        receiveMap.put("unit", "-");
+                        receiveMap.put("unit", "EA");
                     }
                     
                     // 창고 정보

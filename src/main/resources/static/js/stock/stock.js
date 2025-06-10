@@ -233,6 +233,125 @@ const StockList = {
             });
     },
 
+	// 🆕 재고 테이블 업데이트 (NEW 배지 포함)
+	updateTable(stocks) {
+	    const tbody = document.getElementById('stockTableBody');
+	    if (!tbody) return;
+
+	    tbody.innerHTML = '';
+
+	    if (!stocks || stocks.length === 0) {
+	        const noDataRow = `
+	            <tr class="no-data-row">
+	                <td colspan="11" class="text-center text-muted py-5">
+	                    <div class="d-flex flex-column align-items-center">
+	                        <i class="fas fa-box-open fa-3x mb-3 text-secondary"></i>
+	                        <h5 class="mb-2">표시할 재고가 없습니다</h5>
+	                        <p class="mb-0">검색 조건을 확인하거나 데이터를 추가해주세요.</p>
+	                    </div>
+	                </td>
+	            </tr>`;
+	        tbody.insertAdjacentHTML('beforeend', noDataRow);
+	        return;
+	    }
+
+	    stocks.forEach((stock, index) => {
+	        const actualLastIn = stock.actualLastInAt ? StockUtils.formatDate(stock.actualLastInAt) : 
+	                            (stock.lastInDate ? StockUtils.formatDate(stock.lastInDate) :
+	                            (stock.firstStockedDate ? StockUtils.formatDate(stock.firstStockedDate) : '-'));
+	        const actualLastOut = stock.actualLastOutAt ? StockUtils.formatDate(stock.actualLastOutAt) : 
+	                             (stock.lastOutDate ? StockUtils.formatDate(stock.lastOutDate) : '-');
+	        const itemUnit = stock.itemUnit || stock.unit || 'EA';
+
+	        // 🆕 최근 창고이동 입고 체크
+	        const hasRecentTransfer = this.hasRecentTransferIn(stock.stockId);
+	        const newBadge = hasRecentTransfer ? 
+	            '<span class="badge bg-success ms-1 stock-new-badge" style="animation: pulse 1.5s infinite; font-size: 0.7em;">NEW</span>' : '';
+
+	        const rowHtml = `
+	            <tr data-stock-id="${stock.stockId}" ${hasRecentTransfer ? 'class="recent-transfer-stock"' : ''}>
+	                <td><input type="checkbox" class="form-check-input stock-checkbox" data-stock-id="${stock.stockId}"></td>
+	                <td>${StockState.currentPage * this.pageSize + index + 1}</td>
+	                <td>${StockUtils.escapeHtml(stock.itemCode)}</td>
+	                <td>
+	                    ${StockUtils.escapeHtml(stock.itemName)}${newBadge}
+	                </td>
+	                <td>${StockUtils.escapeHtml(stock.itemType === 'raw' ? '자재' : (stock.itemType === 'product' ? '완제품' : stock.itemType))}</td>
+	                <td>${StockUtils.escapeHtml(stock.warehouseName)}</td>
+	                <td class="text-end"><strong>${StockUtils.formatNumber(stock.quantity)}</strong></td>
+	                <td>${StockUtils.escapeHtml(itemUnit)}</td>
+	                <td><small>${actualLastIn}</small></td>
+	                <td><small>${actualLastOut}</small></td>
+	                <td>${this.getStockStatusBadge(stock)}</td>
+	                <td>
+	                    <button class="btn btn-info btn-sm stock-detail-btn"
+	                            data-stock-id="${stock.stockId}">
+	                        상세
+	                    </button>
+	                </td>
+	            </tr>`;
+	        tbody.insertAdjacentHTML('beforeend', rowHtml);
+	    });
+
+	    // 🆕 최근 이동된 재고 행 클릭 이벤트 추가
+	    this.setupRecentTransferClickEvents();
+	},
+	
+	// 🆕 최근 이동된 재고 클릭 이벤트 설정
+	setupRecentTransferClickEvents() {
+	    document.querySelectorAll('.recent-transfer-stock').forEach(row => {
+	        row.style.cursor = 'pointer';
+	        row.style.backgroundColor = '#f8fff8'; // 연한 초록색
+	        row.style.borderLeft = '4px solid #28a745';
+	        
+	        // 호버 효과
+	        row.addEventListener('mouseenter', () => {
+	            row.style.backgroundColor = '#e8f5e8';
+	        });
+	        row.addEventListener('mouseleave', () => {
+	            row.style.backgroundColor = '#f8fff8';
+	        });
+	        
+	        // 클릭 시 NEW 배지 제거
+	        row.addEventListener('click', (e) => {
+	            // 체크박스나 버튼 클릭이 아닌 경우만
+	            if (!e.target.closest('input, button')) {
+	                const stockId = row.dataset.stockId;
+	                this.markStockAsViewed(stockId, row);
+	            }
+	        });
+	    });
+	},
+	// 🆕 재고를 확인된 것으로 마킹
+	markStockAsViewed(stockId, rowElement) {
+	    const recentTransfers = JSON.parse(localStorage.getItem('recentTransferStocks') || '{}');
+	    if (recentTransfers[stockId]) {
+	        recentTransfers[stockId].viewed = true;
+	        localStorage.setItem('recentTransferStocks', JSON.stringify(recentTransfers));
+	    }
+
+	    // NEW 배지 제거
+	    const newBadge = rowElement.querySelector('.stock-new-badge');
+	    if (newBadge) {
+	        newBadge.style.animation = 'fadeOut 0.5s ease-out';
+	        setTimeout(() => {
+	            newBadge.remove();
+	        }, 500);
+	    }
+
+	    // 행 스타일 원래대로 복원
+	    rowElement.style.backgroundColor = '';
+	    rowElement.style.borderLeft = '';
+	    rowElement.style.cursor = '';
+	    rowElement.classList.remove('recent-transfer-stock');
+
+	    // 이벤트 리스너 제거
+	    rowElement.replaceWith(rowElement.cloneNode(true));
+	    
+	    StockUtils.showToast('새로운 창고이동을 확인했습니다.', 'info', 2000);
+	},
+	
+	
     updateTable(stocks) {
         const tbody = document.getElementById('stockTableBody');
         if (!tbody) return;
@@ -1319,13 +1438,29 @@ const StockActions = {
             console.log('✅ 모달이 성공적으로 표시됨!');
         }, { once: true });
     },
+	
+	// 🆕 확인한 이력을 로컬스토리지에 저장
+	markHistoryAsViewed(logId) {
+	    const viewedLogs = JSON.parse(localStorage.getItem('viewedTransferLogs') || '[]');
+	    if (!viewedLogs.includes(logId)) {
+	        viewedLogs.push(logId);
+	        localStorage.setItem('viewedTransferLogs', JSON.stringify(viewedLogs));
+	    }
+	},
+
+	// 🆕 해당 이력이 이미 확인되었는지 체크
+	isHistoryViewed(logId) {
+	    const viewedLogs = JSON.parse(localStorage.getItem('viewedTransferLogs') || '[]');
+	    return viewedLogs.includes(logId);
+	},
     
+	// 🆕 개선된 이력 렌더링 (NEW 배지 + 클릭 이벤트)
 	renderHistory(logs) {
 	    const tbody = document.getElementById('historyTableBody');
 	    if (!tbody) return;
 	    
 	    tbody.innerHTML = '';
-	    
+
 	    if (logs.length === 0) {
 	        tbody.innerHTML = `
 	            <tr>
@@ -1338,23 +1473,66 @@ const StockActions = {
 	        return;
 	    }
 	    
-	    logs.forEach(log => {
+	    logs.forEach((log, index) => {
 	        const logTypeDisplay = this.getLogTypeDisplay(log.logType);
 	        const quantityDisplay = this.getQuantityDisplay(log.logType, log.quantity);
-	        
-	        // 상태 표시 추가
 	        const statusBadge = this.getStatusBadge(log.logStatus);
-	        
+
+	        // 🆕 창고이동 입고 감지 및 최근 로그 판단
+	        const isTransferIn = this.isTransferIncoming(log.comment);
+	        const isRecent = this.isRecentLog(log.logDatetime); // 24시간 이내
+	        const isViewed = this.isHistoryViewed(log.logId);
+
+	        // 🆕 NEW 배지 (창고이동 입고이면서 최근이고 아직 안 본 경우만)
+	        const shouldShowNew = isTransferIn && isRecent && !isViewed;
+	        const newBadge = shouldShowNew ?
+	            '<span class="badge bg-success ms-1 new-badge" style="animation: pulse 1.5s infinite;">NEW</span>' : '';
+
 	        const row = document.createElement('tr');
+	        
+	        // 🆕 고유 ID 설정 (클릭 추적용)
+	        row.setAttribute('data-log-id', log.logId);
+	        
+	        // 🆕 클릭 가능한 행 스타일 (NEW가 있는 경우만)
+	        if (shouldShowNew) {
+	            row.style.cursor = 'pointer';
+	            row.classList.add('clickable-log-row');
+	            row.style.transition = 'background-color 0.3s ease';
+	            
+	            // 호버 효과
+	            row.addEventListener('mouseenter', () => {
+	                row.style.backgroundColor = '#f8f9fa';
+	            });
+	            row.addEventListener('mouseleave', () => {
+	                row.style.backgroundColor = '';
+	            });
+	            
+	            // 🆕 클릭 이벤트 - NEW 배지 제거
+	            row.addEventListener('click', () => {
+	                this.handleLogRowClick(log.logId, row);
+	            });
+	        }
+
+	        // 🆕 창고이동 입고인 경우 특별 스타일
+	        if (isTransferIn) {
+	            row.classList.add('transfer-incoming-row');
+	            if (isRecent && !isViewed) {
+	                row.style.backgroundColor = '#f8fff8'; // 연한 초록색 배경
+	                row.style.borderLeft = '4px solid #28a745'; // 왼쪽 강조선
+	            }
+	        }
+
 	        row.innerHTML = `
 	            <td class="text-nowrap">
 	                <small>${StockUtils.formatDateTime(log.logDatetime)}</small>
+	                ${isRecent ? '<i class="fas fa-clock text-info ms-1" title="최근 기록"></i>' : ''}
 	            </td>
 	            <td class="text-center">
 	                <span class="badge bg-${logTypeDisplay.color} rounded-pill">
-	                    ${logTypeDisplay.label}
+	                    ${logTypeDisplay.label}${newBadge}
 	                </span>
 	                ${statusBadge ? `<br><small>${statusBadge}</small>` : ''}
+	                ${shouldShowNew ? '<br><small class="text-muted">클릭하여 확인</small>' : ''}
 	            </td>
 	            <td class="text-end">
 	                <strong class="${quantityDisplay.class}">
@@ -1363,14 +1541,124 @@ const StockActions = {
 	            </td>
 	            <td>
 	                <small class="text-muted">
-	                    ${StockUtils.escapeHtml(log.comment || log.reason || '-')}
+	                    ${this.highlightTransferInfo(StockUtils.escapeHtml(log.comment || log.reason || '-'))}
 	                </small>
 	            </td>
 	        `;
 	        tbody.appendChild(row);
 	    });
+	    
+	    // 🆕 CSS 애니메이션 동적 추가
+	    this.addPulseAnimation();
 	},
 	
+	// 🆕 로그 행 클릭 처리
+	handleLogRowClick(logId, rowElement) {
+	    console.log('📋 이력 행 클릭 - logId:', logId);
+	    
+	    // 확인 처리
+	    this.markHistoryAsViewed(logId);
+	    
+	    // NEW 배지 제거
+	    const newBadge = rowElement.querySelector('.new-badge');
+	    if (newBadge) {
+	        newBadge.style.animation = 'fadeOut 0.5s ease-out';
+	        setTimeout(() => {
+	            newBadge.remove();
+	        }, 500);
+	    }
+	    
+	    // 행 스타일 원래대로 복원
+	    rowElement.style.backgroundColor = '';
+	    rowElement.style.borderLeft = '';
+	    rowElement.style.cursor = '';
+	    rowElement.classList.remove('clickable-log-row');
+	    
+	    // "클릭하여 확인" 텍스트 제거
+	    const clickText = rowElement.querySelector('small:contains("클릭하여 확인")');
+	    if (clickText) {
+	        clickText.remove();
+	    }
+	    
+	    // 클릭 이벤트 제거
+	    rowElement.replaceWith(rowElement.cloneNode(true));
+	    
+	    // 성공 피드백
+	    StockUtils.showToast('이력을 확인했습니다.', 'info', 2000);
+	},
+	
+	// 🆕 펄스 애니메이션 CSS 동적 추가
+	addPulseAnimation() {
+	    // 이미 추가되었는지 확인
+	    if (document.getElementById('pulseAnimationStyle')) return;
+	    
+	    const style = document.createElement('style');
+	    style.id = 'pulseAnimationStyle';
+	    style.textContent = `
+	        @keyframes pulse {
+	            0% { opacity: 1; }
+	            50% { opacity: 0.5; }
+	            100% { opacity: 1; }
+	        }
+	        
+	        @keyframes fadeOut {
+	            0% { opacity: 1; }
+	            100% { opacity: 0; }
+	        }
+	        
+	        .new-badge {
+	            font-size: 0.7em;
+	            font-weight: bold;
+	            text-shadow: 0 0 2px rgba(255,255,255,0.8);
+	        }
+	        
+	        .clickable-log-row:hover {
+	            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+	        }
+	    `;
+	    document.head.appendChild(style);
+	},
+	
+	// 🆕 최근 로그 판단 (24시간 이내)
+	isRecentLog(logDatetime) {
+	    if (!logDatetime) return false;
+
+	    const logTime = new Date(logDatetime);
+	    const now = new Date();
+	    const hoursDiff = (now - logTime) / (1000 * 60 * 60);
+
+	    return hoursDiff <= 24;
+	},
+	
+	// 🆕 창고이동 정보 하이라이트
+	highlightTransferInfo(comment) {
+	    if (!comment) return comment;
+
+	    // 창고이동 관련 키워드 하이라이트
+	    return comment
+	        .replace(/\[창고이동-입고\]/g, '<span class="badge bg-success">창고이동-입고</span>')
+	        .replace(/\[창고이동-출고\]/g, '<span class="badge bg-danger">창고이동-출고</span>')
+	        .replace(/(\w+창고\s*\d*)\s*←\s*(\w+창고\s*\d*)/g,
+	            '<strong class="text-success">$1</strong> ← <strong class="text-primary">$2</strong>')
+	        .replace(/(\w+창고\s*\d*)\s*→\s*(\w+창고\s*\d*)/g,
+	            '<strong class="text-primary">$1</strong> → <strong class="text-success">$2</strong>');
+	},
+
+	// 🆕 창고이동 입고 감지 메서드
+	isTransferIncoming(comment) {
+	    if (!comment) return false;
+
+	    // 창고이동-입고 패턴 감지
+	    const transferInPatterns = [
+	        '[창고이동-입고]',
+	        '창고간 이동으로 생성',
+	        '← '  // "창고A ← 창고B" 패턴
+	    ];
+	    
+	    return transferInPatterns.some(pattern => 
+	        comment.includes(pattern)
+	    );
+	},
 	
 	// 상태 배지 표시 메서드 (수정됨)
 	getStatusBadge(logStatus) {
@@ -1450,6 +1738,8 @@ const StockActions = {
         
         this.loadStockForQuickOut(stockId);
     },
+	
+	
 
     // 긴급출고 모달 동적 생성
     createQuickOutModal() {
@@ -2177,78 +2467,115 @@ const StockTransfer = {
             }
         }
     },
-	// StockTransfer.processTransfer 
-    processTransfer() {
-        const form = document.getElementById('stockTransferForm');
-        if (!form.checkValidity()) {
-            form.reportValidity();
-            return;
-        }
-        
-        if (!this.selectedStock) {
-            StockUtils.showError('선택된 재고 정보가 없습니다.');
-            return;
-        }
+	
+	// 🆕 창고이동 성공 시 로컬스토리지에 기록
+	recordSuccessfulTransfer(stockData, transferData) {
+	    const transferRecord = {
+	        stockId: stockData.stockId,
+	        itemId: stockData.itemId,
+	        itemName: stockData.itemName,
+	        fromWarehouse: transferData.fromWarehouseName,
+	        toWarehouse: transferData.toWarehouseName,
+	        quantity: transferData.quantity,
+	        timestamp: new Date().toISOString(),
+	        viewed: false
+	    };
 
-        const toWarehouseSelect = document.getElementById('toWarehouse');
-        const selectedOption = toWarehouseSelect.selectedOptions[0];
-        const selectedWarehouseType = selectedOption?.dataset.warehouseType;
-        
-        if (!this.validateWarehouseTypeMatch(this.selectedStock.itemType, selectedWarehouseType)) {
-            return;
-        }
-        
-        const data = {
-            fromStockId: this.selectedStock.stockId,
-            fromWarehouseId: this.selectedStock.warehouseId,
-            toWarehouseId: parseInt(document.getElementById('toWarehouse').value),
-            itemId: this.selectedStock.itemId,
-            quantity: parseInt(document.getElementById('transferQty').value),
-            reason: document.getElementById('transferReason').value,
-            comment: document.getElementById('transferComment').value
-        };
-		
-		// 🔍 전송 전 디버깅 로그
-		console.log('🚀 창고이동 요청 데이터:');
-		console.log('  fromStockId:', data.fromStockId);
-		console.log('  fromWarehouseId:', data.fromWarehouseId);
-		console.log('  toWarehouseId:', data.toWarehouseId);
-		console.log('  itemId:', data.itemId);
-		console.log('  quantity:', data.quantity);
+	    // 최근 창고이동 목록에 추가
+	    const recentTransfers = JSON.parse(localStorage.getItem('recentTransferStocks') || '{}');
+	    recentTransfers[stockData.stockId] = transferRecord;
+	    localStorage.setItem('recentTransferStocks', JSON.stringify(recentTransfers));
 
-        
-        const toWarehouseName = selectedOption?.text || '';
-        const confirmMsg = `정말로 ${data.quantity}개를 ${toWarehouseName}로 이동하시겠습니까?`;
-        
-        if (!confirm(confirmMsg)) return;
-        
-        fetch('/api/stocks/transfer', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        })
-		.then(response => {
-		    console.log('서버 응답 상태:', response.status);
-		    if (!response.ok) {
-		        throw new Error(`서버 오류: ${response.status}`);
-		    }
-		    return response.json();
-		})
-        .then(result => {
-			console.log('서버 응답:', result);
-            if (result.status === 'success') {
-                StockUtils.showSuccess(result.message || '창고 이동이 완료되었습니다.');
-                bootstrap.Modal.getInstance(document.getElementById('stockTransferModal')).hide();
-                StockList.refresh();
-            } else {
-                StockUtils.showError(result.message || '창고 이동에 실패했습니다.');
-            }
-        })
-        .catch(error => {
-            console.error('창고 이동 오류:', error);
-            StockUtils.showError('창고 이동 중 오류가 발생했습니다.');
-        });
-    },
+	    console.log('✅ 창고이동 추적 기록됨:', transferRecord);
+	},
+	
+	// 🆕 수정된 창고이동 처리 (추적 기능 포함)
+	processTransfer() {
+	    const form = document.getElementById('stockTransferForm');
+	    if (!form.checkValidity()) {
+	        form.reportValidity();
+	        return;
+	    }
+	    
+	    if (!this.selectedStock) {
+	        StockUtils.showError('선택된 재고 정보가 없습니다.');
+	        return;
+	    }
+
+	    const toWarehouseSelect = document.getElementById('toWarehouse');
+	    const selectedOption = toWarehouseSelect.selectedOptions[0];
+	    const selectedWarehouseType = selectedOption?.dataset.warehouseType;
+	    
+	    if (!this.validateWarehouseTypeMatch(this.selectedStock.itemType, selectedWarehouseType)) {
+	        return;
+	    }
+	    
+	    const data = {
+	        fromStockId: this.selectedStock.stockId,
+	        fromWarehouseId: this.selectedStock.warehouseId,
+	        toWarehouseId: parseInt(document.getElementById('toWarehouse').value),
+	        itemId: this.selectedStock.itemId,
+	        quantity: parseInt(document.getElementById('transferQty').value),
+	        reason: document.getElementById('transferReason').value,
+	        comment: document.getElementById('transferComment').value
+	    };
+	    
+	    const fromWarehouseName = this.selectedStock.warehouseName;
+	    const toWarehouseName = selectedOption?.text.split(']')[1]?.split('(')[0]?.trim() || '선택된 창고';
+	    
+	    const confirmBtn = document.getElementById('confirmTransfer');
+	    const originalText = confirmBtn.textContent;
+	    confirmBtn.disabled = true;
+	    confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>처리 중...';
+	    
+	    fetch('/api/stocks/transfer', {
+	        method: 'POST',
+	        headers: { 'Content-Type': 'application/json' },
+	        body: JSON.stringify(data)
+	    })
+	    .then(response => {
+	        if (!response.ok) {
+	            throw new Error(`서버 오류: ${response.status}`);
+	        }
+	        return response.json();
+	    })
+	    .then(result => {
+	        if (result.status === 'success') {
+	            // 🆕 창고이동 추적 기록
+	            this.recordSuccessfulTransfer(this.selectedStock, {
+	                fromWarehouseName,
+	                toWarehouseName,
+	                quantity: data.quantity
+	            });
+	            
+	            // 🆕 특별 성공 알림
+	            StockUtils.showTransferSuccess(
+	                fromWarehouseName, 
+	                toWarehouseName, 
+	                data.quantity, 
+	                this.selectedStock.itemName
+	            );
+	            
+	            bootstrap.Modal.getInstance(document.getElementById('stockTransferModal')).hide();
+	            StockList.refresh();
+	            
+	            // 선택 해제
+	            document.querySelectorAll('.stock-checkbox:checked').forEach(cb => {
+	                cb.checked = false;
+	            });
+	        } else {
+	            StockUtils.showError(result.message || '창고 이동에 실패했습니다.');
+	        }
+	    })
+	    .catch(error => {
+	        console.error('창고 이동 오류:', error);
+	        StockUtils.showError('창고 이동 중 오류가 발생했습니다.');
+	    })
+	    .finally(() => {
+	        confirmBtn.disabled = false;
+	        confirmBtn.textContent = originalText;
+	    });
+	},
 
     validateWarehouseTypeMatch(itemType, warehouseType) {
         let isValid = false;
@@ -2351,6 +2678,7 @@ const StockSummary = {
     }
 };
 
+
 // ===== 메인 초기화 =====
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 재고 관리 시스템 초기화 시작');
@@ -2405,3 +2733,4 @@ setTimeout(() => {
     console.log('  - currentItemName:', StockModal.currentItemName);
     console.log('  - currentItemType:', StockModal.currentItemType);
 }, 1000); // 1초 후 실행
+

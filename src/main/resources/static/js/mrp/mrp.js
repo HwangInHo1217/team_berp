@@ -581,7 +581,9 @@ window.onload = function() {
         if (!window.confirm(confirmMsg)) {
             return;
         }
+
         window.location.href = `/place/purchase-order?items=${encodeURIComponent(uniquePairs.join(","))}`;
+
     });
 
     // ■ 엔터키 → calculateMrp() 호출

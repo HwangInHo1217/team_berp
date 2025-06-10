@@ -9,7 +9,7 @@ import lombok.Data;
 public class plant_DTO {
  
    //번호(자동 순번)
-   private int work_id;
+   private long work_id;
    
    //사업자 명, 사업자 대표, 사업자 번호, 업태
    private String work_name, work_ceonm, work_no, work_cond;
