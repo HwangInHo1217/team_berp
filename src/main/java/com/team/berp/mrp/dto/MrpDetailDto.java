@@ -13,45 +13,49 @@ import java.util.List;
 public class MrpDetailDto {
     // ───────────────────────────────────────────
     // A. 기본 정보
-    private Long   mrpId;           // MRP 번호 (PK)
-    private String createDate;      // 요청 일자 (기준일자)
-    private String dueDate;         // 필요 일자
-    private String planType;        // 계획 타입 (예: PRODUCTION)
-    private String status;          // MRP 상태 (예: PLANNED, RELEASED, CLOSED)
+    private Long   mrpId;
+    private String createDate;
+    private String dueDate;
+    private String planType;
+    private String status;
 
     // ───────────────────────────────────────────
     // B. 품목 정보
-    private String itemCode;        // 품목 코드
-    private String itemName;        // 품목명
-    private String itemType;        // 품목 유형 (raw / product)
-    private String unit;            // 단위
-    private String spec;            // 사양 (Spec)
-    private int    safetyStock;     // 안전 재고
-    private int    stockQty;        // 현재 가용 재고
-    private String location;        // 재고 위치
+    private String itemCode;
+    private String itemName;
+    private String itemType;
+    private String unit;
+    private String spec;
+    private int    safetyStock;
+    private int    stockQty;
+    private String location;
 
     // ───────────────────────────────────────────
     // C. 수량·리드타임
-    private int    requiredQty;         // 요청 수량
-    private int    shortageQty;         // 부족 수량
-    private int    purchaseLeadTime;    // 구매 리드타임(일)
-    private int    productionLeadTime;  // 생산 리드타임(일)
-    private String orderableDate;       // 주문 가능 일자
+    private int    requiredQty;
+    private int    shortageQty;
+    private int    purchaseLeadTime;
+    private int    productionLeadTime;
+    private String orderableDate;
 
     // ───────────────────────────────────────────
     // D. BOM 구성
     private List<MrpBomComponent> bomComponents;
+
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
     public static class MrpBomComponent {
-        private String childCode;       // 부품 코드
-        private String childName;       // 부품명
-        private int    perParentQty;    // 구성 수량 per 모품
-        private int    totalQty;        // 총 필요 수량 (perParentQty * requiredQty)
-        private int    stockQty;        // 가용 재고
-        private int    shortageQty;     // 부족 수량
-        private int    leadTime;        // 리드 타임(구매)
+        private String childCode;
+        private String childName;
+        private int    perParentQty;
+        private int    totalQty;
+        private int    stockQty;
+        private int    shortageQty;
+        private int    leadTime;
+        // [수정] 아래 두 필드를 추가합니다.
+        private int    safetyStock;
+        private int    purchaseQty;
     }
 
     // ───────────────────────────────────────────
@@ -61,11 +65,11 @@ public class MrpDetailDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class MrpPurchaseOrder {
-        private String poNo;       // PO 번호
-        private String itemCode;   // 품목 코드
-        private int    qty;        // 수량
-        private String dueDate;    // 납기일
-        private String status;     // 상태
+        private String poNo;
+        private String itemCode;
+        private int    qty;
+        private String dueDate;
+        private String status;
     }
 
     private List<MrpWorkOrder> workOrders;
@@ -73,12 +77,12 @@ public class MrpDetailDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class MrpWorkOrder {
-        private String woNo;       // WO 번호
-        private String itemCode;   // 품목 코드
-        private int    qty;        // 수량
-        private String startDate;  // 시작일
-        private String endDate;    // 종료 예정일
-        private String status;     // 상태
+        private String woNo;
+        private String itemCode;
+        private int    qty;
+        private String startDate;
+        private String endDate;
+        private String status;
     }
 
     // ───────────────────────────────────────────
@@ -88,7 +92,7 @@ public class MrpDetailDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class MrpHistory {
-        private String timestamp;  // 타임스탬프
-        private String message;    // 로그 메시지
+        private String timestamp;
+        private String message;
     }
 }
