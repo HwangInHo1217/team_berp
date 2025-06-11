@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -43,7 +44,6 @@ public class PlaceController {
     private final ClientService clientService;
     private final ItemService itemService;
     private final EmployeeRepository employeeRepository;
-
     
     @GetMapping
     public String placePage(Model model) {
@@ -63,7 +63,6 @@ public class PlaceController {
     public String receivePage() {
         return "receive";  // 예: receive.html 또는 receive.jsp로 포워딩
     }
-
     
     //제품 정보 불러오기
     @GetMapping("/items")
@@ -94,12 +93,6 @@ public class PlaceController {
             .orElse(ResponseEntity.notFound().build());
     }
 
-    //발주 등록
-//    @PostMapping("/add")
-//    public String placeAdd(@ModelAttribute PlaceDTO dto) {
-//    	placeService.registerOrder(dto);
-//    	return "redirect:/place";
-//    }
   //발주 등록 - JSON 방식으로 수정
     @PostMapping("/add")
     @ResponseBody
@@ -113,7 +106,7 @@ public class PlaceController {
         }
     }
 
-    //발주 수정
+    //발주 수정 데이터 조회
     @GetMapping("/edit/{lineItemId}")
     public ResponseEntity<PlaceDTO> getPlaceForEdit(@PathVariable("lineItemId") Long lineItemId) {
         PlaceDTO dto = placeService.getPlaceEditData(lineItemId);
@@ -121,39 +114,7 @@ public class PlaceController {
         return ResponseEntity.ok(dto);
     }
     
-    //발주 수정 등록
-//    @PostMapping("/update")
-//    @ResponseBody
-//    public ResponseEntity<?> updatePlace(@RequestBody PlaceDTO placeDTO) {
-//        try {
-//            placeService.updateOrder(placeDTO);
-//            return ResponseEntity.ok("발주 정보가 성공적으로 수정되었습니다.");
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("발주 수정 중 오류가 발생했습니다.");
-//        }
-//    }
-
-  //발주 수정 등록
-//    @PostMapping("/update")
-//    @ResponseBody
-//    public ResponseEntity<?> updatePlace(@RequestBody PlaceDTO placeDTO) {
-//        try {
-//            System.out.println("✅ 수정 요청 받음 - orderId: " + placeDTO.getOrderId());
-//            System.out.println("✅ lineItems 개수: " + (placeDTO.getLineItems() != null ? placeDTO.getLineItems().size() : 0));
-//            
-//            placeService.updateOrder(placeDTO);
-//            
-//            System.out.println("✅ 수정 완료");
-//            return ResponseEntity.ok("발주 정보가 성공적으로 수정되었습니다.");
-//        } catch (Exception e) {
-//            System.err.println("❌ 발주 수정 컨트롤러 오류: " + e.getMessage());
-//            e.printStackTrace();
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-//                               .body("발주 수정 중 오류가 발생했습니다: " + e.getMessage());
-//        }
-//    }
-
+    //발주 수정처리
     @PostMapping("/update")
     @ResponseBody
     public ResponseEntity<?> updatePlace(@RequestBody PlaceDTO placeDTO) {
@@ -213,7 +174,6 @@ public class PlaceController {
             // 검색어가 없으면 전체 조회
             orderList = placeService.getAllOrders();
         }
-        
         model.addAttribute("orderList", orderList);
         model.addAttribute("companies", companies);
         model.addAttribute("employees", employees);
@@ -221,5 +181,107 @@ public class PlaceController {
         
         return "place/place";
     }
+
+    //발주 처리현황 변경현황 변경
+    @PostMapping("/{orderId}/status")
+    public ResponseEntity<?> updateOrderStatus(
+    		@PathVariable("orderId") Long orderId,
+            @RequestParam("status") String status) {
+
+        try {
+            // 문자열을 대문자로 변환 후, enum으로 변환 시도
+            CompanyOrder.OrderStatus orderStatus = CompanyOrder.OrderStatus.valueOf(status.toUpperCase());
+
+            CompanyOrder updatedOrder = placeService.updateOrderStatusEnum(orderId, orderStatus);
+            return ResponseEntity.ok(updatedOrder);
+
+        } catch (IllegalArgumentException e) {
+            // enum 변환 실패 시 (잘못된 상태값)
+            String errorMsg = "Invalid status value: " + status;
+            System.err.println(errorMsg);
+            return ResponseEntity.badRequest().body(errorMsg);
+        } catch (RuntimeException e) {
+            // 서비스 처리 중 다른 예외 발생 시
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+ // 발주 확정 (WAITING → CONFIRMED)
+    @PostMapping("/{orderId}/confirm")
+    @ResponseBody
+    public ResponseEntity<?> confirmOrder(@PathVariable("orderId") Long orderId) {
+        try {
+            CompanyOrder updatedOrder = placeService.confirmOrder(orderId);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "발주가 확정되었습니다.");
+            response.put("newStatus", updatedOrder.getOrderStatus().name());
+            
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", e.getMessage());
+            
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
+
+    // 입고 완료 (CONFIRMED → COMPLETED)
+    @PostMapping("/{orderId}/complete")
+    @ResponseBody
+    public ResponseEntity<?> completeOrder(@PathVariable("orderId") Long orderId) {
+        try {
+            CompanyOrder updatedOrder = placeService.completeOrder(orderId);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "입고 처리가 완료되었습니다.");
+            response.put("newStatus", updatedOrder.getOrderStatus().name());
+            
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", e.getMessage());
+            
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
     
+    //발주 삭제
+ // PlaceController.java에 추가할 메서드
+    @DeleteMapping("/item/{lineItemId}/delete")
+    @ResponseBody
+    public ResponseEntity<?> deleteOrderItem(@PathVariable("lineItemId") Long lineItemId) {
+        try {
+            String result = placeService.deleteOrderLineItem(lineItemId);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", result);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (RuntimeException e) {
+            System.err.println("❌ 품목 삭제 오류: " + e.getMessage());
+            e.printStackTrace();
+            
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", e.getMessage());
+            
+            return ResponseEntity.badRequest().body(errorResponse);
+        } catch (Exception e) {
+            System.err.println("❌ 예상치 못한 삭제 오류: " + e.getMessage());
+            e.printStackTrace();
+            
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "삭제 처리 중 시스템 오류가 발생했습니다.");
+            
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
 }

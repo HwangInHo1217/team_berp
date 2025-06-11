@@ -35,5 +35,23 @@ public interface PlaceService {
 	
 	// 품목명으로 발주 검색
 	List<CompanyOrder> searchOrdersByItemName(String itemName);
+//	CompanyOrder updateOrderStatus(Long orderId, String nextStatus);
+	CompanyOrder updateOrderStatusEnum(Long orderId, CompanyOrder.OrderStatus status);
+	boolean changeOrderStatus(Long orderId, String newStatus);
 	
+	// 기존 메서드들 아래에 추가
+	boolean canEdit(CompanyOrder.OrderStatus status);
+	boolean canConfirm(CompanyOrder.OrderStatus status);
+	boolean canReceive(CompanyOrder.OrderStatus status);
+	CompanyOrder confirmOrder(Long orderId);
+	CompanyOrder completeOrder(Long orderId);
+	
+	/**
+	 * 발주 품목 스마트 삭제
+	 * - 여러 품목 중 하나 삭제: 해당 품목만 제거
+	 * - 마지막 품목 삭제: 발주서 전체 삭제
+	 * @param lineItemId 삭제할 품목 ID
+	 * @return 삭제 결과 메시지
+	 */
+	String deleteOrderLineItem(Long lineItemId);
 }
