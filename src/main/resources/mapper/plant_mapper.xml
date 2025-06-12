@@ -29,8 +29,28 @@ from workplace where work_id=#{work_id}
 select * from workplace
 </select>
 
-<delete id="workplace_list_del" parameterType="String">
+<delete id="workplace_list_del" parameterType="long">
 delete from workplace where work_id=#{work_id}
 </delete>
+
+<update id="updateWorkplace" parameterType="com.team.berp.plant.DTO.plant_DTO">
+ UPDATE workplace
+    SET
+        work_name = #{work_name},
+        work_ceonm = #{work_ceonm},
+        work_no = #{work_no},
+        work_cond = #{work_cond},
+        work_item = #{work_item},
+        work_tel = #{work_tel},
+        work_fax = #{work_fax},
+        work_addr = #{work_addr},
+        work_mainadd = #{work_mainadd},
+        work_detailadd = #{work_detailadd},
+        work_manname = #{work_manname},
+        work_manemail = #{work_manemail},
+        work_mantel = #{work_mantel}
+    WHERE
+        work_id = #{work_id}
+</update>
 
 </mapper>

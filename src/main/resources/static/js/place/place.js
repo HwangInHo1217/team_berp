@@ -896,6 +896,33 @@ function updateBatchDeleteButton() {
     }
 }
 
+// ✅ HTML에서 호출하는 함수명과 일치시키기 위한 별칭 함수
+function updateDeleteButtons() {
+    updateBatchDeleteButton();
+}
+
+// ✅ DOM이 로드된 후 이벤트 리스너 등록 (개별 체크박스용)
+document.addEventListener('DOMContentLoaded', function() {
+    // 모든 개별 체크박스에 이벤트 리스너 추가
+    const itemCheckboxes = document.querySelectorAll('.item-checkbox');
+    itemCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updateBatchDeleteButton();
+        });
+    });
+    
+    // 전체 선택 체크박스에도 이벤트 리스너 추가
+    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            toggleSelectAll(this);
+        });
+    }
+    
+    // 초기 상태 설정
+    updateBatchDeleteButton();
+});
+
 // ✅ 선택된 품목들 일괄 삭제
 function deleteSelectedItems() {
     const checkedBoxes = document.querySelectorAll('.item-checkbox:checked');

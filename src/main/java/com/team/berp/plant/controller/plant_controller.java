@@ -55,10 +55,42 @@ public class plant_controller {
       //완료 후 해당 페이지로 리다이렉트
    }
    
+   //사업장 목록 삭제
    @PostMapping("/plant/delete")
    public String deleteworkplace(@RequestParam(value="work_id") long work_id) {
        ps.workplace_list_del(work_id);
       return "redirect:/plant";
+   }
+   
+   //사업장 목록 수정
+//   @PostMapping("/plant/update")
+//   public String updateWorkplace(@ModelAttribute plant_DTO dto) {
+//	   System.out.println("수정할 workplace_id = " + dto.getWork_id());  // null인지 체크!
+//       ps.updateWorkplace(dto); // 수정용 서비스 메서드 호출 (직접 만들어야 함)
+//       return "redirect:/plant";
+//   }
+
+   @PostMapping("/plant/update")
+   public String updateWorkplace(@ModelAttribute plant_DTO dto) {
+       System.out.println("=== 수정 요청 받음 ===");
+       System.out.println("수정할 work_id = " + dto.getWork_id());
+       System.out.println("회사명 = " + dto.getWork_name());
+       System.out.println("대표자 = " + dto.getWork_ceonm());
+       
+       if (dto.getWork_id() == 0) {
+           System.out.println("❌ ERROR: work_id가 0입니다!");
+           return "redirect:/plant?error=no_id";
+       }
+       
+       try {
+           int result = ps.updateWorkplace(dto);
+           System.out.println("수정 결과: " + result + "건 업데이트됨");
+       } catch (Exception e) {
+           System.out.println("❌ 수정 오류: " + e.getMessage());
+           e.printStackTrace();
+       }
+       
+       return "redirect:/plant";
    }
    
 }
