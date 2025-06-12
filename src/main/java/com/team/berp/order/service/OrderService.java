@@ -147,7 +147,8 @@ public class OrderService {
         dto.setAmount(co.getAmount());
         dto.setCompanyId(co.getCompany().getCompanyId());
         dto.setCompanyName(co.getCompany().getCompanyName());
-        dto.setCompanyEmpName(co.getCompany().getEmployee().getEmpName());
+        dto.setCompanyEmpName(co.getCompany().getCompanyEmpName());
+        dto.setEmpName(co.getCompany().getEmployee().getEmpName());;
 
         // 🔹 주문 상세 DTO 리스트 세팅
         dto.setItems(co.getLineItems().stream()
@@ -302,4 +303,54 @@ public class OrderService {
             })
             .collect(Collectors.toList());
     }
+    
+    
+    @Transactional
+    public void updateOrder(Long orderId, CreateOrderRequest request) {
+        // 1. 기존 주문 조회
+        CompanyOrder order = companyOrderRepository.findById(orderId)
+            .orElseThrow(() -> new IllegalArgumentException("주문이 존재하지 않습니다."));
+
+        // 2. 주문 헤더 수정
+        Company company = companyRepository.findById(request.getCompanyId())
+            .orElseThrow(() -> new IllegalArgumentException("고객사가 존재하지 않습니다."));
+
+        order.setCompany(company);
+        order.setOrderDate(request.getOrderDate());
+        order.setOrderType(CompanyOrder.OrderType.valueOf(request.getOrderType()));
+        order.setNote(request.getRemark());
+
+        // 3. 기존 lineItems에서 clear()로 모두 삭제 (JPA 고아제거와 충돌없이)
+        List<OrderLineItem> lineItems = order.getLineItems();
+        lineItems.clear();
+
+        int totalQty = 0;
+        long totalAmount = 0;
+        for (OrderItemRequest itemReq : request.getItems()) {
+            Item item = itemRepository.findById(itemReq.getItemId())
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 품목입니다."));
+
+            OrderLineItem lineItem = OrderLineItem.builder()
+                .item(item)
+                .unit(itemReq.getUnit())
+                .unitPrice(itemReq.getUnitPrice())
+                .unitQty(itemReq.getUnitQty())
+                .unitPriceall(itemReq.getUnitQty() * itemReq.getUnitPrice())
+                .warehouse(null)
+                .build();
+            lineItem.setCompanyOrder(order);
+
+            totalQty += itemReq.getUnitQty();
+            totalAmount += itemReq.getUnitQty() * itemReq.getUnitPrice();
+
+            lineItems.add(lineItem);
+        }
+        order.setOrderQty(totalQty);
+        order.setAmount(totalAmount);
+
+        companyOrderRepository.save(order);
+
+        // 필요시: mrpService.generateMrpForOrder(orderId);
+    }
+
 }

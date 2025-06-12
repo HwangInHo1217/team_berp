@@ -1,6 +1,8 @@
 package com.team.berp.item.controller;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -118,6 +120,20 @@ public class ItemApiController {
         	
         Page<ItemListViewResponse> response = resultPage.map(ItemListViewResponse::new);
         return ResponseEntity.ok(response);
+    }
+    
+    
+ // 모든 품목의 이름, 코드, 단위만 간단 반환
+    @GetMapping("/api/item/items")
+    public List<Map<String, Object>> getAllItemsSimple() {
+        return itemRepository.findAll().stream()
+            .map(item -> {
+                Map<String, Object> map = new HashMap<>();
+                map.put("itemName", item.getName());
+                map.put("itemCode", item.getCode());
+                map.put("unit", item.getUnit());
+                return map;
+            }).toList();
     }
 
 
