@@ -391,7 +391,7 @@ document
       .then(msg => {
         alert('✅ 삭제되었습니다.');
         // 3) 테이블 리프레시: 고객사 출고 목록을 다시 불러옵니다.
-        loadCustomerShipments(/* 페이지 번호나 필터조건 인자 등 필요 시 */);
+        fetchAllShipments();
       })
       .catch(err => {
         console.error('❌ 출고 삭제 중 오류 발생:', err);
@@ -441,3 +441,131 @@ document
         alert('❌ 삭제 중 오류가 발생했습니다:\n' + err.message);
       });
   });
+  
+  
+  // ─────────────────────────────────────────────────────────────────
+  // ③ “창고 이동(특별 출고)” 등록 버튼 핸들러 및 모달 폼 제출 처리
+  // ─────────────────────────────────────────────────────────────────
+
+  // 1) 등록 버튼 클릭 시 모달 열기
+  document.getElementById('btnRegister_Transfer').addEventListener('click', () => {
+    const modal = new bootstrap.Modal(document.getElementById('registerTransferModal'));
+    modal.show();
+  });
+
+  // 2) 모달 폼 제출 처리
+  document.getElementById('formTransferRegister').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    // 1. 값 읽기
+    // - select, input, textarea 값 전부 수집
+    const itemName = document.getElementById('selectItemName').value;
+    const itemCode = document.getElementById('inputItemCode').value;
+    const unit = document.getElementById('inputUnit').value;
+    const warehouse = document.getElementById('selectWarehouse').value;
+    const shipmentDate = document.getElementById('inputShipmentDate').value;
+    const quantity = document.getElementById('inputQuantity').value;
+    const remark = document.getElementById('inputRemark') ? document.getElementById('inputRemark').value : '';
+
+    // 2. 유효성 체크
+    if (!itemName || !itemCode || !unit || !warehouse || !shipmentDate || !quantity) {
+      alert('필수 입력값을 모두 입력하세요.');
+      return;
+    }
+
+    // 3. 등록 데이터 구성
+    const data = {
+      shipmentDate,
+      itemCode,
+      itemName,
+      quantity: Number(quantity),
+      unit,
+      warehouseName: warehouse,
+      comment: remark,
+	  companyName: "",
+	  orderNum: ""
+    };
+
+    // 4. API 호출
+    try {
+      const res = await fetch('/api/shipment/transfer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      if (!res.ok) {
+        alert('등록 실패: ' + await res.text());
+        return;
+      }
+
+      alert('✅ 특별 출고 등록 완료!');
+      this.reset();
+
+      // 모달 닫기
+      bootstrap.Modal.getInstance(document.getElementById('registerTransferModal')).hide();
+
+      // 목록 새로고침
+      fetchAllShipments();
+    } catch (err) {
+      alert('❌ 등록 중 오류: ' + err.message);
+    }
+  });
+
+
+  
+  // 품목, 창고 마스터데이터 (최초 1회만 불러옴)
+  let itemsMaster = [];
+  let warehousesMaster = [];
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    await loadMasterData(); // 품목, 창고 데이터 채우기
+
+    // 품목명 선택시 코드/단위 자동 입력
+    document.getElementById('selectItemName').addEventListener('change', function() {
+      const selectedName = this.value;
+      const item = itemsMaster.find(it => it.itemName === selectedName);
+      document.getElementById('inputItemCode').value = item ? item.itemCode : '';
+      document.getElementById('inputUnit').value = item ? item.unit : '';
+    });
+  });
+
+  // 품목/창고 마스터 불러와서 select option 생성
+  async function loadMasterData() {
+    // 품목
+    const itemsRes = await fetch('/api/item/items');
+    itemsMaster = await itemsRes.json();
+    const itemSel = document.getElementById('selectItemName');
+    itemSel.innerHTML = '<option value="">-- 품목명 선택 --</option>';
+    itemsMaster.forEach(item => {
+      const opt = document.createElement('option');
+      opt.value = item.itemName;
+      opt.textContent = item.itemName;
+      itemSel.appendChild(opt);
+    });
+
+    // 창고
+    const whsRes = await fetch('/api/warehouses/list');
+    warehousesMaster = await whsRes.json();
+    const whSel = document.getElementById('selectWarehouse');
+    whSel.innerHTML = '<option value="">-- 창고 선택 --</option>';
+    warehousesMaster.forEach(wh => {
+      const opt = document.createElement('option');
+      opt.value = wh.warehouseName;
+      opt.textContent = wh.warehouseName;
+      whSel.appendChild(opt);
+    });
+  }
+
+  document.getElementById("btnExcelDownload_Customer").addEventListener("click", function () {
+      var table = document.getElementById("tblCustomerShipment");
+      var wb = XLSX.utils.table_to_book(table, { sheet: "고객사 출고" });
+      XLSX.writeFile(wb, "고객사출고내역.xlsx");
+  });
+
+  document.getElementById("btnExcelDownload_Transfer").addEventListener("click", function () {
+      var table = document.getElementById("tblTransferShipment");
+      var wb = XLSX.utils.table_to_book(table, { sheet: "특별 출고" });
+      XLSX.writeFile(wb, "특별출고내역.xlsx");
+  });
+  

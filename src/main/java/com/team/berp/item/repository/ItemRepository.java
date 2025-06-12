@@ -1,6 +1,7 @@
 package com.team.berp.item.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -74,5 +75,5 @@ public interface ItemRepository extends JpaRepository<Item, Long>{
     @Query("SELECT DISTINCT i FROM Item i WHERE i.id IN (SELECT b.parentItem.id FROM Bom b) AND i.type = :type")
     Page<Item> findRegisteredParentItems(@Param("type") ItemType type, Pageable pageable);
 
-
+    Optional<Item> findByCode(String code);
 }

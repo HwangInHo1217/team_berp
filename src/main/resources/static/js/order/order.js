@@ -1,217 +1,159 @@
-// ✅ 전역 변수 초기화
-let ALL_ITEMS = [];
-let ALL_WAREHOUSES = [];
+// ==========================
+// 주문+출고 통합 JS파일
+// ==========================
 
-function loadCompanies() {
-	$.get('/api/companies', data => {
-		const $select = $('#companySelect, #searchCompanySelect');
-		$select.empty().append('<option value=\"\">전체</option>');
-		data.forEach(c => {
-			$select.append(`<option value=\"${c.companyId}\">${c.companyName}</option>`);
-		});
-	});
+// ===== 전역 변수 =====
+let ALL_ITEMS = [];        // 품목 목록
+let ALL_WAREHOUSES = [];   // 창고 목록
+
+// ===== 숫자 포맷 함수 =====
+function formatNumber(num) {
+  if (num == null || num === "") return "";
+  return Math.floor(Number(num)).toLocaleString('ko-KR');
 }
 
-function loadProductItems(callback) {
-	$.get('/api/items?type=product', data => {
-		ALL_ITEMS = data;
-		if (callback) callback();
-	});
-}
-
-function loadWarehouses(callback) {
-	$.get('/api/warehouses/all', data => {
-		if (!Array.isArray(data)) return alert('창고 목록 불러오기 실패');
-		ALL_WAREHOUSES = data.filter(w => w.warehouseType === 'PRODUCT');
-		if (callback) callback();
-	});
-}
-
+// ===== 초기 로딩 =====
 $(document).ready(() => {
-	loadCompanies();
-	loadProductItems(() => {
-		loadWarehouses(() => {
-			fetchOrders(0);
-		});
-	});
-
-	bindGlobalEventHandlers();
-});
-document.addEventListener('DOMContentLoaded', () => {
-  const saveBtn = document.getElementById('shipmentSaveBtn');
-
-  saveBtn.addEventListener('click', () => {
-    // 1) 모달 내 모든 <tr>을 순회하며,
-    //    각 tr 안에 있는 “hiddenOrderLineItem + select(warehouseId) + input(quantity)” 조합을 찾아 출고 데이터 수집
-    const rows = document.querySelectorAll('#shipmentItemTableBody tr');
-    const shipmentItems = [];
-
-    rows.forEach(tr => {
-      // tr 내의 각 “wrapper” 선택
-      const wrappers = tr.querySelectorAll('.warehouse-row');
-      wrappers.forEach(wrapper => {
-        // 각각 wrapper 안의 hidden, select, input을 찾아낸다.
-        const hiddenEl = wrapper.querySelector('input[type="hidden"][data-field="orderLineItemId"]');
-        const selectEl = wrapper.querySelector('select[data-field="warehouseId"]');
-        const inputEl = wrapper.querySelector('input[type="number"][data-field="quantity"]');
-
-        if (!hiddenEl || !selectEl || !inputEl) return; // 안전장치
-
-        const orderLineItemId = Number(hiddenEl.value);               // 주문상품 ID
-        const warehouseId = Number(selectEl.value);                   // 사용자가 선택한 창고 ID
-        const quantity = Number(inputEl.value) || 0;                   // 출고수량
-
-        if (quantity > 0) {
-          shipmentItems.push({
-            orderLineItemId: orderLineItemId,
-            warehouseId: warehouseId,
-            quantity: quantity
-          });
-        }
-      });
+  loadCompanies();
+  loadProductItems(() => {
+    loadWarehouses(() => {
+      fetchOrders(0);
     });
-
-    // 2) 출고 데이터가 없으면 경고
-    if (shipmentItems.length === 0) {
-      alert('🚨 출고할 수량을 하나 이상 입력해주세요.');
-      return;
-    }
-
-    // 3) 모달 내에서 “comment”(비고)와 “companyEmpName”(출고담당자) 값을 가져오기
-    //    (모달 내에 이 두 필드가 있다고 가정: #shipmentComment, #shipmentCompanyEmpName)
-    const comment = document.querySelector('#shipmentComment')?.value || '';
-    const companyEmpName = document.querySelector('#shipmentCompanyEmpName')?.value || '';
-
-    // 4) 현재 주문 ID도 같이 포함
-    const orderId = Number(document.querySelector('#shipmentModal').dataset.orderId);
-
-    // 5) 최종 payload 객체
-    const payload = {
-      orderId: orderId,
-      comment: comment,
-      companyEmpName: companyEmpName,
-      shipmentItems: shipmentItems
-    };
-
-    // 6) 서버에 출고 정보 전달
-    fetch('/api/shipments', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload)
-    })
-      .then(res => {
-        if (!res.ok) {
-          return res.text().then(msg => { throw new Error(msg); });
-        }
-        return res.text();
-      })
-      .then(_ => {
-        alert('✅ 출고가 정상적으로 등록되었습니다.');
-
-        // 모달 닫기
-        const modalEl = document.getElementById('shipmentModal');
-        const modalInstance = bootstrap.Modal.getInstance(modalEl);
-        if (modalInstance) modalInstance.hide();
-
-        // 필요 시, 주문목록/재고 현황 갱신
-        // fetchOrders(0);
-        // fetchInventoryStatus();
-      })
-      .catch(err => {
-        console.error('❌ 출고 등록 중 오류 발생:', err);
-        alert('❌ 출고 등록 중 오류가 발생했습니다.');
-      });
   });
+  bindGlobalEventHandlers();
 });
 
-// ✅ 전역 이벤트 바인딩
+// ===== 고객사/품목/창고 목록 불러오기 =====
+function loadCompanies() {
+  $.get('/api/companies', data => {
+    const $select = $('#companySelect, #searchCompanySelect, #fixedCompanySelect');
+    $select.empty().append('<option value="">전체</option>');
+    data.forEach(c => $select.append(`<option value="${c.companyId}">${c.companyName}</option>`));
+  });
+}
+function loadProductItems(callback) {
+  $.get('/api/items?type=product', data => {
+    ALL_ITEMS = data;
+    if (callback) callback();
+  });
+}
+function loadWarehouses(callback) {
+  $.get('/api/warehouses/all-simple', data => {
+    if (!Array.isArray(data)) return alert('창고 목록 불러오기 실패');
+    ALL_WAREHOUSES = data.filter(w => w.warehouseType === 'PRODUCT');
+    if (callback) callback();
+  });
+}
+
+// ===== 버튼/이벤트 핸들러 등록 =====
 function bindGlobalEventHandlers() {
+  $('#openRegisterModal').click(handleOpenRegisterModal);
+  $('#companySelect').change(handleCompanyChange);
+  $('#addItem').click(addItemRow);
+  $('#selectAll').change(toggleSelectAll);
+  $('#deleteSelected').click(deleteSelectedOrders);
+  $('#filterForm').submit(e => { e.preventDefault(); fetchOrders(0); });
+  $('#fixedaddItem').off('click').on('click', () => {
+    addFixedItemRow();
+    calcFixedTotalAmount();
+  });
+  $('#excelDownloadBtn').on('click', downloadExcelOrderList);
 
-	$('#openRegisterModal').click(handleOpenRegisterModal);
-	$('#companySelect').change(handleCompanyChange);
-	$('#addItem').click(addItemRow);
-	$('#selectAll').change(toggleSelectAll);
-	$('#deleteSelected').click(deleteSelectedOrders);
-	$('#filterForm').submit(e => { e.preventDefault(); fetchOrders(0); });
+  // 출고등록(동적 버튼)
+  $(document).on('click', '.shipmentBtn', openShipmentModal);
+
+  // 출고등록 저장버튼(모달)
+  $(document).on('click', '#shipmentSaveBtn', saveShipment);
 }
 
-// ✅ 모달 열기 및 초기화
+// ===== 주문등록 모달 오픈 =====
 function handleOpenRegisterModal() {
-	$('#registerForm')[0].reset();
-	$('#itemsTable tbody').empty();
-	$('#totalAmount').text('0');
-	addItemRow();
-	$('#registerModal').modal('show');
-
-	// 중복 방지
-	$('#saveOrder').off('click').on('click', saveOrder);
+  $('#registerForm')[0].reset();
+  $('#itemsTable tbody').empty();
+  $('#totalAmount').text('0');
+  addItemRow();
+  $('#registerModal').modal('show');
+  $('#saveOrder').off('click').on('click', saveOrder);
 }
 
-// ✅ 고객사 변경 시 담당자 자동 세팅
+// ===== 고객사 변경시 담당자/거래처담당자 자동 =====
 function handleCompanyChange() {
-	const companyId = $(this).val();
-	if (!companyId) return $('#empName').val('');
-
-	$.get(`/api/companies/${companyId}/info`, data => {
-		$('#empName').val(data.empName);
-	});
+  const companyId = $(this).val();
+  if (!companyId) {
+    $('#empName').val('');
+    $('#companyEmpName').val('');
+    return;
+  }
+  $.get(`/api/companies/${companyId}/info`, data => {
+    $('#empName').val(data.empName || '');
+    $('#companyEmpName').val(data.companyEmpName || '');
+  });
 }
 
-// ✅ 주문 저장
+// ===== 주문 저장 =====
 function saveOrder() {
-	const orderItems = [];
+  const companyId = $('#companySelect').val();
+  const orderDate = $('input[name="orderDate"]').val();
+  const empName = $('#empName').val();
+  const companyEmpName = $('#companyEmpName').val();
+  if (!companyId) return alert('고객사를 선택하세요.');
+  if (!orderDate) return alert('주문일자를 입력하세요.');
+  if (!empName) return alert('담당자가 없습니다. 고객사를 다시 선택하세요.');
+  if (!companyEmpName) return alert('거래처 담당자가 없습니다. 고객사를 다시 선택하세요.');
 
-	$('#itemsTable tbody tr').each(function() {
-		const itemId = $(this).find('.itemSelect').val();
-		const unit = $(this).find('.unit').val();
-		const unitPrice = $(this).find('.unitPrice').val();
-		const unitQty = $(this).find('.unitQty').val();
+  const itemRows = $('#itemsTable tbody tr');
+  if (itemRows.length === 0) return alert('품목을 1개 이상 추가하세요.');
 
-		if (itemId && unit && unitPrice && unitQty) {
-			orderItems.push({
-				itemId: Number(itemId),
-				unit,
-				unitPrice: Number(unitPrice),
-				unitQty: Number(unitQty)
-			});
-		}
-	});
+  let valid = true;
+  itemRows.each(function() {
+    const itemId = $(this).find('.itemSelect').val();
+    const unit = $(this).find('.unit').val();
+    const unitPrice = $(this).find('.unitPrice').val();
+    const unitQty = $(this).find('.unitQty').val();
+    if (!itemId || !unit || !unitPrice || !unitQty) valid = false;
+  });
+  if (!valid) return alert('품목 정보(품목/단가/수량)를 모두 입력하세요.');
 
-	const orderData = {
-		companyId: Number($('#companySelect').val()),
-		orderDate: $('input[name="orderDate"]').val(),
-		empName: $('#empName').val(),
-		companyEmpName: $('#companyEmpName').val(),
-		remark: $('textarea[name="remark"]').val(),
-		orderType: $('input[name="orderType"]').val(),
-		itemType: $('input[name="itemType"]').val(),
-		items: orderItems
-	};
+  const orderItems = [];
+  itemRows.each(function() {
+    const itemId = $(this).find('.itemSelect').val();
+    const unit = $(this).find('.unit').val();
+    const unitPrice = $(this).find('.unitPrice').val();
+    const unitQty = $(this).find('.unitQty').val();
+    orderItems.push({
+      itemId: Number(itemId), unit, unitPrice: Number(unitPrice), unitQty: Number(unitQty)
+    });
+  });
 
-	$.ajax({
-		url: '/api/orders',
-		method: 'POST',
-		contentType: 'application/json',
-		data: JSON.stringify(orderData),
-		success: function() {
-			alert('저장 완료');
-			$('#registerModal').modal('hide');
-			$('#registerForm')[0].reset();
-			$('#itemsTable tbody').empty();
-			fetchOrders(0);
-		},
-		error: function() {
-			alert('저장 중 오류 발생');
-		}
-	});
+  const orderData = {
+    companyId: Number(companyId),
+    orderDate, empName, companyEmpName,
+    remark: $('textarea[name="remark"]').val(),
+    orderType: $('input[name="orderType"]').val(),
+    itemType: $('input[name="itemType"]').val(),
+    items: orderItems
+  };
+
+  $.ajax({
+    url: '/api/orders',
+    method: 'POST',
+    contentType: 'application/json',
+    data: JSON.stringify(orderData),
+    success: function() {
+      alert('저장 완료');
+      $('#registerModal').modal('hide');
+      $('#registerForm')[0].reset();
+      $('#itemsTable tbody').empty();
+      fetchOrders(0);
+    },
+    error: function() { alert('저장 중 오류 발생'); }
+  });
 }
 
-// ✅ 품목 행 추가
+// ===== 품목 행 추가 =====
 function addItemRow() {
-	const idx = $('#itemsTable tbody tr').length;
-	const $tr = $(`
+  const idx = $('#itemsTable tbody tr').length;
+  const $tr = $(`
     <tr>
       <td>
         <select name="items[${idx}].itemId" class="form-select itemSelect" required>
@@ -225,129 +167,83 @@ function addItemRow() {
       <td><button type="button" class="btn btn-danger removeItem">삭제</button></td>
     </tr>
   `);
-
-	const $itemSel = $tr.find('.itemSelect');
-	ALL_ITEMS.forEach(i => {
-		$itemSel.append(`<option value="${i.id}" data-unit="${i.unit}" data-price="${i.itemPrice}">${i.itemName}</option>`);
-	});
-
-	$('#itemsTable tbody').append($tr);
+  const $itemSel = $tr.find('.itemSelect');
+  ALL_ITEMS.forEach(i => {
+    $itemSel.append(`<option value="${i.id}" data-unit="${i.unit}" data-price="${i.itemPrice}">${i.itemName}</option>`);
+  });
+  $('#itemsTable tbody').append($tr);
 }
 
-// ✅ 품목 선택 시 자동입력
+// ===== 품목행 입력시 자동처리 =====
 $('#itemsTable').on('change', '.itemSelect', function() {
-	const $tr = $(this).closest('tr');
-	const opt = $(this).find('option:selected');
-	$tr.find('.unit').val(opt.data('unit'));
-	$tr.find('.unitPrice').val(opt.data('price'));
-	$tr.find('.unitQty').val(1);
-	calculateRowTotal($tr);
-	calculateTotalAmount();
+  const $tr = $(this).closest('tr');
+  const opt = $(this).find('option:selected');
+  $tr.find('.unit').val(opt.data('unit'));
+  $tr.find('.unitPrice').val(opt.data('price'));
+  $tr.find('.unitQty').val(1);
+  calculateRowTotal($tr); calculateTotalAmount();
 });
-
-// ✅ 수량 변경 시 합계 재계산
 $('#itemsTable').on('input', '.unitQty', function() {
-	const $tr = $(this).closest('tr');
-	calculateRowTotal($tr);
-	calculateTotalAmount();
+  const $tr = $(this).closest('tr');
+  calculateRowTotal($tr); calculateTotalAmount();
 });
-
-// ✅ 행 삭제
 $('#itemsTable').on('click', '.removeItem', function() {
-	$(this).closest('tr').remove();
-	calculateTotalAmount();
+  $(this).closest('tr').remove();
+  calculateTotalAmount();
 });
-
 function calculateRowTotal($tr) {
-	const qty = parseFloat($tr.find('.unitQty').val()) || 0;
-	const price = parseFloat($tr.find('.unitPrice').val()) || 0;
-	$tr.find('.total').val((qty * price).toFixed(2));
+  const qty = parseFloat($tr.find('.unitQty').val()) || 0;
+  const price = parseFloat($tr.find('.unitPrice').val()) || 0;
+  $tr.find('.total').val(formatNumber(qty * price));
 }
-
 function calculateTotalAmount() {
-	let total = 0;
-	$('#itemsTable tbody tr').each(function() {
-		total += parseFloat($(this).find('.total').val()) || 0;
-	});
-	$('#totalAmount').text(total.toFixed(2));
+  let total = 0;
+  $('#itemsTable tbody tr').each(function() {
+    total += Number(String($(this).find('.total').val()).replace(/,/g,"")) || 0;
+  });
+  $('#totalAmount').text(formatNumber(total));
 }
 
-function toggleSelectAll() {
-	$('.selectBox').prop('checked', this.checked);
-}
-
+// ===== 체크박스/삭제/목록조회/상세/수정 =====
+function toggleSelectAll() { $('.selectBox').prop('checked', this.checked); }
 function deleteSelectedOrders() {
-	const ids = $('.selectBox:checked').map((i, el) => el.value).get();
-
-	if (ids.length === 0) return alert('삭제할 주문을 선택하세요.');
-	if (!confirm('정말 삭제하시겠습니까?')) return;
-
-	fetch('/api/orders', {
-		method: 'DELETE',
-		headers: {
-			'Content-Type': 'application/json'
-		},
-		body: JSON.stringify(ids)
-	})
-		.then(response => {
-			if (!response.ok) {
-				return response.text().then(msg => { throw new Error(msg); });
-			}
-			return response.text();
-		})
-		.then(msg => {
-			alert('✅ ' + msg);
-			fetchOrders(); // 목록 다시 불러오기
-		})
-		.catch(err => {
-			alert('❌ ' + err.message); // API에서 전달한 에러 메시지 출력
-		});
+  const ids = $('.selectBox:checked').map((i, el) => el.value).get();
+  if (ids.length === 0) return alert('삭제할 주문을 선택하세요.');
+  if (!confirm('정말 삭제하시겠습니까?')) return;
+  fetch('/api/orders', {
+    method: 'DELETE', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(ids)
+  })
+  .then(response => {
+    if (!response.ok) return response.text().then(msg => { throw new Error(msg); });
+    return response.text();
+  })
+  .then(msg => { alert('✅ ' + msg); fetchOrders(0); })
+  .catch(err => { alert('❌ ' + err.message); });
 }
-
-
 function fetchOrders(page = 0) {
-	const params = new URLSearchParams({
-		companyId: $('#searchCompanySelect').val(),
-		itemId: $('#searchItemSelect').val(),
-		fromDate: $('input[name="fromDate"]').val(),
-		toDate: $('input[name="toDate"]').val(),
-		page,
-		size: 10
-	});
-
-	fetch(`/api/orders/list?${params.toString()}`)
-		.then(res => res.json())
-		.then(data => {
-			renderOrderTable(data.content, data.number, data.size);
-			renderPagination(data.totalPages, data.number);
-		})
-		.catch(() => alert("주문 목록 조회 실패"));
+  const params = new URLSearchParams({
+    companyId: $('#searchCompanySelect').val(),
+    itemId: $('#searchItemSelect').val(),
+    fromDate: $('input[name="fromDate"]').val(),
+    toDate: $('input[name="toDate"]').val(),
+    page, size: 10, sort: 'orderDate,asc'
+  });
+  fetch(`/api/orders/list?${params.toString()}`)
+    .then(res => res.json())
+    .then(data => {
+      renderOrderTable(data.content, data.number, data.size);
+      renderPagination(data.totalPages, data.number);
+    })
+    .catch(() => alert("주문 목록 조회 실패"));
 }
-
-/**
- * 주문 목록을 화면에 그려주는 함수
- * - orders: 백엔드에서 내려준 페이지(content) 배열
- * - pageNumber, pageSize: 페이징용 계산값
- */
 function renderOrderTable(orders, pageNumber, pageSize) {
   const $tbody = $('#orderTableBody').empty();
-
-  // ───────────────────────────────────────────────────────
-  // ★ 이미 출고가 완료된 행(allShipped===true)은 건너뛰고(!) 렌더링
-  // ───────────────────────────────────────────────────────
-  const visibleOrders = orders.filter(o => !o.allShipped);
-
-  visibleOrders.forEach((o, i) => {
+  orders.forEach((o, i) => {
     const idx = i + 1 + pageNumber * pageSize;
-
-    // (예시: allShipped가 false이므로, 항상 '출고등록' 버튼을 렌더링)
-    const shipmentBtnHtml = `
-      <button type="button"
-              class="btn btn-success btn-sm shipmentBtn"
-              data-id="${o.orderId}">
-        출고 등록
-      </button>`;
-
+    const shipmentBtnHtml = o.allShipped
+      ? '<span style="font-weight:bold; color:#007bff;">출고완료</span>'
+      : `<button type="button" class="btn btn-success btn-sm shipmentBtn" data-id="${o.orderId}">출고 등록</button>`;
     const row = `
       <tr>
         <td><input type="checkbox" class="selectBox" value="${o.orderId}" /></td>
@@ -355,8 +251,8 @@ function renderOrderTable(orders, pageNumber, pageSize) {
         <td>${o.orderDate}</td>
         <td>${o.orderNum || '-'}</td>
         <td>${o.companyName}</td>
-        <td>${o.orderQty}</td>
-        <td>${o.amount}원</td>
+        <td>${formatNumber(o.orderQty)}</td>
+        <td>${formatNumber(o.amount)}원</td>
         <td>${o.companyEmpName || '-'}</td>
         <td>${o.empName || '-'}</td>
         <td>
@@ -369,11 +265,9 @@ function renderOrderTable(orders, pageNumber, pageSize) {
           ${shipmentBtnHtml}
         </td>
       </tr>`;
-
     $tbody.append(row);
   });
-
-  // 기존에 Detail/수정 버튼 바인딩 로직을 그대로 유지
+  // 상세/수정 버튼 이벤트
   $('.detailBtn').off('click').on('click', function() {
     const orderId = $(this).data('id');
     $.get(`/api/orders/${orderId}`, populateDetailModal);
@@ -383,280 +277,353 @@ function renderOrderTable(orders, pageNumber, pageSize) {
     $.get(`/api/orders/${orderId}`, populateFixedForm);
   });
 }
-
 function renderPagination(totalPages, currentPage) {
-	const $ul = $('.pagination').empty();
-	if (totalPages === 0) return;
-
-	$ul.append(`<li class="page-item ${currentPage === 0 ? 'disabled' : ''}">
+  const $ul = $('.pagination').empty();
+  if (totalPages === 0) return;
+  $ul.append(`<li class="page-item ${currentPage === 0 ? 'disabled' : ''}">
     <button class="page-link" onclick="fetchOrders(${currentPage - 1})">이전</button></li>`);
-
-	for (let i = 0; i < totalPages; i++) {
-		$ul.append(`<li class="page-item ${i === currentPage ? 'active' : ''}">
+  for (let i = 0; i < totalPages; i++) {
+    $ul.append(`<li class="page-item ${i === currentPage ? 'active' : ''}">
       <button class="page-link" onclick="fetchOrders(${i})">${i + 1}</button></li>`);
-	}
-
-	$ul.append(`<li class="page-item ${currentPage === totalPages - 1 ? 'disabled' : ''}">
+  }
+  $ul.append(`<li class="page-item ${currentPage === totalPages - 1 ? 'disabled' : ''}">
     <button class="page-link" onclick="fetchOrders(${currentPage + 1})">다음</button></li>`);
 }
-
 function populateDetailModal(data) {
-	$('#detailOrderNum').text(data.orderNum || '-');
-	$('#detailOrderDate').text(data.orderDate || '-');
-	$('#detailCompanyName').text(data.companyName || '-');
-	$('#detailEmpName').text(data.empName || '-');
-	$('#detailCompanyEmpName').text(data.companyEmpName || '-');
-	$('#detailRemark').text(data.remark || '-');
-
-	const $tbody = $('#detailItemsTable tbody');
-	$tbody.empty();
-
-	data.items.forEach(item => {
-		const total = item.unitQty * item.unitPrice;
-		const row = `
+  $('#detailOrderNum').text(data.orderNum || '-');
+  $('#detailOrderDate').text(data.orderDate || '-');
+  $('#detailCompanyName').text(data.companyName || '-');
+  $('#detailEmpName').text(data.empName || '-');
+  $('#detailCompanyEmpName').text(data.companyEmpName || '-');
+  $('#detailRemark').text(data.remark || '-');
+  const $tbody = $('#detailItemsTable tbody').empty();
+  data.items.forEach(item => {
+    const total = item.unitQty * item.unitPrice;
+    const row = `
       <tr>
         <td>${item.itemName}</td>
         <td>${item.unit}</td>
-        <td>${item.unitPrice.toFixed(2)}</td>
-        <td>${item.unitQty}</td>
-        <td>${total.toFixed(2)}</td>
+        <td>${formatNumber(item.unitPrice)}</td>
+        <td>${formatNumber(item.unitQty)}</td>
+        <td>${formatNumber(total)}</td>
       </tr>
     `;
-		$tbody.append(row);
-	});
-
-	const modalEl = document.getElementById('detailModal');
-	const modal = new bootstrap.Modal(modalEl);
-	modal.show();
+    $tbody.append(row);
+  });
+  const modalEl = document.getElementById('detailModal');
+  const modal = new bootstrap.Modal(modalEl);
+  modal.show();
 }
-// order.js
 
+// ===== 주문수정 모달 및 기능 =====
+function populateFixedForm(orderData) {
+  $('#fixedOrderId').val(orderData.orderId);
+  $('#fixedCompanySelect').val(orderData.companyId);
+  $('#fixedOrderDate').val(orderData.orderDate);
+  $('#fixedEmpName').val(orderData.empName || '');
+  $('#fixedCompanyEmpName').val(orderData.companyEmpName || '');
+  $('#fixedRemark').val(orderData.remark || '');
+  const $tbody = $('#fixedItemsTable tbody').empty();
+  (orderData.items || []).forEach(item => addFixedItemRow(item));
+  calcFixedTotalAmount();
+  $tbody.off('click', '.fixedRemoveItem').on('click', '.fixedRemoveItem', function() {
+    $(this).closest('tr').remove(); calcFixedTotalAmount();
+  });
+  $tbody.off('change', '.fixedItemSelect').on('change', '.fixedItemSelect', function() {
+    const $tr = $(this).closest('tr');
+    const opt = $(this).find('option:selected');
+    $tr.find('.fixedUnit').val(opt.data('unit'));
+    $tr.find('.fixedUnitPrice').val(opt.data('price'));
+    $tr.find('.fixedUnitQty').val(1);
+    $tr.find('.fixedTotal').val(formatNumber(opt.data('price')));
+    calcFixedTotalAmount();
+  });
+  $tbody.off('input', '.fixedUnitQty').on('input', '.fixedUnitQty', function() {
+    const $tr = $(this).closest('tr');
+    const qty = parseFloat($tr.find('.fixedUnitQty').val()) || 0;
+    const price = parseFloat($tr.find('.fixedUnitPrice').val()) || 0;
+    $tr.find('.fixedTotal').val(formatNumber(qty * price));
+    calcFixedTotalAmount();
+  });
+  $('#fixedModal').modal('show');
+}
+function addFixedItemRow(item) {
+  const idx = $('#fixedItemsTable tbody tr').length;
+  const tr = $(`
+    <tr data-index="${idx}">
+      <td>
+        <select class="form-select fixedItemSelect" required>
+          <option value="">선택</option>
+        </select>
+      </td>
+      <td><input type="text" class="form-control fixedUnit" readonly></td>
+      <td><input type="number" class="form-control fixedUnitPrice" readonly></td>
+      <td><input type="number" class="form-control fixedUnitQty" value="1" required></td>
+      <td><input type="text" class="form-control fixedTotal" readonly></td>
+      <td><button type="button" class="btn btn-danger fixedRemoveItem">삭제</button></td>
+    </tr>
+  `);
+  const $sel = tr.find('.fixedItemSelect');
+  ALL_ITEMS.forEach(i => {
+    $sel.append(`<option value="${i.id}" data-unit="${i.unit}" data-price="${i.itemPrice}">${i.itemName}</option>`);
+  });
+  if (item) {
+    $sel.val(item.itemId);
+    tr.find('.fixedUnit').val(item.unit);
+    tr.find('.fixedUnitPrice').val(item.unitPrice);
+    tr.find('.fixedUnitQty').val(item.unitQty);
+    tr.find('.fixedTotal').val(formatNumber(item.unitQty * item.unitPrice));
+  }
+  $('#fixedItemsTable tbody').append(tr);
+}
+function calcFixedTotalAmount() {
+  let total = 0;
+  $('#fixedItemsTable tbody tr').each(function() {
+    total += Number(String($(this).find('.fixedTotal').val()).replace(/,/g,"")) || 0;
+  });
+  $('#totalAmount').text(formatNumber(total));
+}
+$('#updateOrder').off('click').on('click', function() {
+  const orderId = Number($('#fixedOrderId').val());
+  const companyId = Number($('#fixedCompanySelect').val());
+  const orderDate = $('#fixedOrderDate').val();
+  const empName = $('#fixedEmpName').val();
+  const companyEmpName = $('#fixedCompanyEmpName').val();
+  const remark = $('#fixedRemark').val();
+  const orderType = $('input[name="orderType"]').val();
+  const itemType = $('input[name="itemType"]').val();
+  const items = [];
+  $('#fixedItemsTable tbody tr').each(function() {
+    const itemId = Number($(this).find('.fixedItemSelect').val());
+    const unit = $(this).find('.fixedUnit').val();
+    const unitPrice = Number($(this).find('.fixedUnitPrice').val());
+    const unitQty = Number($(this).find('.fixedUnitQty').val());
+    items.push({ itemId, unit, unitPrice, unitQty });
+  });
+  const updatedOrder = { companyId, orderDate, empName, companyEmpName, remark, orderType, itemType, items };
+  $.ajax({
+    url: '/api/orders/' + orderId,
+    method: 'PUT',
+    contentType: 'application/json',
+    data: JSON.stringify(updatedOrder),
+    success: function() {
+      alert('주문이 수정되었습니다.');
+      $('#fixedModal').modal('hide');
+      fetchOrders(0);
+    },
+    error: function(xhr) { alert('수정 중 오류: ' + (xhr.responseText || '')); }
+  });
+});
 
+// ==============================
+// ===== 출고등록 모달 관련 =====
+// ==============================
 
-
-  /**
-   * 1) “창고 입력 줄(wrapper)”을 생성해 주는 함수
-   *    - itemId: 해당 품목 ID
-   *    - warehouseList: 해당 품목이 보유된 모든 창고 정보 배열
-   *      (각 원소: { orderLineItemId, itemId, itemCode, itemName, orderQty, warehouseId, warehouseName, stockQty } )
-   */
-  function createWarehouseRow(itemId, warehouseList) {
-    // 1) wrapper <div> 생성
-    const wrapper = document.createElement('div');
-    wrapper.classList.add('mb-2', 'd-flex', 'align-items-center', 'warehouse-row');
-
-    // 2) “orderLineItemId”를 숨겨서 보관할 hidden <input> 생성
-    //    (이 값을 서버로 보내서 어떤 주문상품에서 출고할 건지 구분)
-    const hiddenOrderLineItem = document.createElement('input');
-    hiddenOrderLineItem.type = 'hidden';
-    // 첫 번째 warehouseList 요소에 있는 orderLineItemId를 사용
-    hiddenOrderLineItem.value = warehouseList[0].orderLineItemId;
-    hiddenOrderLineItem.setAttribute('data-field', 'orderLineItemId');
-    wrapper.appendChild(hiddenOrderLineItem);
-
-    // 3) 창고 선택 <select> 생성
-    const warehouseSelect = document.createElement('select');
-    warehouseSelect.classList.add('form-select', 'form-select-sm', 'me-2');
-    warehouseSelect.style.minWidth = '200px'; // 너비 지정(필요 시)
-    warehouseSelect.setAttribute('data-field', 'warehouseId');
-
-    // 옵션 추가: “warehouseList” 배열을 순회하며
-    warehouseList.forEach(wsi => {
-      const opt = document.createElement('option');
-      opt.value = wsi.warehouseId;           // ex: 11
-      opt.textContent = `${wsi.warehouseName} (재고: ${wsi.stockQty})`;
-      warehouseSelect.appendChild(opt);
+/**
+ * 출고등록 버튼 클릭시: 출고모달 오픈 + 데이터 바인딩
+ */
+async function openShipmentModal(e) {
+  e.preventDefault();
+  const orderId = Number($(this).data('id'));
+  try {
+    const response = await fetch(`/api/orders/${orderId}/shipment-info`);
+    if (!response.ok) throw new Error(`서버 오류: HTTP ${response.status}`);
+    const rawData = await response.json();
+    if ((Array.isArray(rawData) && rawData.length === 0) ||
+        (!Array.isArray(rawData) && typeof rawData === 'object' && Object.keys(rawData).length === 0)) {
+      alert("– 현재 재고가 전혀 없습니다.\nMRP 페이지로 이동합니다.");
+      window.location.href = '/mrp/mrp';
+      return;
+    }
+    // 그룹핑
+    const dataMap = {};
+    rawData.forEach(wsi => {
+      const oliId = wsi.orderLineItemId;
+      if (!dataMap[oliId]) dataMap[oliId] = [];
+      dataMap[oliId].push(wsi);
     });
-    wrapper.appendChild(warehouseSelect);
-
-    // 4) 출고 수량 입력 <input> 생성
-    const qtyInput = document.createElement('input');
-    qtyInput.type = 'number';
-    qtyInput.min = '0';
-    qtyInput.value = '0';
-    qtyInput.classList.add('form-control', 'form-control-sm', 'me-2');
-    qtyInput.setAttribute('data-field', 'quantity');
-    wrapper.appendChild(qtyInput);
-
-    // 5) “❌ 삭제” 버튼 생성: 잘못 추가된 줄 제거 용
-    const removeBtn = document.createElement('button');
-    removeBtn.type = 'button';
-    removeBtn.classList.add('btn', 'btn-sm', 'btn-outline-danger');
-    removeBtn.innerText = '❌';
-    removeBtn.title = '이 줄 제거';
-    removeBtn.addEventListener('click', () => {
-      wrapper.remove();
+    // 재고부족 체크
+    for (const [oliIdStr, warehouseList] of Object.entries(dataMap)) {
+      const requiredQty = warehouseList[0].orderQty;
+      const totalStock = warehouseList.reduce((sum, wsi) => sum + (wsi.stockQty || 0), 0);
+      if (totalStock < requiredQty) {
+        alert(
+          `주문 상품(${warehouseList[0].itemCode} : ${warehouseList[0].itemName})의\n` +
+          `총 재고(${formatNumber(totalStock)}개)가 주문 수량(${formatNumber(requiredQty)}개)보다 적습니다.\n` +
+          `MRP 페이지로 이동합니다.`
+        );
+        window.location.href = '/mrp/mrp';
+        return;
+      }
+    }
+    // 테이블 비우고 행 생성
+    const tbody = document.getElementById('shipmentItemTableBody');
+    tbody.innerHTML = '';
+    Object.entries(dataMap).forEach(([oliIdStr, warehouseList]) => {
+      const first = warehouseList[0];
+      const itemCode = first.itemCode;
+      const itemName = first.itemName;
+      const orderQty = first.orderQty;
+      const tr = document.createElement('tr');
+      // 품목코드
+      const tdCode = document.createElement('td');
+      tdCode.innerText = itemCode;
+      tr.appendChild(tdCode);
+      // 품목명
+      const tdName = document.createElement('td');
+      tdName.innerText = itemName;
+      tr.appendChild(tdName);
+      // 주문수량
+      const tdOrderQty = document.createElement('td');
+      tdOrderQty.innerText = formatNumber(orderQty);
+      tr.appendChild(tdOrderQty);
+      // 창고/수량
+      const tdWarehouseArea = document.createElement('td');
+      const container = document.createElement('div');
+      container.classList.add('warehouse-rows-container');
+      const firstRow = createWarehouseRow(Number(oliIdStr), warehouseList);
+      container.appendChild(firstRow);
+      // ➕ 행 추가
+      const addBtn = document.createElement('button');
+      addBtn.type = 'button';
+      addBtn.classList.add('btn', 'btn-sm', 'btn-outline-secondary', 'ms-2');
+      addBtn.innerText = '➕';
+      addBtn.title = '다른 창고도 추가 등록';
+      addBtn.addEventListener('click', () => {
+        const newRow = createWarehouseRow(Number(oliIdStr), warehouseList);
+        container.appendChild(newRow);
+      });
+      tdWarehouseArea.appendChild(container);
+      tdWarehouseArea.appendChild(addBtn);
+      tr.appendChild(tdWarehouseArea);
+      tbody.appendChild(tr);
     });
-    wrapper.appendChild(removeBtn);
+    // 모달 data-order-id 설정 + 띄우기
+    const modalEl = document.getElementById('shipmentModal');
+    modalEl.setAttribute('data-order-id', orderId);
+    const modalInstance = new bootstrap.Modal(modalEl);
+    modalInstance.show();
+  } catch (err) {
+    alert('❌ 출고 정보를 불러오는 데 실패했습니다.');
+  }
+}
 
-    // 6) wrapper(DOM 요소) 반환
-    return wrapper;
-  }	// order.js (혹은 shipment-tabs.js 등 실제 사용하는 파일)
-	document
-	  .getElementById('orderTableBody')
-	  .addEventListener('click', async (event) => {
-	    // 1) 클릭된 요소가 .shipmentBtn 인지 확인
-	    if (!event.target.classList.contains('shipmentBtn')) return;
+/**
+ * 창고-수량 입력 한 줄 생성
+ */
+function createWarehouseRow(itemId, warehouseList) {
+  const wrapper = document.createElement('div');
+  wrapper.classList.add('mb-2', 'd-flex', 'align-items-center', 'warehouse-row');
+  const hiddenOrderLineItem = document.createElement('input');
+  hiddenOrderLineItem.type = 'hidden';
+  hiddenOrderLineItem.value = warehouseList[0].orderLineItemId;
+  hiddenOrderLineItem.setAttribute('data-field', 'orderLineItemId');
+  wrapper.appendChild(hiddenOrderLineItem);
+  // 창고 select
+  const warehouseSelect = document.createElement('select');
+  warehouseSelect.classList.add('form-select', 'form-select-sm', 'me-2');
+  warehouseSelect.style.minWidth = '200px';
+  warehouseSelect.setAttribute('data-field', 'warehouseId');
+  warehouseList.forEach(wsi => {
+    const opt = document.createElement('option');
+    opt.value = wsi.warehouseId;
+    opt.textContent = `${wsi.warehouseName} (재고: ${formatNumber(wsi.stockQty)})`;
+    warehouseSelect.appendChild(opt);
+  });
+  wrapper.appendChild(warehouseSelect);
+  // 수량
+  const qtyInput = document.createElement('input');
+  qtyInput.type = 'number';
+  qtyInput.min = '0';
+  qtyInput.value = '0';
+  qtyInput.classList.add('form-control', 'form-control-sm', 'me-2');
+  qtyInput.setAttribute('data-field', 'quantity');
+  wrapper.appendChild(qtyInput);
+  // 삭제
+  const removeBtn = document.createElement('button');
+  removeBtn.type = 'button';
+  removeBtn.classList.add('btn', 'btn-sm', 'btn-outline-danger');
+  removeBtn.innerText = '❌';
+  removeBtn.title = '이 줄 제거';
+  removeBtn.addEventListener('click', () => { wrapper.remove(); });
+  wrapper.appendChild(removeBtn);
+  return wrapper;
+}
 
-	    // 2) 주문 ID
-	    const orderId = Number(event.target.dataset.id);
+/**
+ * 출고등록 저장(POST)
+ */
+function saveShipment() {
+  // 모달에서 orderId 읽기
+  const modal = document.getElementById('shipmentModal');
+  const orderId = Number(modal.getAttribute('data-order-id'));
+  if (!orderId) return alert('주문ID가 없습니다. 다시 시도하세요.');
 
-	    try {
-	      // 3) 서버에서 “해당 주문 상품별 창고/재고 정보” 가져오기
-	      const response = await fetch(`/api/orders/${orderId}/shipment-info`);
-	      if (!response.ok) {
-	        throw new Error(`서버 오류: HTTP ${response.status}`);
-	      }
+  // 각 행의 출고 정보 수집
+  const data = [];
+  $('#shipmentItemTableBody tr').each(function() {
+    $(this).find('.warehouse-rows-container > .warehouse-row').each(function() {
+      const $wr = $(this);
+      const quantity = Number($wr.find('[data-field="quantity"]').val());
+      if (quantity > 0) {
+        data.push({
+          orderLineItemId: $wr.find('[data-field="orderLineItemId"]').val(),
+          warehouseId: $wr.find('[data-field="warehouseId"]').val(),
+          quantity
+        });
+      }
+    });
+  });
 
-	      // 4) JSON 파싱
-	      const rawData = await response.json();
-	      console.log("🚀 서버 응답 rawData:", rawData);
+  if (data.length === 0) return alert('출고수량을 1개 이상 입력하세요.');
 
-	      // ────────────────────────────────────────────────────────────
-	      // 여기까지 왔다는 것은 서버가 “orderLineItem 별 재고” 정보를 내려준 상태입니다.
-	      // rawData는 flat list 형태이며, 예시 한 행(row)의 형태는 아래와 같습니다:
-	      // {
-	      //   orderLineItemId: 10,
-	      //   itemId: 5,
-	      //   itemCode: "PRD001",
-	      //   itemName: "휴대용 선풍기",
-	      //   orderQty: 7,           // '이 주문상품의 주문 수량'
-	      //   warehouseId: 2,
-	      //   warehouseName: "완제품 창고",
-	      //   stockQty: 3            // 이 창고에 남아 있는 재고 수량
-	      // }
-	      //
-	      //    → rawData 배열에는 여러 창고(row)가 섞여 있을 수 있습니다.
-	      //    → orderLineItemId가 동일한 row들을 모아서 “하나의 주문상품”에
-	      //      여러 창고의 stockQty 정보를 합산해야 합니다.
-	      // ────────────────────────────────────────────────────────────
+  // === 출고등록 API 호출 === (백엔드가 요구하는 구조로)
+  const payload = {
+    orderId: orderId,
+    shipmentItems: data
+  };
 
-	      // 5)  rawData가 비어 있으면 “아무 재고도 없이 빈 배열([])이 온 경우”이므로
-	      //     바로 MRP 페이지로 이동하도록 합니다.
-	      if (Array.isArray(rawData) && rawData.length === 0) {
-	        alert("– 현재 재고가 전혀 없습니다.\nMRP 페이지로 이동합니다.");
-	        window.location.href = '/mrp/mrp';
-	        return;
-	      }
-	      if (!Array.isArray(rawData) && typeof rawData === 'object' && Object.keys(rawData).length === 0) {
-	        alert("– 현재 재고가 전혀 없습니다.\nMRP 페이지로 이동합니다.");
-	        window.location.href = '/mrp/mrp';
-	        return;
-	      }
+  $.ajax({
+    url: '/api/shipments',
+    method: 'POST',
+    contentType: 'application/json',
+    data: JSON.stringify(payload),
+    success: function() {
+      alert('출고 등록 완료!');
+      $('#shipmentModal').modal('hide');
+      fetchOrders(0); // 목록 새로고침
+    },
+    error: function(xhr) {
+      alert('출고 등록 오류: ' + (xhr.responseText || ''));
+    }
+  });
+}
 
-	      // 6) rawData를 orderLineItemId 별로 그룹핑하여 dataMap 생성
-	      //    → key: orderLineItemId (예: "10"), value: [ { … }, { … }, … ]
-	      const dataMap = {};
-	      rawData.forEach(wsi => {
-	        const oliId = wsi.orderLineItemId;
-	        if (!dataMap[oliId]) dataMap[oliId] = [];
-	        dataMap[oliId].push(wsi);
-	      });
-	      console.log("🚀 그룹핑된 dataMap:", dataMap);
+// ================================
+// 주문목록 엑셀 다운로드(SheetJS 필요)
+// ================================
+function downloadExcelOrderList() {
+  const table = document.getElementById('orderTableBody');
+  const rows = Array.from(table.querySelectorAll('tr'));
+  const data = [
+    ['No', '주문일자', '주문번호', '고객사', '주문수량', '금액', '거래처담당자', '담당자']
+  ];
+  rows.forEach(tr => {
+    const tds = tr.querySelectorAll('td');
+    data.push([
+      tds[1]?.innerText,
+      tds[2]?.innerText,
+      tds[3]?.innerText,
+      tds[4]?.innerText,
+      tds[5]?.innerText,
+      tds[6]?.innerText,
+      tds[7]?.innerText,
+      tds[8]?.innerText
+    ]);
+  });
+  const ws = XLSX.utils.aoa_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '주문목록');
+  XLSX.writeFile(wb, `주문목록_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
 
-	      // 7) “MRP 이동 판정”: 
-	      //    dataMap의 각 그룹(주문상품별)마다 재고합계 < 주문수량인지 검사
-	      for (const [oliIdStr, warehouseList] of Object.entries(dataMap)) {
-	        // 7-1) 주문수량 (모든 warehouseList 요소에서 동일하다고 가정)
-	        const requiredQty = warehouseList[0].orderQty;
-
-	        // 7-2) 해당 주문상품(주문라인)에 남아있는 총 재고합계를 계산
-	        const totalStock = warehouseList.reduce((sum, wsi) => {
-	          return sum + (wsi.stockQty || 0);
-	        }, 0);
-
-	        // 7-3) 재고<주문수량 이면 MRP 페이지로 이동
-	        if (totalStock < requiredQty) {
-	          alert(
-	            `주문 상품(${warehouseList[0].itemCode} : ${warehouseList[0].itemName})의\n` +
-	            `총 재고(${totalStock}개)가 주문 수량(${requiredQty}개)보다 적습니다.\n` +
-	            `MRP 페이지로 이동합니다.`
-	          );
-	          window.location.href = '/mrp/mrp';
-	          return; // 더 이상 모달을 띄우지 않고 함수 종료
-	        }
-	      }
-
-	      // ────────────────────────────────────────────────────────────
-	      // 8) 모든 주문상품에 대해 “재고 합계 >= 주문수량”이라면
-	      //    아래 코드를 실행하여 출고 모달을 띄워줍니다.
-	      // ────────────────────────────────────────────────────────────
-
-	      // 8-1) <tbody> 비우기
-	      const tbody = document.getElementById('shipmentItemTableBody');
-	      tbody.innerHTML = '';
-
-	      // 8-2) dataMap을 itemId나 orderLineItemId 별로 다시 한 번 순회하며 테이블 행 생성
-	      //      예시에서는 orderLineItemId 기반으로 했으니, 그대로 진행합니다.
-	      Object.entries(dataMap).forEach(([oliIdStr, warehouseList]) => {
-	        // 하나의 주문상품(orderLineItem) 대표 정보 가져오기
-	        const first = warehouseList[0];
-	        const itemCode = first.itemCode;
-	        const itemName = first.itemName;
-	        const orderQty = first.orderQty; // 주문수량
-
-	        // <tr> 생성
-	        const tr = document.createElement('tr');
-
-	        // ─── 품목 코드 셀
-	        const tdCode = document.createElement('td');
-	        tdCode.innerText = itemCode;
-	        tr.appendChild(tdCode);
-
-	        // ─── 품목 이름 셀
-	        const tdName = document.createElement('td');
-	        tdName.innerText = itemName;
-	        tr.appendChild(tdName);
-
-	        // ─── 주문 수량 셀
-	        const tdOrderQty = document.createElement('td');
-	        tdOrderQty.innerText = orderQty;
-	        tr.appendChild(tdOrderQty);
-
-	        // ─── 창고별 출고 수량 입력 셀
-	        const tdWarehouseArea = document.createElement('td');
-	        const container = document.createElement('div');
-	        container.classList.add('warehouse-rows-container');
-
-	        // 최초 1개의 “창고 입력 줄(wrapper)” 생성
-	        const firstRow = createWarehouseRow(Number(oliIdStr), warehouseList);
-	        container.appendChild(firstRow);
-
-	        // “➕ 행 추가” 버튼
-	        const addBtn = document.createElement('button');
-	        addBtn.type = 'button';
-	        addBtn.classList.add('btn', 'btn-sm', 'btn-outline-secondary', 'ms-2');
-	        addBtn.innerText = '➕';
-	        addBtn.title = '다른 창고도 추가 등록';
-	        addBtn.addEventListener('click', () => {
-	          const newRow = createWarehouseRow(Number(oliIdStr), warehouseList);
-	          container.appendChild(newRow);
-	        });
-
-	        tdWarehouseArea.appendChild(container);
-	        tdWarehouseArea.appendChild(addBtn);
-	        tr.appendChild(tdWarehouseArea);
-
-	        // 완성된 <tr>을 <tbody>에 붙이기
-	        tbody.appendChild(tr);
-	      });
-
-	      // 9) 모달 띄우기 전, data-order-id 속성 설정
-	      const modalEl = document.getElementById('shipmentModal');
-	      modalEl.setAttribute('data-order-id', orderId);
-
-	      // 10) 모달 띄우기
-	      const modalInstance = new bootstrap.Modal(modalEl);
-	      modalInstance.show();
-
-	    } catch (err) {
-	      console.error('❌ 출고 정보를 불러오는 데 실패했습니다.', err);
-	      alert('❌ 출고 정보를 불러오는 데 실패했습니다.');
-	    }
-	  });
-
-	/**
-	 * createWarehouseRow 함수는 그대로 기존 로직을 사용하시면 됩니다.
-	 * (orderLineItemId, warehouseList를 인자로 받아서 “숨김(hidden) input + 창고 select + 수량 input + ❌ 제거 버튼”을
-	 *  가진 <div>를 반환하도록 이미 구현되어 있을 겁니다.)
-	 */

@@ -10,6 +10,7 @@
   rel="stylesheet"
   integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
   crossorigin="anonymous">
+  <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
 </head>
 <body class="d-flex flex-column" style="min-height: 100vh;">
   <!-- 공통 레이아웃 -->
@@ -39,7 +40,7 @@
           <span class="align-self-center">~</span>
           <input type="date" name="toDate" class="form-control w-auto" />
           <button type="submit" class="btn btn-outline-secondary">검색</button>
-          <button type="button" class="btn btn-outline-success ms-auto" onclick="window.location.href='?export=excel'">엑셀 다운로드</button>
+          <button type="button" id="excelDownloadBtn" class="btn btn-outline-success ms-auto" onclick="window.location.href='?export=excel'">엑셀 다운로드</button>
           <button type="button" id="deleteSelected" class="btn btn-danger">삭제</button>
         <button type="button" id="openRegisterModal" class="btn btn-primary">+ 주문등록</button>
         </form>

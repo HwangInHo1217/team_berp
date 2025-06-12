@@ -281,4 +281,24 @@ public class WarehouseAPI_controller {
             default -> "item.name"; // 기본값: 품목명 정렬
         };
     }
+    
+    @GetMapping("/all-simple")
+    public List<WarehouseResponseDTO> listWarehouses() {
+        return whsService.getWhsByFilter(null);
+    }
+    
+ // 모든 창고 이름만 간단 반환 (id/코드 추가도 가능)
+    @GetMapping("/list")
+    public List<Map<String, Object>> getAllWarehousesSimple() {
+        return whsService.getWhsByFilter(null).stream()
+            .map(wh -> {
+                Map<String, Object> map = new HashMap<>();
+                map.put("warehouseName", wh.getWarehouseName());
+                // map.put("warehouseId", wh.getId());
+                // map.put("warehouseCode", wh.getWarehouseCode());
+                return map;
+            }).toList();
+    }
+    
+    
 }
