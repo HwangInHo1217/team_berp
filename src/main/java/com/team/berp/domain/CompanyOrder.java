@@ -1,6 +1,7 @@
 package com.team.berp.domain;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
@@ -38,7 +39,7 @@ public class CompanyOrder {
     private Company company;
 
     @OneToMany(mappedBy = "companyOrder", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<OrderLineItem> lineItems;
+    private List<OrderLineItem> lineItems = new ArrayList<>();
     
     public enum OrderType { CUSTOMER, SUPPLIER }
 

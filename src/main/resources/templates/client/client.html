@@ -9,22 +9,30 @@
   <script th:src="@{https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js}"></script>
 </head>
 <body class="d-flex flex-column" style="min-height: 100vh;">
+  <!-- 헤더 영역 -->
   <div th:replace="~{layouts/header :: header}"></div>
+
   <div class="d-flex flex-grow-1">
+    <!-- 사이드바 영역 -->
     <div th:replace="~{layouts/sidebar :: sidebar}"></div>
+
+    <!-- 메인 콘텐츠 -->
     <main class="p-4 flex-fill">
       <div class="container">
         <h2 class="mb-4">거래처 관리</h2>
 
-        <!-- 검색 / 정렬 / 등록 / 일괄삭제 -->
+        <!-- 검색 / 정렬 / 등록 / 일괄삭제 폼 -->
         <form id="searchForm" class="row align-items-center mb-3">
           <div class="col-md-9 d-flex flex-wrap align-items-center">
+            <!-- 1) 거래처 유형 필터: “겸용” 옵션 제거 -->
             <select id="filterType" class="form-select me-2 mb-1" style="width:130px;">
               <option value="">전체유형</option>
               <option value="CUSTOMER">고객사</option>
               <option value="SUPPLIER">매입처</option>
-              <option value="BOTH">겸용</option>
+              <!-- <option value="BOTH">겸용</option> 제거 -->
             </select>
+
+            <!-- 2) 검색 기준 -->
             <select id="searchType" class="form-select me-2 mb-1" style="width:140px;">
               <option value="name">거래처명</option>
               <option value="ceo">담당자명</option>
@@ -32,15 +40,18 @@
               <option value="biznum">사업자번호</option>
             </select>
             <input type="text" id="searchKeyword" class="form-control me-2 mb-1" placeholder="검색어 입력" style="width:180px;" />
+
+            <!-- 3) 정렬 기준 -->
             <select id="sortType" class="form-select me-2 mb-1" style="width:130px;">
               <option value="">정렬기준</option>
               <option value="companyName,asc">이름 ↑</option>
               <option value="companyName,desc">이름 ↓</option>
             </select>
+
             <button type="submit" class="btn btn-outline-secondary me-2 mb-1">검색</button>
           </div>
           <div class="col-md-3 text-end">
-            <button type="button" class="btn btn-danger me-2 mb-1" onclick="deleteChecked()">삭제</button>
+            <button type="button" class="btn btn-danger me-2 mb-1" onclick="deleteChecked()">전체 삭제</button>
             <button type="button" class="btn btn-primary mb-1" data-bs-toggle="modal" data-bs-target="#clientRegisterModal">+ 거래처 등록</button>
           </div>
         </form>
@@ -66,7 +77,7 @@
           </table>
         </div>
 
-        <!-- 페이징: << < [번호들] > >> + 직접 이동 입력 -->
+        <!-- 페이징 컨트롤 -->
         <div class="d-flex justify-content-center align-items-center my-2">
           <button id="firstPageBtn" class="btn btn-sm btn-outline-primary me-1">&laquo;&laquo;</button>
           <button id="prevPageBtn"  class="btn btn-sm btn-outline-primary me-3">&laquo;</button>
@@ -92,6 +103,7 @@
               <div class="modal-body">
                 <input type="hidden" id="editCompanyId" name="editCompanyId" />
 
+                <!-- 회사명 / 담당자명 -->
                 <div class="row mb-3">
                   <div class="col-md-6">
                     <label class="form-label">회사명</label>
@@ -103,6 +115,7 @@
                   </div>
                 </div>
 
+                <!-- 사업자번호 / 전화번호 -->
                 <div class="row mb-3">
                   <div class="col-md-6">
                     <label class="form-label">사업자 번호</label>
@@ -114,6 +127,7 @@
                   </div>
                 </div>
 
+                <!-- 우편번호 / 주소 / 상세주소 -->
                 <div class="row mb-3">
                   <div class="col-md-4">
                     <label class="form-label">우편번호</label>
@@ -129,6 +143,7 @@
                   </div>
                 </div>
 
+                <!-- 거래처 담당자(select) / 팩스 -->
                 <div class="row mb-3">
                   <div class="col-md-6">
                     <label class="form-label">거래처 담당자</label>
@@ -142,6 +157,7 @@
                   </div>
                 </div>
 
+                <!-- 업태 / 종목 -->
                 <div class="row mb-3">
                   <div class="col-md-6">
                     <label class="form-label">업태</label>
@@ -153,6 +169,7 @@
                   </div>
                 </div>
 
+                <!-- 거래처 유형 라디오 버튼: “겸용” 제거 -->
                 <div class="mb-3">
                   <label class="form-label">거래처 유형</label>
                   <div>
@@ -162,12 +179,13 @@
                     <label class="form-check form-check-inline">
                       <input class="form-check-input" type="radio" name="clientType" value="SUPPLIER" /> 매입처
                     </label>
-                    <label class="form-check form-check-inline">
+                    <!-- <label class="form-check form-check-inline">
                       <input class="form-check-input" type="radio" name="clientType" value="BOTH" /> 겸용
-                    </label>
+                    </label> 제거 -->
                   </div>
                 </div>
 
+                <!-- 중복 경고 -->
                 <div class="mb-3 d-none" id="duplicateWarning">
                   <div class="alert alert-danger py-2 mb-0">
                     이미 동일한 거래처(회사명/사업자번호)가 존재합니다.
@@ -183,7 +201,7 @@
         </div>
       </div>
 
-      <!-- 거래처 상세정보 -->
+      <!-- 거래처 상세정보 모달 -->
       <div class="modal fade" id="clientDetailModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg">
           <div class="modal-content">
@@ -198,11 +216,13 @@
           </div>
         </div>
       </div>
-
     </main>
   </div>
+
+  <!-- 푸터 영역 -->
   <div th:replace="~{layouts/footer :: footer}"></div>
 
+  <!-- JS 불러오기 -->
   <script src="/js/client/client.js"></script>
   <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
 </body>

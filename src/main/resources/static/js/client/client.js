@@ -1,5 +1,3 @@
-// File: src/main/resources/static/js/clients/client-management.js
-
 document.addEventListener('DOMContentLoaded', () => {
   let currentType       = '';
   let currentPage       = 0;
@@ -56,7 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   function setEmployeeOptions(list, selId) {
     const sel = document.getElementById('employeeId');
-    sel.innerHTML = '<option value="">담당자 선택</option>';
+    sel.innerHTML = '<option value="">거래처 담당자 선택</option>';
     list.forEach(e => {
       const o = document.createElement('option');
       o.value = e.employeeId;
@@ -66,10 +64,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // 리스트 로드
+  // 리스트 로드 (페이징 단위를 10개로 변경)
   function loadClients(type = currentType, page = 0, kw = '', st = 'name', sort = '') {
     console.log('▶ loadClients', { type, page, kw, st, sort });
-    let url = `/api/clients?page=${page}&size=5&searchType=${st}`;
+    // size=10으로 변경
+    let url = `/api/clients?page=${page}&size=10&searchType=${st}`;
     if (type) url += `&type=${type}`;
     if (kw)   url += `&keyword=${encodeURIComponent(kw)}`;
     if (sort) url += `&sort=${sort}`;
@@ -93,6 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     tb.innerHTML = list.map(r => {
+      // r.useYn 값이 'N'(정지)인 경우에도 그대로 보여줌
       const d = encodeURIComponent(JSON.stringify(r));
       return `
         <tr data-id="${r.companyId}">
@@ -194,90 +194,86 @@ document.addEventListener('DOMContentLoaded', () => {
     new bootstrap.Modal(registerModalEl).show();
   }
 
-  // 페이징
+  // 페이징 렌더링
   function renderPagination(total, cur) {
-      lastTotalPages = total;
-      const pg = document.querySelector('.pagination');
-      pg.innerHTML = Array.from({length: total}, (_, i) => `
-        <li class="page-item ${i === cur ? 'active' : ''}">
-          <a class="page-link" href="#" data-page="${i}">${i + 1}</a>
-        </li>`).join('');
+    lastTotalPages = total;
+    const pg = document.querySelector('.pagination');
 
-      // 번호 클릭
-      pg.querySelectorAll('.page-link').forEach(a => {
-        a.onclick = e => {
-          e.preventDefault();
-          const p = +a.dataset.page;
-          currentPage = p;
-          loadClients(currentType, p, currentKeyword, currentSearchType, currentSortType);
-        };
-      });
+    // 페이지 번호
+    pg.innerHTML = Array.from({length: total}, (_, i) => `
+      <li class="page-item ${i === cur ? 'active' : ''}">
+        <a class="page-link" href="#" data-page="${i}">${i + 1}</a>
+      </li>`).join('');
 
-      // <<, <, >, >> 버튼
-      document.getElementById('firstPageBtn').onclick = () => {
-        if (currentPage > 0) {
-          currentPage = 0;
-          loadClients(currentType, 0, currentKeyword, currentSearchType, currentSortType);
-        }
+    // 번호 클릭 이벤트
+    pg.querySelectorAll('.page-link').forEach(a => {
+      a.onclick = e => {
+        e.preventDefault();
+        const p = +a.dataset.page;
+        currentPage = p;
+        loadClients(currentType, p, currentKeyword, currentSearchType, currentSortType);
       };
-      document.getElementById('prevPageBtn').onclick = () => {
-        if (currentPage > 0) {
-          currentPage--;
-          loadClients(currentType, currentPage, currentKeyword, currentSearchType, currentSortType);
-        }
-      };
-      document.getElementById('nextPageBtn').onclick = () => {
-        if (currentPage < total - 1) {
-          currentPage++;
-          loadClients(currentType, currentPage, currentKeyword, currentSearchType, currentSortType);
-        }
-      };
-      document.getElementById('lastPageBtn').onclick = () => {
-        if (currentPage < total - 1) {
-          currentPage = total - 1;
-          loadClients(currentType, currentPage, currentKeyword, currentSearchType, currentSortType);
-        }
-      };
-
-      // 직접 이동 Go
-      const gotoInput = document.getElementById('gotoPageInput');
-      document.getElementById('gotoPageBtn').onclick = () => {
-        const v = parseInt(gotoInput.value, 10);
-        if (!isNaN(v) && v >= 1 && v <= total) {
-          currentPage = v - 1;
-          loadClients(currentType, currentPage, currentKeyword, currentSearchType, currentSortType);
-          gotoInput.value = '';
-        } else {
-          alert(`1부터 ${total} 사이 숫자를 입력하세요.`);
-        }
-      };
-    }
-    // ------------------------
-
-    // ■ 검색 폼(submit) 이벤트 바인딩
-    document.getElementById('searchForm').addEventListener('submit', e => {
-      e.preventDefault();
-      searchClients();
     });
+
+    // <<, <, >, >> 버튼
+    document.getElementById('firstPageBtn').onclick = () => {
+      if (currentPage > 0) {
+        currentPage = 0;
+        loadClients(currentType, 0, currentKeyword, currentSearchType, currentSortType);
+      }
+    };
+    document.getElementById('prevPageBtn').onclick = () => {
+      if (currentPage > 0) {
+        currentPage--;
+        loadClients(currentType, currentPage, currentKeyword, currentSearchType, currentSortType);
+      }
+    };
+    document.getElementById('nextPageBtn').onclick = () => {
+      if (currentPage < total - 1) {
+        currentPage++;
+        loadClients(currentType, currentPage, currentKeyword, currentSearchType, currentSortType);
+      }
+    };
+    document.getElementById('lastPageBtn').onclick = () => {
+      if (currentPage < total - 1) {
+        currentPage = total - 1;
+        loadClients(currentType, currentPage, currentKeyword, currentSearchType, currentSortType);
+      }
+    };
+
+    // 직접 이동 Go
+    const gotoInput = document.getElementById('gotoPageInput');
+    document.getElementById('gotoPageBtn').onclick = () => {
+      const v = parseInt(gotoInput.value, 10);
+      if (!isNaN(v) && v >= 1 && v <= total) {
+        currentPage = v - 1;
+        loadClients(currentType, currentPage, currentKeyword, currentSearchType, currentSortType);
+        gotoInput.value = '';
+      } else {
+        alert(`1부터 ${total} 사이 숫자를 입력하세요.`);
+      }
+    };
+  }
+
+  // ─────────────────────────────────────────────────────────────────────
+
+  // ■ 검색 폼(submit) 이벤트 바인딩
+  document.getElementById('searchForm').addEventListener('submit', e => {
+    e.preventDefault();
+    searchClients();
+  });
 
   // 검색 & 필터
   function searchClients() {
     currentSearchType = document.getElementById('searchType').value;
     currentKeyword    = searchInput.value.trim();
     if (currentSearchType === 'biznum') currentKeyword = stripHyphens(currentKeyword);
-    // (정렬 기준은 select#sortType 의 현재값)
-    currentSortType   = document.getElementById('sortType').value; 
+    currentSortType   = document.getElementById('sortType').value;
     currentPage       = 0;
     loadClients(currentType, 0, currentKeyword, currentSearchType, currentSortType);
   }
 
-  // (1) 검색(Form) → 엔터 혹은 버튼 클릭 시
-  const searchForm = document.getElementById('searchForm');
-  searchForm.addEventListener('submit', e => {
-    e.preventDefault();
-    searchClients();
-  });
-
+  // Enter 키로 검색
   searchInput.addEventListener('keydown', e => {
     if (e.key === 'Enter') {
       e.preventDefault();
@@ -285,23 +281,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // (2) “유형(filterType)” 변경 즉시 호출
+  // 필터(유형) 변경 즉시 호출
   filterSelect.addEventListener('change', () => {
     currentType = filterSelect.value;
     currentPage = 0;
     loadClients(currentType, 0, currentKeyword, currentSearchType, currentSortType);
   });
 
-  // ─────────────────────────────────────────────────────────────────────
-  // ** 새로 추가: “정렬 기준(select#sortType) 변경 즉시 호출” **
+  // 정렬 기준 변경 즉시 호출
   sortSelect.addEventListener('change', () => {
     currentSortType = sortSelect.value;
     currentPage = 0;
     loadClients(currentType, 0, currentKeyword, currentSearchType, currentSortType);
   });
-  // ─────────────────────────────────────────────────────────────────────
 
-  // bulk delete
+  // ------------------------ Bulk delete ------------------------
   window.deleteChecked = () => {
     const ids = [...document.querySelectorAll('.row-check:checked')].map(c=>c.value);
     if (!ids.length) return alert('하나 이상 체크하세요.');
@@ -314,7 +308,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.row-check').forEach(c=>c.checked = this.checked);
   });
 
-  // 포맷팅 리스너
+  // 핸드폰/사업자번호 입력 시 포맷팅
   document.getElementById('phone').addEventListener('input', e => {
     e.target.value = formatPhone(e.target.value);
   });
@@ -334,7 +328,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!isEdit) loadEmployees();
   });
 
-  // 폼 submit (주소·중복 체크 포함)
+  // 거래처 등록/수정 폼 submit (중복 체크 포함)
   document.getElementById('clientRegisterForm').onsubmit = e => {
     e.preventDefault();
     const f   = e.target;
@@ -414,10 +408,11 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   };
 
-  // 모달 닫힐 때 리셋
+  // 모달 닫힐 때 폼 리셋
   registerModalEl.addEventListener('hidden.bs.modal', () => {
     document.getElementById('clientRegisterForm').reset();
-    isEdit = false; editCompanyId = null;
+    isEdit = false;
+    editCompanyId = null;
     document.getElementById('clientRegisterModalLabel').innerText = '거래처 등록';
     document.getElementById('modalSubmitBtn').innerText           = '등록';
     document.getElementById('duplicateWarning').classList.add('d-none');

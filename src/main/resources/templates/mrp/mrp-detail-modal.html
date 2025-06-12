@@ -1,7 +1,7 @@
 <!-- File: src/main/resources/templates/mrp/mrp-detail-modal.html -->
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-  <!-- th:fragment 속성만 유지하고, outer <html>, <head>, <body> 태그는 제거해야 합니다. -->
+  <!-- th:fragment 속성만 유지하고, outer <html>, <head>, <body> 태그는 제거 -->
   <div th:fragment="mrp-detail-modal">
     <div class="modal fade" id="mrpDetailModal" tabindex="-1" aria-labelledby="mrpDetailModalLabel" aria-hidden="true">
       <div class="modal-dialog modal-dialog-scrollable modal-xl">
@@ -101,10 +101,12 @@
                 <div class="col-sm-4">
                   <div class="row mb-2">
                     <label class="col-5 detail-label">요청 수량</label>
+                    <!-- 메인 화면과 동일한 필드명(orderQty) 사용 -->
                     <div class="col-7 detail-value" id="mrpDetailRequiredQty">0</div>
                   </div>
                   <div class="row mb-2">
                     <label class="col-5 detail-label">부족 수량</label>
+                    <!-- 메인 화면과 동일한 필드명(shortageQty) 사용 -->
                     <div class="col-7 detail-value" id="mrpDetailShortQty">0</div>
                   </div>
                 </div>
