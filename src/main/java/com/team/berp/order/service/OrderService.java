@@ -335,20 +335,20 @@ public class OrderService {
                 .findByCompanyOrder_OrderId(orderId);
             log.debug("[findOrderSummaries] Found {} line items for orderId={}", lineItems.size(), orderId);
 
-            // 2-2) 하나라도 “OUT+CONFIRMED” 로그가 없으면 allShipped = false
-            boolean allShipped = true;
+         // 2-2. 모든 주문상세의 출고확정 로그 존재 여부 체크
+            boolean allShipped = true; // 일단 true로 시작해서
             for (OrderLineItem oli : lineItems) {
-                boolean hasConfirmedOut = order_InventoryLogRepositroy
+                // (a) 이 주문상세가 출고확정(OUT+CONFIRMED) 로그를 갖고 있는지 체크
+                boolean shipped = order_InventoryLogRepositroy
                     .existsByOrderLineItem_OrderLineItemIdAndLogTypeAndLogStatus(
                         oli.getOrderLineItemId(),
-                        LogType.OUT,
-                        LogStatus.CONFIRMED
+                        LogType.OUT,      // 출고 로그
+                        LogStatus.CONFIRMED // 확정 상태
                     );
-                log.debug("[findOrderSummaries] orderLineItemId={}, hasConfirmedOut={}",
-                        oli.getOrderLineItemId(), hasConfirmedOut);
-                if (!hasConfirmedOut) {
+                // (b) 하나라도 출고확정이 아니면 전체 주문도 출고완료 아님
+                if (!shipped) {
                     allShipped = false;
-                    break;
+                    break; // 더 검사할 필요 없음
                 }
             }
 
@@ -367,52 +367,50 @@ public class OrderService {
      */
     @Transactional(readOnly = true)
     public List<ItemWarehouseResponse> getShipmentInfoList(Long orderId) {
-        log.debug("[getShipmentInfoList] Fetching shipment info for orderId={}", orderId);
-
-        // 1) 주문서에 속한 모든 OrderLineItem 조회
         List<OrderLineItem> lineItems = orderLineItemRepository
             .findByCompanyOrder_OrderId(orderId);
-        log.debug("[getShipmentInfoList] Found {} line items for orderId={}", lineItems.size(), orderId);
 
-        // 2) 각 OrderLineItem → Stock 조회 → ItemWarehouseResponse로 Flat Map
-        List<ItemWarehouseResponse> responses = lineItems.stream()
-            .flatMap(li -> {
-                Long itemId = li.getItem().getId();
-                String itemCode = li.getItem().getCode();
-                String itemName = li.getItem().getName();
-                Integer orderQty = li.getUnitQty();
+        List<ItemWarehouseResponse> responses = new ArrayList<>();
 
-                log.debug("[getShipmentInfoList] Processing OrderLineItem: orderLineItemId={}, itemId={}, orderQty={}",
-                        li.getOrderLineItemId(), itemId, orderQty);
+        for (OrderLineItem li : lineItems) {
+            Long itemId = li.getItem().getId();
+            String itemCode = li.getItem().getCode();
+            String itemName = li.getItem().getName();
+            Integer orderQty = li.getUnitQty();
 
-                List<Stock> stocks = stockRepository
-                    .findByItemIdAndQuantityGreaterThan(itemId, 0);
-                log.debug("[getShipmentInfoList] Retrieved {} stock entries for itemId={}", stocks.size(), itemId);
+            List<Stock> stocks = stockRepository.findByItemIdAndQuantityGreaterThan(itemId, 0);
 
-                Stream<ItemWarehouseResponse> itemWhStream = stocks.stream()
-                    .map(stock -> {
-                        Warehouse wh = stock.getWarehouse();
-                        ItemWarehouseResponse resp = new ItemWarehouseResponse(
-                            li.getOrderLineItemId(),
-                            itemId,
-                            itemCode,
-                            itemName,
-                            orderQty,
-                            wh.getId(),
-                            wh.getWarehouseName(),
-                            stock.getQuantity()
-                        );
-                        log.debug("[getShipmentInfoList] Created ItemWarehouseResponse: {}", resp);
-                        return resp;
-                    });
-
-                return itemWhStream;
-            })
-            .collect(Collectors.toList());
-
-        log.debug("[getShipmentInfoList] Returning {} ItemWarehouseResponse entries", responses.size());
+            if (stocks.isEmpty()) {
+                // 재고가 하나도 없는 품목도 내려줌 (warehouse 정보는 null/빈 값으로)
+                responses.add(new ItemWarehouseResponse(
+                    li.getOrderLineItemId(),
+                    itemId,
+                    itemCode,
+                    itemName,
+                    orderQty,
+                    null,
+                    "재고없음",   // 또는 "", null 등
+                    0
+                ));
+            } else {
+                for (Stock stock : stocks) {
+                    Warehouse wh = stock.getWarehouse();
+                    responses.add(new ItemWarehouseResponse(
+                        li.getOrderLineItemId(),
+                        itemId,
+                        itemCode,
+                        itemName,
+                        orderQty,
+                        wh.getId(),
+                        wh.getWarehouseName(),
+                        stock.getQuantity()
+                    ));
+                }
+            }
+        }
         return responses;
     }
+
     
     
     @Transactional
@@ -430,37 +428,90 @@ public class OrderService {
         order.setOrderType(CompanyOrder.OrderType.valueOf(request.getOrderType()));
         order.setNote(request.getRemark());
 
-        // 3. 기존 lineItems에서 clear()로 모두 삭제 (JPA 고아제거와 충돌없이)
-        List<OrderLineItem> lineItems = order.getLineItems();
-        lineItems.clear();
+        // 기존 라인아이템 Map<itemId, OrderLineItem> 만들기 (Key는 필요에 따라 조정)
+        List<OrderLineItem> oldLineItems = new ArrayList<>(order.getLineItems());
+        // 새로운 라인아이템 요청
+        List<OrderItemRequest> newItemRequests = request.getItems();
 
-        int totalQty = 0;
-        long totalAmount = 0;
-        for (OrderItemRequest itemReq : request.getItems()) {
-            Item item = itemRepository.findById(itemReq.getItemId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 품목입니다."));
+        // 삭제 대상, 유지 대상 구분
+        List<OrderLineItem> toRemove = new ArrayList<>();
 
-            OrderLineItem lineItem = OrderLineItem.builder()
-                .item(item)
-                .unit(itemReq.getUnit())
-                .unitPrice(itemReq.getUnitPrice())
-                .unitQty(itemReq.getUnitQty())
-                .unitPriceall(itemReq.getUnitQty() * itemReq.getUnitPrice())
-                .warehouse(null)
-                .build();
-            lineItem.setCompanyOrder(order);
+     // 3. 기존 LineItem 분류 (유지/삭제/수정)
+        List<OrderLineItem> existing = new ArrayList<>(order.getLineItems());
+        List<Long> requestItemIds = request.getItems().stream().map(OrderItemRequest::getItemId).collect(Collectors.toList());
 
-            totalQty += itemReq.getUnitQty();
-            totalAmount += itemReq.getUnitQty() * itemReq.getUnitPrice();
+        // 3-1. 삭제 대상 선별 (InventoryLog 있는건 삭제 금지)
+        for (OrderLineItem oldItem : existing) {
+            boolean hasLog = inventoryLogRepository.existsByOrderLineItem_OrderLineItemId(oldItem.getOrderLineItemId());
+            boolean stillExists = requestItemIds.contains(oldItem.getItem().getId());
 
-            lineItems.add(lineItem);
+            if (!stillExists && !hasLog) {
+                order.getLineItems().remove(oldItem); // 삭제
+            }
+            // 출고 기록 있으면 삭제 금지. 그냥 두세요 (단, 수량/가격 등은 수정 허용할 수 있음)
         }
+
+        // 3-2. 수정/추가
+        for (OrderItemRequest itemReq : request.getItems()) {
+            Optional<OrderLineItem> match = order.getLineItems().stream()
+                .filter(oli -> oli.getItem().getId().equals(itemReq.getItemId()))
+                .findFirst();
+
+            if (match.isPresent()) {
+                // 이미 존재하는 LineItem은 수정
+                OrderLineItem oli = match.get();
+                oli.setUnit(itemReq.getUnit());
+                oli.setUnitPrice(itemReq.getUnitPrice());
+                oli.setUnitQty(itemReq.getUnitQty());
+                oli.setUnitPriceall(itemReq.getUnitQty() * itemReq.getUnitPrice());
+                oli.setWarehouse(null);
+            } else {
+                // 새로 추가
+                Item item = itemRepository.findById(itemReq.getItemId())
+                    .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 품목입니다."));
+                OrderLineItem lineItem = OrderLineItem.builder()
+                    .item(item)
+                    .unit(itemReq.getUnit())
+                    .unitPrice(itemReq.getUnitPrice())
+                    .unitQty(itemReq.getUnitQty())
+                    .unitPriceall(itemReq.getUnitQty() * itemReq.getUnitPrice())
+                    .warehouse(null)
+                    .build();
+                lineItem.setCompanyOrder(order);
+                order.getLineItems().add(lineItem);
+            }
+        }
+
+        // 기존에 없던 신규 품목 추가
+        for (OrderItemRequest itemReq : newItemRequests) {
+            boolean alreadyExists = order.getLineItems().stream()
+                    .anyMatch(li -> li.getItem().getId().equals(itemReq.getItemId()));
+            if (!alreadyExists) {
+                Item item = itemRepository.findById(itemReq.getItemId())
+                        .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 품목입니다."));
+                OrderLineItem newLineItem = OrderLineItem.builder()
+                        .item(item)
+                        .unit(itemReq.getUnit())
+                        .unitPrice(itemReq.getUnitPrice())
+                        .unitQty(itemReq.getUnitQty())
+                        .unitPriceall(itemReq.getUnitQty() * itemReq.getUnitPrice())
+                        .warehouse(null)
+                        .build();
+                newLineItem.setCompanyOrder(order);
+                order.getLineItems().add(newLineItem);
+            }
+        }
+        
+        
+     // 4. 총 수량, 금액 재계산
+        int totalQty = order.getLineItems().stream().mapToInt(OrderLineItem::getUnitQty).sum();
+        long totalAmount = order.getLineItems().stream().mapToLong(li -> li.getUnitQty() * li.getUnitPrice()).sum();
         order.setOrderQty(totalQty);
         order.setAmount(totalAmount);
 
         companyOrderRepository.save(order);
-
         // 필요시: mrpService.generateMrpForOrder(orderId);
     }
+
 
 }

@@ -259,15 +259,15 @@
 						</div>
 			            <div class="col-md-6">
 			              <label class="form-label">출고일자</label>
-			              <input type="date" class="form-control" name="shipmentDate" id="inputShipmentDate" required>
+			              <input type="date" class="form-control" name="shipmentDate" id="inputShipmentDate" required readonly>
 			            </div>
 			            <div class="col-md-6">
 			              <label class="form-label">수량</label>
-			              <input type="number" class="form-control" name="quantity" id="inputQuantity" required>
+			              <input type="number" class="form-control" name="quantity" id="inputQuantity" min="1" step="1" required>
 			            </div>
 			            <div class="col-md-12">
 			              <label class="form-label">비고</label>
-			              <textarea class="form-control" name="remark" rows="2"></textarea>
+			              <textarea class="form-control" name="remark" id="inputRemark" rows="2"></textarea>
 			            </div>
 			          </div>
 			        </div>

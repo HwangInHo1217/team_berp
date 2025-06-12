@@ -47,12 +47,12 @@
               <table class="table table-bordered text-center align-middle" id="fixedItemsTable">
                 <thead class="table-light">
                   <tr>
-                    <th>품목</th>
-                    <th>단위</th>
-                    <th>단가</th>
-                    <th>수량</th>
-                    <th>합계</th>
-                    <th>삭제</th>
+                    <th style="width: 120px;">품목</th>
+                    <th style="width: 90px;">단위</th>
+                    <th style="width: 100px;">단가</th>
+                    <th style="width: 70px;">수량</th>
+                    <th style="width: 100px;">합계</th>
+                    <th style="width: 70px;">삭제</th>
                   </tr>
                 </thead>
                 <tbody></tbody>
@@ -63,7 +63,7 @@
             <input type="hidden" name="itemType" value="product" />
           </div>
           <div class="modal-footer">
-            <span class="me-auto fw-bold">총합계: <span id="totalAmount">0.00</span></span>
+            <span class="me-auto fw-bold">총합계: <span id="fixedTotalAmount">0.00</span></span>
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
             <button type="button" id="updateOrder" class="btn btn-primary">수정</button>
           </div>

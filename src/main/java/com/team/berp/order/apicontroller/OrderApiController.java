@@ -99,13 +99,7 @@ public class OrderApiController {
     public OrderDetailResponse getOrder(@PathVariable("orderId") Long orderId) {
         return orderService.getOrderDetail(orderId);
     }
-/*
-    // --- 주문 수정 ---
-    @PutMapping("/orders")
-    public OrderDto updateOrder(@ModelAttribute OrderDto dto) {
-        return orderService.updateOrder(dto);
-    }
-*/
+
  // 예: 쿼리 파라미터로 전달받는 경우
     @DeleteMapping("/orders")
     

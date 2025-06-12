@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.team.berp.shipment.dto.ShipmentInfoDTO;
 import com.team.berp.shipment.dto.ShipmentRequestDTO;
+import com.team.berp.shipment.dto.ShipmentResponse;
 import com.team.berp.shipment.service.ShipmentService;
 
 import lombok.RequiredArgsConstructor;
@@ -38,8 +39,8 @@ public class ShipmentAPIController {
      * }
      */
     @PostMapping("/api/shipments")
-    public ResponseEntity<Void> createShipment(@RequestBody ShipmentRequestDTO request) {
-        shipmentService.createShipment(request);
+    public ResponseEntity<ShipmentResponse> createShipment(@RequestBody ShipmentRequestDTO request) {
+    	shipmentService.createShipment(request);
         return ResponseEntity.ok().build();
     }
 
