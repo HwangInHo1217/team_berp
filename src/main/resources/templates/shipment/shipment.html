@@ -18,6 +18,7 @@
       overflow-y: auto;
     }
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body class="d-flex flex-column" style="min-height: 100vh;">
   <!-- 상단 헤더 (Thymeleaf fragment) -->
@@ -174,7 +175,6 @@
               <select class="form-select" id="searchField_Transfer">
                 <option value="itemName">품목명</option>
                 <option value="itemCode">품목코드</option>
-                <option value="orderNum">주문번호</option>
               </select>
             </div>
             <!-- 2) 검색어 입력 -->
@@ -213,11 +213,73 @@
 
           <!-- ===== 버튼들(창고 이동 전용) ===== -->
           <div class="mb-3 d-flex gap-2">
-            <button class="btn btn-success" id="btnExcelDownload_Customer">엑셀 다운로드</button>
+            <button class="btn btn-success" id="btnExcelDownload_Transfer">엑셀 다운로드</button>
             <button class="btn btn-danger" id="btnDelete_Transfer">삭제</button>
+            <button class="btn btn-primary" id="btnRegister_Transfer">출고 등록</button>
             
           </div>
-
+          
+          
+          <!-- 특별 출고 등록 모달 -->
+			<div class="modal fade" id="registerTransferModal" tabindex="-1" aria-labelledby="registerTransferModalLabel" aria-hidden="true">
+			  <div class="modal-dialog modal-lg">
+			    <div class="modal-content">
+			      <form id="formTransferRegister">
+			        <div class="modal-header">
+			          <h5 class="modal-title" id="registerTransferModalLabel">특별 출고 등록</h5>
+			          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+			        </div>
+			        <div class="modal-body">
+			          <div class="row g-2">
+			            <!-- 품목명 -->
+						<div class="col-md-6">
+						  <label class="form-label">품목명</label>
+						  <select class="form-select" name="itemName" id="selectItemName" required>
+						    <option value="">-- 품목 선택 --</option>
+						    <!-- JS에서 옵션 자동 생성 -->
+						  </select>
+						</div>
+						<!-- 품목코드 -->
+						<div class="col-md-6">
+						  <label class="form-label">품목 코드</label>
+						  <input type="text" class="form-control" name="itemCode" id="inputItemCode" readonly>
+						</div>
+						<!-- 단위 -->
+						<div class="col-md-6">
+						  <label class="form-label">단위</label>
+						  <input type="text" class="form-control" name="unit" id="inputUnit" readonly>
+						</div>
+						<!-- 창고 -->
+						<div class="col-md-6">
+						  <label class="form-label">출발창고</label>
+						  <select class="form-select" name="warehouse" id="selectWarehouse" required>
+						    <option value="">-- 창고 선택 --</option>
+						    <!-- JS에서 옵션 자동 생성 -->
+						  </select>
+						</div>
+			            <div class="col-md-6">
+			              <label class="form-label">출고일자</label>
+			              <input type="date" class="form-control" name="shipmentDate" id="inputShipmentDate" required>
+			            </div>
+			            <div class="col-md-6">
+			              <label class="form-label">수량</label>
+			              <input type="number" class="form-control" name="quantity" id="inputQuantity" required>
+			            </div>
+			            <div class="col-md-12">
+			              <label class="form-label">비고</label>
+			              <textarea class="form-control" name="remark" rows="2"></textarea>
+			            </div>
+			          </div>
+			        </div>
+			        <div class="modal-footer">
+			          <button type="submit" class="btn btn-primary">등록</button>
+			          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+			        </div>
+			      </form>
+			    </div>
+			  </div>
+			</div>
+			
           <!-- ===== 창고 이동 전용 테이블 ===== -->
           <div class="table-responsive">
             <table
@@ -228,12 +290,12 @@
                 <tr>
                   <th><input type="checkbox" id="selectAllTransfer" /></th>
                   <th>순번</th>
-                  <th>이동일자</th>
+                  <th>출고일자</th>
                   <th>품목코드</th>
                   <th>품목명</th>
                   <th>수량</th>
                   <th>단위</th>
-                  <th>출발창고</th>
+                  <th>창고명</th>
                   <th>비고</th>
  
                 </tr>
