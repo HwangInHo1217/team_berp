@@ -42,11 +42,10 @@ public class InventoryLog {
 
     @Column(name = "log_datetime")
     private LocalDateTime logDatetime;
-    
 
     @Column(columnDefinition = "TEXT")
     private String comment;
-
+    
     @Enumerated(EnumType.STRING)
     @Column(name = "log_status", length = 20)
     private LogStatus logStatus;
