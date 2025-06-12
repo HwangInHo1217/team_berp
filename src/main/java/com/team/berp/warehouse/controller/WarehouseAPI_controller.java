@@ -172,7 +172,7 @@ public class WarehouseAPI_controller {
     
     /**
      * 특정 창고의 재고 목록 조회 - GET /api/warehouses/{warehouseId}/stocks
-     * 창고별 재고 모달에서 사용
+     * 🔧 미사용 창고 접근 제한 추가
      */
     @GetMapping("/{warehouseId}/stocks")
     public ResponseEntity<Page<StockResponseDTO>> getWarehouseStocks(
@@ -187,10 +187,17 @@ public class WarehouseAPI_controller {
         return ApiUtils.handle(() -> {
             log.debug("창고별 재고 조회 요청 - warehouseId: {}", warehouseId);
             
-            // 창고 존재 여부 확인
+            // 창고 존재 여부 및 사용 여부 확인
             WarehouseResponseDTO warehouse = whsService.getWhsById(warehouseId);
             if (warehouse == null) {
                 throw new IllegalArgumentException("존재하지 않는 창고입니다.");
+            }
+            
+            // 🔧 미사용 창고 접근 제한
+            if (!"Y".equals(warehouse.getUseYn())) {
+                log.warn("미사용 창고 접근 시도 - 창고: {}, 사용여부: {}", 
+                        warehouse.getWarehouseName(), warehouse.getUseYn());
+                throw new IllegalArgumentException("사용하지 않는 창고입니다. 재고 조회가 제한됩니다.");
             }
             
             // 창고 코드로 재고 검색 (기존 StockService 활용)
@@ -207,7 +214,6 @@ public class WarehouseAPI_controller {
             
             Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortField));
             
-            // 🔧 StockService 인스턴스 메서드로 호출 (static 제거)
             Page<StockResponseDTO> stocks = stockService.getList(
                 keyword, warehouseCode, itemType, stockStatus, pageable);
             
@@ -220,6 +226,7 @@ public class WarehouseAPI_controller {
     
     /**
      * 창고별 재고 요약 통계 - GET /api/warehouses/{warehouseId}/stocks/summary
+     * 🔧 미사용 창고 접근 제한 추가
      */
     @GetMapping("/{warehouseId}/stocks/summary")
     public ResponseEntity<Map<String, Object>> getWarehouseStockSummary(
@@ -228,14 +235,31 @@ public class WarehouseAPI_controller {
         return ApiUtils.handle(() -> {
             log.debug("창고별 재고 요약 조회 - warehouseId: {}", warehouseId);
             
-            // 창고 존재 여부 확인
+            // 창고 존재 여부 및 사용 여부 확인
             WarehouseResponseDTO warehouse = whsService.getWhsById(warehouseId);
             if (warehouse == null) {
                 throw new IllegalArgumentException("존재하지 않는 창고입니다.");
             }
             
-            // 🔧 StockService 인스턴스 메서드로 호출 (static 제거)
+            // 🔧 미사용 창고 접근 제한
+            if (!"Y".equals(warehouse.getUseYn())) {
+                log.warn("미사용 창고 통계 접근 시도 - 창고: {}", warehouse.getWarehouseName());
+                
+                // 미사용 창고는 모든 통계를 0으로 반환
+                Map<String, Object> emptySummary = new HashMap<>();
+                emptySummary.put("totalItems", 0L);
+                emptySummary.put("outOfStock", 0L);
+                emptySummary.put("belowSafety", 0L);
+                emptySummary.put("normalStock", 0L);
+                emptySummary.put("totalQuantity", 0L);
+                emptySummary.put("isActive", false);
+                emptySummary.put("message", "사용하지 않는 창고입니다.");
+                
+                return emptySummary;
+            }
+            
             Map<String, Object> summary = stockService.getWarehouseStockSummary(warehouseId);
+            summary.put("isActive", true); // 🆕 활성 상태 추가
             
             log.info("창고별 재고 요약 조회 완료 - 창고: {}", warehouse.getWarehouseName());
             

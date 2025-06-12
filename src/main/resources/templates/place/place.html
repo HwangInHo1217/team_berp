@@ -13,102 +13,248 @@
   }
 </style>
 </head>
-<body class="d-flex flex-column" style="min-height: 100vh;">
-
-<!-- 공통 헤더 -->
-  <div th:replace="~{/layouts/header :: header}"></div>
-  <div class="d-flex flex-grow-1">
-       <!-- 공통 사이드바 -->
-    <div th:replace="~{/layouts/sidebar :: sidebar}"></div>
-
-    <!-- ✅ 본문 영역 -->
-    <div class="container py-4">
-      <h2 class="mb-4">발주 관리</h2>
-
-<!-- 🔍 검색 + 버튼 -->
-<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-  <!-- 왼쪽: 검색창 + 검색 버튼 + 초기화 버튼 -->
+	<body class="d-flex flex-column" style="min-height: 100vh;">
+	
+	<!-- 공통 헤더 -->
+	  <div th:replace="~{/layouts/header :: header}"></div>
+	  <div class="d-flex flex-grow-1">
+	       <!-- 공통 사이드바 -->
+	    <div th:replace="~{/layouts/sidebar :: sidebar}"></div>
+	
+	    <!-- ✅ 본문 영역 -->
+	    <div class="container py-4">
+	      <h2 class="mb-4">발주 관리</h2>
+	
+	<!-- 🔍 검색 + 버튼 -->
+	<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+	  <!-- 왼쪽: 검색창 + 검색 버튼 + 초기화 버튼 -->
+	  <div class="d-flex align-items-center gap-2">
+	    <!-- ✅ 검색어 유지 -->
+	    <input type="text" class="form-control w-auto" placeholder="품목명을 입력하세요" 
+	           id="searchKeyword" th:value="${searchKeyword}" />
+	    <button class="btn btn-outline-secondary" onclick="searchOrders()">검색</button>
+	    <button class="btn btn-outline-danger" onclick="clearSearch()">초기화</button>
+	    
+	    <!-- ✅ 검색 결과 표시 (선택사항) -->
+	    <span th:if="${searchKeyword != null and !searchKeyword.isEmpty()}" 
+	          class="badge bg-info">
+	      '<span th:text="${searchKeyword}"></span>' 검색 결과
+	    </span>
+	  </div>
+	
+	  <!-- 오른쪽: 상세 / 수정 / 삭제 / 발주 등록 / 입고 이동 버튼 -->
+	  <!-- 오른쪽: 버튼들 -->
   <div class="d-flex align-items-center gap-2">
-    <!-- ✅ 검색어 유지 -->
-    <input type="text" class="form-control w-auto" placeholder="품목명을 입력하세요" 
-           id="searchKeyword" th:value="${searchKeyword}" />
-    <button class="btn btn-outline-secondary" onclick="searchOrders()">검색</button>
-    <button class="btn btn-outline-danger" onclick="clearSearch()">초기화</button>
-    
-    <!-- ✅ 검색 결과 표시 (선택사항) -->
-    <span th:if="${searchKeyword != null and !searchKeyword.isEmpty()}" 
-          class="badge bg-info">
-      '<span th:text="${searchKeyword}"></span>' 검색 결과
-    </span>
-  </div>
-
-  <!-- 오른쪽: 상세 / 수정 / 삭제 / 발주 등록 / 입고 이동 버튼 -->
-  <!-- 기존 코드 -->
-<div class="d-flex align-items-center gap-2">
-    <!-- onclick 속성 제거 -->
-    <button class="btn btn-info" id="detailBtn">상세</button>
-    <button class="btn btn-warning" id="editBtn">수정</button>
+    <!-- ✅ 새로운 일괄 삭제 버튼들 -->
+     <button class="btn btn-danger" id="batchDeleteBtn" onclick="deleteSelectedItems()" disabled>
+      <i class="bi bi-trash"></i> 선택 삭제
+    </button>
     <button class="btn btn-primary" id="addBtn">+ 발주 등록</button>
     <button class="btn btn-primary" onclick="goToInboundPage()">입고 페이지로 이동</button>
-</div>
-</div>
-
-
-      <!-- 📋 발주 테이블 -->
-      <div class="table-responsive">
-        <table class="table table-bordered text-center align-middle">
-          <thead class="table-light">
-            <tr>
-              <th>순번</th>
-              <th>발주일자</th>
-              <th>거래처</th>
-              <th><input type="checkbox" id="checkAll"/></th>
-              <th>주문번호</th>
-              <th>품목코드</th>
-              <th>품목명</th>
-              <th>수량</th>
-              <th>단위</th>
-              <th>담당자</th>
-              <!-- 
-              <th>상세</th>
-              <th>수정</th>
-               -->
-            </tr>
-          </thead>
-          
-          <!-- order: company_order, company: Company, lineItems: order_line_items, item: item -->
-         <tbody>
-  <th:block th:each="order, orderStat : ${orderList}">
-    <tr th:each="item, iterStat : ${order.lineItems}">
-      <!-- 첫 번째 품목일 때만 rowspan 칼럼 출력 -->
-      <td th:if="${iterStat.index == 0}" th:rowspan="${order.lineItems.size()}" th:text="${orderStat.count}">1</td>
-      <td th:if="${iterStat.index == 0}" th:rowspan="${order.lineItems.size()}" th:text="${#temporals.format(order.orderDate, 'yyyy-MM-dd')}">2024-01-01</td>
-      <td th:if="${iterStat.index == 0}" th:rowspan="${order.lineItems.size()}" th:text="${order.company.companyName}">거래처명</td>
-
-      <!-- ✅ 품목 정보 (항상 출력) -->
-      <td><input type="checkbox" name="lineItemIds" th:value="${item.orderLineItemId}" /></td>
-      <td th:text="${order.orderNum}">주문번호</td>
-      <td th:text="${item.item.code}">품목코드</td>
-      <td th:text="${item.item.name}">품목명</td>
-      <td th:text="${item.unitQty}">수량</td>
-      <td th:text="${item.item.unit}">단위</td>
-
-      <td th:if="${iterStat.index == 0}" th:rowspan="${order.lineItems.size()}" th:text="${order.company.employee.empName}">담당자</td>
-    </tr>
-  </th:block>
-</tbody>
-
-
-        </table>
-      </div>
-    </div>
   </div>
+</div>
+	
+	
+	      <!-- 📋 발주 테이블 -->
+	      <!-- place.html의 테이블 부분 교체 -->
+	<div class="table-responsive">
+	  <table class="table table-bordered text-center align-middle">
+	    <thead class="table-light">
+	      <tr>
+	      	<th width="50">
+	          <!-- ✅ 전체 선택 체크박스 -->
+	          <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)" />
+	        </th>
+	        <th>순번</th>
+	        <th>발주일자</th>
+	        <th>거래처</th>
+	        <th>주문번호</th>
+	        <th>품목코드</th>
+	        <th>품목명</th>
+	        <th>수량</th>
+	        <th>단위</th>
+	        <th>담당자</th>
+	        <th>처리현황</th>
+	        <th width="200">액션</th>
+	      </tr>
+	    </thead>
+	    
+	   <tbody>
+	  <th:block th:each="order, orderStat : ${orderList}">
+	    <tr th:each="item, iterStat : ${order.lineItems}">
+	    <!-- ✅ 체크박스 칼럼 -->
+        <td>
+          <input type="checkbox" 
+                 class="item-checkbox" 
+                 th:value="${item.orderLineItemId}"
+                 th:attr="data-orderId=${order.orderId},
+                          data-itemName=${item.item.name},
+                          data-orderNum=${order.orderNum},
+                          data-itemCount=${order.lineItems.size()},
+                          data-orderStatus=${order.orderStatus}"
+                 th:disabled="${order.orderStatus == null or order.orderStatus.name() != 'WAITING'}"
+                 onchange="updateDeleteButtons()" />
+        </td>
+	      <!-- 첫 번째 품목일 때만 rowspan 칼럼 출력 -->
+	      <td th:if="${iterStat.index == 0}" th:rowspan="${order.lineItems.size()}" th:text="${orderStat.count}">1</td>
+	      <td th:if="${iterStat.index == 0}" th:rowspan="${order.lineItems.size()}" th:text="${#temporals.format(order.orderDate, 'yyyy-MM-dd')}">2024-01-01</td>
+	      <td th:if="${iterStat.index == 0}" th:rowspan="${order.lineItems.size()}" th:text="${order.company.companyName}">거래처명</td>
+	
+	      <!-- 품목 정보 (항상 출력) -->
+	      <td th:text="${order.orderNum}">주문번호</td>
+	      <td th:text="${item.item.code}">품목코드</td>
+	      <td th:text="${item.item.name}">품목명</td>
+	      <td th:text="${item.unitQty}">수량</td>
+	      <td th:text="${item.item.unit}">단위</td>
+	
+	      <td th:if="${iterStat.index == 0}" th:rowspan="${order.lineItems.size()}" th:text="${order.company.employee.empName}">담당자</td>
+	      
+	      <!-- 처리현황 -->
+	      <td th:if="${iterStat.index == 0}" th:rowspan="${order.lineItems.size()}">
+	        <span th:switch="${order.orderStatus != null ? order.orderStatus.name() : 'UNKNOWN'}">
+	          <span th:case="'WAITING'">
+	            <button type="button" class="btn btn-primary btn-sm" 
+	                    th:attr="data-orderId=${order.orderId}" 
+	                    onclick="confirmOrder(this)">
+	              발주 대기
+	            </button>
+	          </span>
+	          <span th:case="'CONFIRMED'" class="badge bg-success">발주 등록</span>
+	          <span th:case="'COMPLETED'" class="badge bg-secondary">입고 완료</span>
+	        </span>
+	      </td>
+	      
+	      <!-- ✅ 개별 품목 액션 버튼 -->
+	      <td class="action-buttons">
+	        <div class="d-flex gap-1 justify-content-center flex-wrap">
+	          <button type="button" class="btn btn-info btn-sm" 
+	                  th:attr="data-lineItemId=${item.orderLineItemId}"
+	                  onclick="openPlaceDetailModal(this.getAttribute('data-lineItemId'))"
+	                  th:title="'품목 상세: ' + ${item.item.name}">
+	            <i class="bi bi-eye"></i>상세
+	          </button>
+	          
+	          <!-- 수정 버튼 (발주 대기 상태에서만 활성화) -->
+	          <button type="button" 
+	                  th:class="${order.orderStatus != null and order.orderStatus.name() == 'WAITING'} ? 'btn btn-warning btn-sm' : 'btn btn-secondary btn-sm'"
+	                  th:disabled="${order.orderStatus == null or order.orderStatus.name() != 'WAITING'}"
+	                  th:attr="data-lineItemId=${item.orderLineItemId}"
+	                  onclick="openPlaceEditModal(this.getAttribute('data-lineItemId'))"
+	                  th:title="'품목 수정: ' + ${item.item.name}">
+	            <i class="bi bi-pencil"></i>수정
+	          </button>
+	          
+	          <!-- 삭제 버튼 -->
+	          <button type="button" 
+	                  th:class="${order.orderStatus != null and order.orderStatus.name() == 'WAITING'} ? 'btn btn-danger btn-sm' : 'btn btn-secondary btn-sm'"
+	                  th:disabled="${order.orderStatus == null or order.orderStatus.name() != 'WAITING'}"
+	                  th:attr="data-lineItemId=${item.orderLineItemId}, 
+	                           data-orderId=${order.orderId},
+	                           data-itemCount=${order.lineItems.size()},
+	                           data-itemName=${item.item.name},
+	                           data-orderNum=${order.orderNum}"
+	                  onclick="smartDeleteItem(this)"
+	                  th:title="'품목 삭제: ' + ${item.item.name}">
+	            <i class="bi bi-trash"></i>삭제
+	          </button>
+	        </div>
+	      </td>
+	    </tr>
+	  </th:block>
+	</tbody>
+	  </table>
+	</div>
    <!-- 공통 푸터 -->
   <div th:replace="~{/layouts/footer :: footer}"></div>
-
   <!-- ✅ 모달 삽입용 div -->
  <div th:replace="~{place/place-detail-modal :: place-detail-modal}"></div>
  <div th:replace="~{place/place-register-modal :: place-register-modal}"></div>
+ 
+ <script th:inline="javascript">
+  document.addEventListener('DOMContentLoaded', function() {
+    const itemsParam = /*[[${itemsParam}]]*/ null;
+
+    if (itemsParam) {
+      // (1) 폼 초기화
+      openplaceAddModal();
+
+      // (2) 실제 Bootstrap 모달을 화면에 띄움
+      const modalEl = document.getElementById('placeRegisterModal');
+      const modal = new bootstrap.Modal(modalEl);
+      modal.show();
+
+      // (3) itemsParam 파싱 & 테이블에 행 채우기
+      const parsedList = itemsParam.split(',')
+                            .map(pair => pair.trim())
+                            .map(pair => {
+                              const [code, qty] = pair.split(':');
+                              return { itemCode: code, quantity: parseInt(qty, 10) };
+                            });
+
+      const container = document.getElementById('itemListContainer');
+      container.innerHTML = '';
+      parsedList.forEach((item, idx) => {
+        const newRow = document.createElement('tr');
+        newRow.className = 'item-row';
+        newRow.innerHTML = `
+          <td>
+            <select name="lineItems[${idx}].itemType" class="form-select item-type">
+              <option value="자재" selected>자재</option>
+              <option value="완제품">완제품</option>
+            </select>
+          </td>
+          <td>
+            <select name="lineItems[${idx}].itemId" class="form-select item-name">
+              <option value="">-- 품목 선택 --</option>
+            </select>
+          </td>
+          <td>
+            <input type="text" class="form-control item-code" name="lineItems[${idx}].itemCode" readonly />
+          </td>
+          <td>
+            <input type="number" class="form-control unit-qty" name="lineItems[${idx}].unitQty" min="1" />
+          </td>
+          <td>
+            <input type="text" class="form-control item-unit" name="lineItems[${idx}].unit" readonly />
+          </td>
+          <td>
+            <input type="text" class="form-control unit-price" name="lineItems[${idx}].unitPrice" readonly />
+          </td>
+          <td>
+            <input type="hidden" name="lineItems[${idx}].orderLineItemId" class="order-line-item-id" value="" />
+          </td>
+          <td>
+            <button type="button" class="btn btn-danger btn-sm" onclick="removeItemRow(this)">삭제</button>
+          </td>
+        `;
+        container.appendChild(newRow);
+
+        // item-type을 “자재”로 고정
+        newRow.querySelector('.item-type').value = '자재';
+
+        // 옵션 채워넣고, itemCode가 일치하는 option 선택
+        loadItems(newRow.querySelector('.item-type')).then(() => {
+          const selectElem = newRow.querySelector('.item-name');
+          Array.from(selectElem.options).forEach(opt => {
+            if (opt.dataset.code === item.itemCode) {
+              selectElem.value = opt.value;
+              fillItemDetails(selectElem);
+            }
+          });
+        });
+
+        // 품목코드, 수량 필드에 값 채우기
+        newRow.querySelector('.item-code').value = item.itemCode;
+        newRow.querySelector('.unit-qty').value = item.quantity;
+      });
+
+      // 총합계 계산
+      calculateTotals();
+    }
+  });
+</script>
+  
+  
 
 <script src="/js/place/place.js"></script>
 </body>

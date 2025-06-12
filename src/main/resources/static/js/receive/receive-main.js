@@ -1,4 +1,4 @@
-// receive-main.js - 입고 관리 메인 JavaScript (개선된 버전)
+// receive-main.js - 입고 관리 메인 JavaScript (버그 수정된 버전)
 
 // 전역 변수
 let currentPage = 1;
@@ -24,22 +24,22 @@ window.searchReceiveHistory = function() {
     loadReceiveHistory();
 };
 
+// 🆕 버그 2 수정: 전체 조회 기능 추가
 window.resetSearch = function() {
-    console.log('검색 조건 초기화');
+    console.log('검색 조건 초기화 - 전체 데이터 조회');
     
-    // 오늘 날짜로 리셋
-    const today = new Date().toISOString().split('T')[0];
+    // 날짜와 타입 필터 모두 초기화
     const searchDateInput = document.getElementById('searchDate');
     const typeFilterSelect = document.getElementById('searchTypeFilter');
     
-    if (searchDateInput) searchDateInput.value = today;
+    if (searchDateInput) searchDateInput.value = '';
     if (typeFilterSelect) typeFilterSelect.value = '';
     
-    // 검색 파라미터 초기화
+    // 검색 파라미터 초기화 (전체 조회)
     searchParams = {};
     currentPage = 1;
     
-    // 데이터 다시 로드
+    // 전체 데이터 로드
     loadReceiveHistory();
 };
 
@@ -60,7 +60,7 @@ window.showReceiveDetail = function(receiveId) {
                 'detailReceiveDate': data.receiveDate || '-',
                 'detailItemCode': data.itemCode || '-',
                 'detailItemName': data.itemName || '-',
-                'detailQuantity': data.quantity ? `${data.quantity.toLocaleString()} ${data.unit || ''}` : '-',
+                'detailQuantity': data.quantity ? formatQuantityWithUnit(data.quantity, data.unit) : '-',
                 'detailWarehouse': data.warehouse || '-',
                 'detailCompany': data.company || '-',
                 'detailReceiveType': data.receiveType || '-',
@@ -107,28 +107,39 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 100);
 });
 
-// 페이지 초기화
+// 페이지 초기화 (버그 2 수정: 기본값 설정 변경)
 function initializePage() {
     console.log('페이지 초기화 시작');
     
-    // 오늘 날짜로 검색 날짜 설정
+    // 🆕 기본값을 오늘 날짜로 설정하되, 전체 유형으로 설정
     const today = new Date().toISOString().split('T')[0];
     const searchDateInput = document.getElementById('searchDate');
+    const typeFilterSelect = document.getElementById('searchTypeFilter');
     
     if (searchDateInput) {
         searchDateInput.value = today;
         console.log('검색일 설정:', today);
     }
     
-    // 초기 데이터 로드
+    if (typeFilterSelect) {
+        typeFilterSelect.value = '';  // 전체 유형으로 설정
+        console.log('입고 유형 필터: 전체 유형으로 초기화');
+    }
+    
+    // 오늘 날짜의 전체 유형 데이터 로드
+    searchParams = {
+        date: today,
+        type: '',
+        page: 1
+    };
     loadReceiveHistory();
 }
 
-// 이벤트 리스너 설정
+// 이벤트 리스너 설정 (버그 1 수정: 전체 체크박스 로직 개선)
 function setupEventListeners() {
     console.log('이벤트 리스너 설정 시작');
     
-    // 전체 선택 체크박스
+    // 🆕 버그 1 수정: 전체 선택 체크박스 개선
     const selectAllCheckbox = document.getElementById('selectAll');
     if (selectAllCheckbox) {
         selectAllCheckbox.addEventListener('change', function() {
@@ -139,6 +150,14 @@ function setupEventListeners() {
         });
         console.log('전체 선택 체크박스 이벤트 등록됨');
     }
+    
+    // 🆕 개별 체크박스 변경 시 전체 체크박스 상태 업데이트
+    document.addEventListener('change', function(event) {
+        if (event.target.type === 'checkbox' && 
+            event.target.closest('#receiveTableBody')) {
+            updateSelectAllCheckboxState();
+        }
+    });
     
     // 검색 필터 변경 시 자동 검색
     const searchInputs = ['searchDate', 'searchTypeFilter'];
@@ -156,7 +175,31 @@ function setupEventListeners() {
     });
 }
 
-// 입고 이력 데이터 로드 (최적화된 버전)
+// 🆕 버그 1 수정: 전체 체크박스 상태 업데이트 함수
+function updateSelectAllCheckboxState() {
+    const selectAllCheckbox = document.getElementById('selectAll');
+    const individualCheckboxes = document.querySelectorAll('#receiveTableBody input[type="checkbox"]');
+    
+    if (!selectAllCheckbox || individualCheckboxes.length === 0) return;
+    
+    const checkedCount = Array.from(individualCheckboxes).filter(cb => cb.checked).length;
+    
+    if (checkedCount === 0) {
+        // 아무것도 선택되지 않음
+        selectAllCheckbox.checked = false;
+        selectAllCheckbox.indeterminate = false;
+    } else if (checkedCount === individualCheckboxes.length) {
+        // 모두 선택됨
+        selectAllCheckbox.checked = true;
+        selectAllCheckbox.indeterminate = false;
+    } else {
+        // 일부만 선택됨
+        selectAllCheckbox.checked = false;
+        selectAllCheckbox.indeterminate = true;
+    }
+}
+
+// 입고 이력 데이터 로드 (버그 2 수정: 필터링 로직 개선)
 function loadReceiveHistory() {
     console.log('입고 이력 데이터 로드 시작');
     
@@ -169,16 +212,18 @@ function loadReceiveHistory() {
         size: pageSize
     });
     
-    // 날짜 검색 조건 추가 (단일 날짜)
-    if (searchParams.date) {
+    // 🆕 버그 2 수정: 날짜 검색 조건 추가 (전체 조회 지원)
+    if (searchParams.date && searchParams.date.trim() !== '') {
         params.append('startDate', searchParams.date);
         params.append('endDate', searchParams.date);
     }
+    // 날짜가 없으면 전체 기간 조회
     
-    // 타입 필터 추가
-    if (searchParams.type) {
+    // 🆕 버그 2 수정: 타입 필터 추가 (빈 문자열이면 전체 조회)
+    if (searchParams.type && searchParams.type.trim() !== '') {
         params.append('type', searchParams.type);
     }
+    // 타입이 없으면 전체 유형 조회
     
     console.log('검색 파라미터:', Object.fromEntries(params));
     
@@ -200,7 +245,22 @@ function loadReceiveHistory() {
         });
 }
 
-// 입고 이력 표시
+// 🆕 버그 3 수정: 단위에 따른 수량 표시 함수
+function formatQuantityWithUnit(quantity, unit) {
+    if (!quantity) return '0';
+    
+    const formattedQty = quantity.toLocaleString();
+    
+    // unit이 없거나 'EA', 'ea', '개'인 경우 "~개"로 표시
+    if (!unit || unit.toUpperCase() === 'EA' || unit === '개' || unit.trim() === '') {
+        return `${formattedQty}개`;
+    }
+    
+    // 그 외의 단위(kg, L, m 등)는 단위 그대로 표시
+    return `${formattedQty}${unit}`;
+}
+
+// 입고 이력 표시 (버그 3 수정: 단위 표시 개선)
 function displayReceiveHistory(data) {
     console.log('입고 이력 표시:', data);
     
@@ -224,7 +284,7 @@ function displayReceiveHistory(data) {
     if (emptyState) emptyState.style.display = 'none';
     if (tableContainer) tableContainer.style.display = 'block';
     
-    // 테이블 내용 생성
+    // 테이블 내용 생성 (버그 3 수정: 단위 표시 개선)
     if (tableBody) {
         tableBody.innerHTML = data.content.map((item, index) => `
             <tr onclick="window.showReceiveDetail(${item.id})" style="cursor: pointer;">
@@ -235,8 +295,8 @@ function displayReceiveHistory(data) {
                 <td>${item.receiveDate}</td>
                 <td>${item.itemCode || '-'}</td>
                 <td>${item.itemName || '-'}</td>
-                <td>${item.quantity ? item.quantity.toLocaleString() : '0'}</td>
-                <td>${item.unit || '-'}</td>
+                <td>${formatQuantityWithUnit(item.quantity, item.unit)}</td>
+                <td>${item.unit || 'EA'}</td>
                 <td>${item.company || '-'}</td>
                 <td>${item.warehouse || '-'}</td>
                 <td>
@@ -247,6 +307,13 @@ function displayReceiveHistory(data) {
             </tr>
         `).join('');
         console.log('테이블 내용 업데이트됨');
+        
+        // 🆕 버그 1 수정: 테이블 업데이트 후 전체 체크박스 상태 초기화
+        const selectAllCheckbox = document.getElementById('selectAll');
+        if (selectAllCheckbox) {
+            selectAllCheckbox.checked = false;
+            selectAllCheckbox.indeterminate = false;
+        }
     }
     
     // 페이지네이션 업데이트

@@ -22,7 +22,6 @@
               <select id="orderType" name="orderType" class="form-control" onchange="filterCompanies()" required>
                 <option value="">-- 유형 선택 --</option>
                 <option value="SUPPLIER">거래처</option>
-                <option value="CUSTOMER">고객사</option>
               </select>
             </div>
             <div class="col-md-4">
@@ -77,9 +76,8 @@
                 <tr class="item-row">
                   <td>
                     <select class="form-select item-type" name="itemType" onchange="loadItems(this)" required>
-                        <option value="">-- 자재 선택 --</option>
+                        <option value="">-- 유형 선택 --</option>
                         <option value="자재">자재</option>
-                        <option value="완제품">완제품</option>
                     </select>
                   </td>
                   <!-- 품목명 선택 (초기에는 비어 있음) -->
