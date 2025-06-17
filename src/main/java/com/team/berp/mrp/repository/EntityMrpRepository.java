@@ -129,4 +129,20 @@ public interface EntityMrpRepository extends JpaRepository<Mrp, Long>, JpaSpecif
              WHERE i.id = :itemId
             """)
     Integer sumRequiredQtyByItemId(@Param("itemId") Long itemId);
+    
+    Page<Mrp> findByStatusAndBaseDateBetween(
+            MrpStatus status,
+            LocalDate start,
+            LocalDate end,
+            Pageable pageable
+        );
+
+	Page<Mrp> findByStatusAndBaseDateBetweenAndPlan_Item_CodeContainingIgnoreCaseOrBaseDateBetweenAndPlan_Item_NameContainingIgnoreCase(
+	MrpStatus status,
+	LocalDate from1, LocalDate to1, String code,
+	LocalDate from2, LocalDate to2, String name,
+	Pageable pageable
+	);
+    
+	List<Mrp> findByPlan_Item_CodeAndStatus(String itemCode, MrpStatus status);
 }
