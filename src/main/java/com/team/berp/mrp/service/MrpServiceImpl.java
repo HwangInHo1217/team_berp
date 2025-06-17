@@ -80,18 +80,24 @@ public class MrpServiceImpl implements MrpService {
                 : LocalDate.parse(endDate);
 
         Page<Mrp> mrpPage;
-        if ((startDate == null || startDate.isEmpty()) ||
-            (endDate   == null || endDate.isEmpty()) ||
-            (itemSearch == null || itemSearch.isEmpty())) {
-            mrpPage = mrpRepository.findAll(pageable);
-        } else {
-            mrpPage = mrpRepository
-                    .findByBaseDateBetweenAndPlan_Item_CodeContainingIgnoreCaseOrBaseDateBetweenAndPlan_Item_NameContainingIgnoreCase(
-                            start, end, itemSearch,
-                            start, end, itemSearch,
-                            pageable
-                    );
-        }
+        if (itemSearch == null || itemSearch.isEmpty()) {
+        	     // 검색어 없으면 PLANNED 전체(날짜 범위 기준) 조회
+        	     mrpPage = mrpRepository
+        	         .findByStatusAndBaseDateBetween(
+        	             MrpStatus.PLANNED,
+        	             start, end,
+        	             pageable
+        	         );
+        	 } else {
+        	     // 검색어 있으면 PLANNED + 날짜 + 코드/이름 검색
+        	     mrpPage = mrpRepository
+        	         .findByStatusAndBaseDateBetweenAndPlan_Item_CodeContainingIgnoreCaseOrBaseDateBetweenAndPlan_Item_NameContainingIgnoreCase(
+        	             MrpStatus.PLANNED,
+        	             start, end, itemSearch,
+        	             start, end, itemSearch,
+        	             pageable
+        	         );
+        	 }
 
         List<Stock> allStocks = stockRepository.findAll();
         Map<String, Integer> stockByItemCode = allStocks.stream()
