@@ -166,23 +166,23 @@ input[type="checkbox"] {
 <body class="d-flex flex-column" style="min-height: 100vh;">
 
     <!-- Header -->
-    <div th:replace="~{layouts/header :: header}"></div>
+    <div th:replace="layouts/header :: header"></div>
     
     <div class="d-flex flex-grow-1">
         <!-- Sidebar -->
-        <div th:replace="~{layouts/sidebar :: sidebar}"></div>
+        <div th:replace="layouts/sidebar :: sidebar"></div>
         
         <!-- 메인 컨텐츠 -->
         <main class="p-4 flex-fill">
-            <div class="container-fluid" th:replace="~{stock/stock_view :: stock_view}"></div>
+            <div class="container-fluid" th:replace="stock/stock_view :: stock_view"></div>
         </main>
     </div>
     
     <!-- Footer -->
-    <div th:replace="~{layouts/footer :: footer}"></div>
+    <div th:replace="layouts/footer :: footer"></div>
     
     <!-- 재고 상세 모달 -->
-    <div th:replace="~{stock/stock_detail_modal :: stock_modal}"></div>
+    <div th:replace="stock/stock_detail_modal :: stock_modal"></div>
     
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
