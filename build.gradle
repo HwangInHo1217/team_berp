@@ -30,11 +30,7 @@ dependencies {
    //Lombok을 테스트 코드에서도 사용한다면 추가
    testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
    testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
-    // ✅ Swagger (API 문서 자동화)
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.1.0'
 
-    // ✅ ModelMapper (DTO ↔ Entity 변환 자동화)
-    implementation 'org.modelmapper:modelmapper:3.1.1'
     //✅ 코드 수정 시 서버 자동 재시작 / 캐시 자동 리프레시 기능 제공
    developmentOnly 'org.springframework.boot:spring-boot-devtools'
 

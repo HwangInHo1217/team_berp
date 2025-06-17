@@ -48,4 +48,6 @@ public interface Warehouse_repository extends JpaRepository<Warehouse, Long> {
     List<Warehouse> findByWarehouseNameContainingOrderByIdDesc(String keyword);
     List<Warehouse> findByWarehouseCodeContainingAndUseYnOrderByIdDesc(String keyword, String useYn);
     List<Warehouse> findByWarehouseNameContainingAndUseYnOrderByIdDesc(String keyword, String useYn);
+    
+    
 }

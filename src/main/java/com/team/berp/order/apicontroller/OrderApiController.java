@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.team.berp.domain.Company;
 import com.team.berp.domain.Company.CompanyType;
 import com.team.berp.domain.ItemType;
+import com.team.berp.domain.Warehouse;
 import com.team.berp.item.repository.ItemRepository;
 import com.team.berp.order.dto.CreateOrderRequest;
 import com.team.berp.order.dto.ItemWarehouseResponse;
@@ -157,6 +159,21 @@ public class OrderApiController {
     	System.out.println("컨트롤러연결확인");
         // 서비스 호출: 주문에 속한 품목들에 대해 재고 있는 창고 정보 조회
     	return orderService.getShipmentInfoList(orderId);
+    }
+
+    
+ // --- 주문 수정 ---
+    @PutMapping("/orders/{orderId}")
+    public ResponseEntity<?> updateOrder(
+        @PathVariable("orderId") Long orderId,
+        @RequestBody CreateOrderRequest request
+    ) {
+        try {
+            orderService.updateOrder(orderId, request);
+            return ResponseEntity.ok("주문 수정 성공");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("수정 중 오류 발생: " + e.getMessage());
+        }
     }
 
 }

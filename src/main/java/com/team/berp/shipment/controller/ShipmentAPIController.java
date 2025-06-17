@@ -1,3 +1,4 @@
+// /team_berp/src/main/java/com/team/berp/shipment/controller/ShipmentAPIController.java
 package com.team.berp.shipment.controller;
 
 import java.util.List;
@@ -64,5 +65,14 @@ public class ShipmentAPIController {
         } catch (RuntimeException e) {
             return ResponseEntity.status(400).body("삭제 실패: " + e.getMessage());
         }
+    }
+    
+    
+    @PostMapping("api/shipment/transfer")
+    public ResponseEntity<?> transfer(@RequestBody ShipmentInfoDTO dto){
+    	shipmentService.saveTransfer(dto);
+    	
+    	
+    	return ResponseEntity.ok().body("등록 완료");
     }
 }

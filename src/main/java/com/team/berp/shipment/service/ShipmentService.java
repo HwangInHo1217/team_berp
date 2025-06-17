@@ -11,10 +11,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.team.berp.domain.CompanyOrder;
 import com.team.berp.domain.InventoryLog;
+import com.team.berp.domain.Item;
 import com.team.berp.domain.LogStatus;
 import com.team.berp.domain.LogType;
 import com.team.berp.domain.OrderLineItem;
 import com.team.berp.domain.Stock;
+import com.team.berp.domain.Warehouse;
+import com.team.berp.inventory_log.repository.InventoryLogRepository;
 import com.team.berp.item.repository.ItemRepository;
 import com.team.berp.order.repository.Order_CompanyOrderRepository;
 import com.team.berp.order.repository.Order_OrderLineItemRepository;
@@ -35,6 +38,7 @@ public class ShipmentService {
 	private final ItemRepository itemRepository;
 	private final Order_WarehouseRepository warehouseRepository;
 	private final Order_OrderLineItemRepository orderLineItemRepository;
+	private final InventoryLogRepository inventoryLogRepository;
 
 	private final Shipment_StockRepository stockRepository;
 
@@ -190,4 +194,21 @@ public class ShipmentService {
     }
 
 
+    public void saveTransfer(ShipmentInfoDTO dto) {
+        Item item = itemRepository.findByCode(dto.getItemCode()).orElseThrow();
+        Warehouse warehouse = warehouseRepository.findBywarehouseName(dto.getWarehouseName())
+            .orElseThrow();
+
+        InventoryLog entity = InventoryLog.builder()
+            .logDatetime(dto.getLogDatetime())
+            .logType(LogType.TRANSFER)
+            .item(item)
+            .warehouse(warehouse)
+            .quantity(dto.getQuantity())
+            .comment(dto.getComment())
+            // 필요한 경우 logStatus 등 추가
+            .build();
+
+        inventoryLogRepository.save(entity);
+    }
 }

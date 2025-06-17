@@ -1,7 +1,5 @@
 // File: src/main/resources/static/js/place/place.js
 
-// File: src/main/resources/static/js/place/place.js (진짜 최종 완성본)
-
 // ========================
 // Section 1: 전역 변수 및 함수
 // ========================
@@ -61,13 +59,72 @@ function openplaceAddModal() {
     calculateTotals();
 }
 
+// [추가] 모달 완전히 정리하는 함수
+function cleanupModal() {
+    const modalEl = document.getElementById('placeRegisterModal');
+    if (modalEl) {
+        const modalInstance = bootstrap.Modal.getInstance(modalEl);
+        if (modalInstance) {
+            modalInstance.dispose();
+        }
+        
+        // backdrop 제거
+        const backdrop = document.querySelector('.modal-backdrop');
+        if (backdrop) {
+            backdrop.remove();
+        }
+        
+        // body 클래스 및 스타일 초기화
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+    }
+}
+
+// [추가] 폼 초기화 함수
+function placeReset() {
+    if (!confirm("입력한 내용이 모두 초기화됩니다. 계속하시겠습니까?")) {
+        return;
+    }
+    
+    // 폼 리셋
+    const form = document.getElementById('placeForm');
+    form.reset();
+    
+    // hidden 필드 초기화
+    document.querySelector('#order_id').value = '';
+    
+    // 모든 필드를 편집 가능 상태로 변경
+    document.querySelectorAll('#placeForm input, #placeForm select, #placeForm textarea').forEach(field => {
+        field.readOnly = false;
+        field.disabled = false;
+        field.style.backgroundColor = '';
+    });
+    
+    // 제목 변경
+    document.querySelector('#placeRegisterModal .modal-title').textContent = '발주 등록';
+    
+    // 경고 메시지 제거
+    const alert = document.querySelector('.edit-restriction-alert');
+    if (alert) alert.remove();
+    
+    // 품목 행 초기화
+    resetItemRows();
+    
+    // 회사 필터링 다시 적용
+    filterCompanies();
+    
+    // 합계 계산
+    calculateTotals();
+    
+    alert("폼이 초기화되었습니다.");
+}
+
 // ========================
 // Section 3: 폼 데이터 처리 및 제출
 // ========================
 
-// [수정] event 객체를 파라미터로 받도록 변경
 function placeSubmit(event) {
-    // [수정] event 객체가 존재할 때만 preventDefault() 호출
     if (event) {
         event.preventDefault();
     }
@@ -94,7 +151,6 @@ function placeSubmit(event) {
         if (!res.ok) {
             return res.text().then(text => { throw new Error(text || '서버 응답 오류'); });
         }
-        // 성공 시 JSON 파싱을 시도하고, 실패하면 기본 성공 메시지 사용
         return res.json().catch(() => ({ success: true, message: successMessage }));
     })
     .then(result => {
@@ -153,7 +209,7 @@ function resetItemRows() {
     const container = document.getElementById("itemListContainer");
     container.innerHTML = `
         <tr class="item-row">
-            <td><select class="form-select item-type" onchange="loadItems(this)"><option value="자재" selected>자재</option><option value="완제품">완제품</option></select></td>
+            <td><select class="form-select item-type" onchange="loadItems(this)"><option value="자재" selected>자재</option></select></td>
             <td><select class="form-select item-name" onchange="fillItemDetails(this)"><option value="">-- 품목 선택 --</option></select></td>
             <td><input type="text" class="form-control item-code" readonly></td>
             <td><input type="number" class="form-control unit-qty" value="1" min="1"></td>
@@ -172,7 +228,7 @@ function addItemRow() {
     const newRow = document.createElement('tr');
     newRow.className = 'item-row';
     newRow.innerHTML = `
-        <td><select class="form-select item-type" onchange="loadItems(this)"><option value="자재" selected>자재</option><option value="완제품">완제품</option></select></td>
+        <td><select class="form-select item-type" onchange="loadItems(this)"><option value="자재" selected>자재</option></select></td>
         <td><select class="form-select item-name" onchange="fillItemDetails(this)"><option value="">-- 품목 선택 --</option></select></td>
         <td><input type="text" class="form-control item-code" readonly></td>
         <td><input type="number" class="form-control unit-qty" value="1" min="1"></td>
@@ -223,9 +279,26 @@ function fillItemDetails(selectElement) {
 }
 
 function calculateItemTotal(row) {
-    const qty = parseInt(row.querySelector('.unit-qty')?.value) || 0;
-    const price = parseFloat(row.querySelector('.unit-price')?.value) || 0;
-    row.querySelector('.unit-price-all').value = (qty * price).toLocaleString();
+    let qtyInput = row.querySelector('.unit-qty');
+    let priceInput = row.querySelector('.unit-price');
+    let priceAllInput = row.querySelector('.unit-price-all');
+    
+    if (!qtyInput) {
+        qtyInput = row.querySelector('input[name*="unitQty"]');
+    }
+    if (!priceInput) {
+        priceInput = row.querySelector('input[name*="unitPrice"]:not([name*="unitPriceAll"])');
+    }
+    if (!priceAllInput) {
+        priceAllInput = row.querySelector('input[name*="unitPriceAll"]');
+    }
+
+    const qty = parseInt(qtyInput?.value) || 0;
+    const price = parseFloat(priceInput?.value) || 0;
+    
+    if (priceAllInput) {
+        priceAllInput.value = (qty * price).toLocaleString();
+    }
 }
 
 function calculateTotals() {
@@ -238,7 +311,6 @@ function calculateTotals() {
     document.getElementById("orderQty").textContent = totalQty.toLocaleString();
     document.getElementById("amount").textContent = totalAmount.toLocaleString();
 }
-
 
 // ========================
 // Section 5: DOM 로드 후 실행
@@ -292,35 +364,41 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // [수정] 모달 이벤트 처리 개선
     const placeModalEl = document.getElementById('placeRegisterModal');
     if(placeModalEl) {
-        placeModalEl.addEventListener('hidden.bs.modal', () => {
-            if (!isSubmitting && urlParams.has('items')) {
-                // [수정] 바로 뒤로 가기 전에 확인 질문
-                if (confirm("작성을 취소하고 이전 페이지로 돌아가시겠습니까?")) {
-                    // [수정] 모달 관련 요소를 완전히 제거하여 검은 화면 문제 해결
-                    const modalInstance = bootstrap.Modal.getInstance(placeModalEl);
-                    if (modalInstance) {
-                        modalInstance.dispose();
+        placeModalEl.addEventListener('hidden.bs.modal', (e) => {
+            // 모달이 완전히 닫힌 후 처리
+            setTimeout(() => {
+                if (!isSubmitting && urlParams.has('items')) {
+                    if (confirm("작성을 취소하고 이전 페이지로 돌아가시겠습니까?")) {
+                        cleanupModal();
+                        history.back();
+                    } else {
+                        // 사용자가 취소한 경우 모달을 다시 열기
+                        const modal = new bootstrap.Modal(placeModalEl);
+                        modal.show();
                     }
-                    const backdrop = document.querySelector('.modal-backdrop');
-                    if (backdrop) {
-                        backdrop.remove();
-                    }
-                    document.body.classList.remove('modal-open');
-                    document.body.style.overflow = '';
-                    
-                    history.back();
+                } else {
+                    cleanupModal();
                 }
-            }
-            isSubmitting = false;
+                isSubmitting = false;
+            }, 100);
         });
     }
 
+    // [수정] 등록 버튼 이벤트 처리
     document.getElementById('addBtn')?.addEventListener('click', () => {
         openplaceAddModal();
-        new bootstrap.Modal(document.getElementById('placeRegisterModal')).show();
+        const modal = new bootstrap.Modal(document.getElementById('placeRegisterModal'));
+        modal.show();
     });
+
+    // [추가] 초기화 버튼 이벤트 처리
+    const resetBtn = document.querySelector('#placeRegisterModal .btn-secondary');
+    if (resetBtn && resetBtn.textContent.includes('초기화')) {
+        resetBtn.addEventListener('click', resetPlaceForm);
+    }
 
     document.getElementById('companySelect')?.addEventListener('change', function () {
         const companyId = this.value;
@@ -353,60 +431,8 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
-// ✅ 개별 품목 합계 계산 함수 (class와 name 속성 모두 지원)
-function calculateItemTotal(row) {
-    // class 기반으로 찾기 시도
-    let qtyInput = row.querySelector('.unit-qty');
-    let priceInput = row.querySelector('.unit-price');
-    let priceAllInput = row.querySelector('.unit-price-all');
-    
-    // class로 못 찾으면 name 속성으로 찾기
-    if (!qtyInput) {
-        qtyInput = row.querySelector('input[name*="unitQty"]');
-    }
-    if (!priceInput) {
-        priceInput = row.querySelector('input[name*="unitPrice"]:not([name*="unitPriceAll"])');
-    }
-    if (!priceAllInput) {
-        priceAllInput = row.querySelector('input[name*="unitPriceAll"]');
-    }
-
-    const qty = parseInt(qtyInput?.value) || 0;
-    const price = parseInt(priceInput?.value) || 0;
-    
-    if (priceAllInput) {
-        priceAllInput.value = qty * price;
-    }
-}
-
-// ✅ 전체 합계 계산 함수 (class와 name 속성 모두 지원)
-function calculateTotals() {
-    const rows = document.querySelectorAll('#itemListContainer tr.item-row');
-    let totalQty = 0;
-    let totalAmount = 0;
-
-    rows.forEach(row => {
-        // class 기반으로 찾기 시도
-        let qtyInput = row.querySelector('.unit-qty');
-        let priceAllInput = row.querySelector('.unit-price-all');
-        
-        // class로 못 찾으면 name 속성으로 찾기
-        if (!qtyInput) {
-            qtyInput = row.querySelector('input[name*="unitQty"]');
-        }
-        if (!priceAllInput) {
-            priceAllInput = row.querySelector('input[name*="unitPriceAll"]');
-        }
-        
-        const qty = parseInt(qtyInput?.value) || 0;
-        const priceAll = parseInt(priceAllInput?.value) || 0;
-        totalQty += qty;
-        totalAmount += priceAll;
-    });
-
-    document.getElementById("orderQty").textContent = totalQty;
-    document.getElementById("amount").textContent = totalAmount.toLocaleString();
-}
+// 나머지 함수들은 기존 코드와 동일...
+// (smartDeleteItem, openPlaceEditModal, loadRestrictedEditModalData, openPlaceDetailModal, confirmOrder, completeOrder, toggleSelectAll, updateBatchDeleteButton, deleteSelectedItems, batchDeleteItems 등)
 
 // 🚀 스마트 삭제 함수
 function smartDeleteItem(button) {
@@ -618,59 +644,6 @@ function openPlaceDetailModal(lineItemId) {
         });
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-    const addBtn = document.getElementById('addBtn');
-    if (addBtn) {
-        addBtn.addEventListener('click', function() {
-            document.getElementById('placeForm').reset();
-            document.querySelector('#order_id').value = '';
-            const itemListContainer = document.getElementById("itemListContainer");
-            itemListContainer.innerHTML = `<tr class="item-row"><td><select name="lineItems[0].itemType" class="form-select item-type"><option value="자재" selected>자재</option><option value="완제품">완제품</option></select></td><td><select name="lineItems[0].itemId" class="form-select item-name"><option value="">-- 품목 선택 --</option></select></td><td><input type="text" class="form-control item-code" name="lineItems[0].itemCode" readonly /></td><td><input type="number" class="form-control unit-qty" name="lineItems[0].unitQty" value="1" /></td><td><input type="text" class="form-control item-unit" name="lineItems[0].unit" readonly /></td><td><input type="text" class="form-control unit-price" name="lineItems[0].unitPrice" readonly /></td><td><input type="text" class="form-control unit-price-all" name="lineItems[0].unitPriceAll" readonly /></td><input type="hidden" name="lineItems[0].orderLineItemId" value="" /><td><button type="button" class="btn btn-danger btn-sm" onclick="removeItemRow(this)">삭제</button></td></tr>`;
-            document.querySelectorAll('#placeForm input, #placeForm select, #placeForm textarea').forEach(field => {
-                field.readOnly = false;
-                field.disabled = false;
-                field.style.backgroundColor = '';
-            });
-            document.querySelector('#placeRegisterModal .modal-title').textContent = '발주 등록';
-            const alert = document.querySelector('.edit-restriction-alert');
-            if (alert) alert.remove();
-        });
-    }
-});
-	
-document.addEventListener('DOMContentLoaded', function() {
-    const placeForm = document.getElementById('placeForm');
-    if (placeForm) {
-        placeForm.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
-                e.preventDefault();
-                return false;
-            }
-        });
-    }
-});
-
-document.addEventListener('DOMContentLoaded', function() {
-    const addBtn = document.getElementById('addBtn');
-    if (addBtn) {
-        addBtn.addEventListener('click', function() {
-            openplaceAddModal();
-            const modal = new bootstrap.Modal(document.getElementById('placeRegisterModal'));
-            modal.show();
-        });
-    }
-	
-    const placeForm = document.getElementById('placeForm');
-    if (placeForm) {
-        placeForm.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
-                e.preventDefault();
-                return false;
-            }
-        });
-    }
-});
-
 function confirmOrder(button) {
     if (!confirm('등록확정하시겠습니까?')) return;
     const orderId = button.getAttribute('data-orderId');
@@ -728,14 +701,6 @@ function toggleSelectAll(selectAllCheckbox) {
     updateBatchDeleteButton();
 }
 
-function toggleSelectAll(selectAllCheckbox) {
-    const itemCheckboxes = document.querySelectorAll('.item-checkbox:not(:disabled)');
-    itemCheckboxes.forEach(checkbox => {
-        checkbox.checked = selectAllCheckbox.checked;
-    });
-    updateBatchDeleteButton();
-}
-
 function updateBatchDeleteButton() {
     const checkedBoxes = document.querySelectorAll('.item-checkbox:checked');
     const totalBoxes = document.querySelectorAll('.item-checkbox:not(:disabled)');
@@ -765,24 +730,6 @@ function updateBatchDeleteButton() {
 function updateDeleteButtons() {
     updateBatchDeleteButton();
 }
-
-document.addEventListener('DOMContentLoaded', function() {
-    const itemCheckboxes = document.querySelectorAll('.item-checkbox');
-    itemCheckboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
-            updateBatchDeleteButton();
-        });
-    });
-    
-    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
-    if (selectAllCheckbox) {
-        selectAllCheckbox.addEventListener('change', function() {
-            toggleSelectAll(this);
-        });
-    }
-    
-    updateBatchDeleteButton();
-});
 
 function deleteSelectedItems() {
     const checkedBoxes = document.querySelectorAll('.item-checkbox:checked');
@@ -859,95 +806,21 @@ function batchDeleteItems(selectedItems) {
         });
 }
 
-// ========================
-// Section 2: [추가된 코드] - 에러 해결 및 기능 추가
-// ========================
-
-/**
- * [추가] 사업장 유형 선택에 따라 해당 사업장명 옵션만 표시하는 함수
- * Uncaught ReferenceError: filterCompanies is not defined 오류를 해결합니다.
- */
-function filterCompanies() {
-    try {
-        const type = document.getElementById("orderType").value;
-        const select = document.getElementById("companySelect");
-        const options = select.querySelectorAll("option");
-
-        options.forEach(opt => {
-            if (opt.value === "") return; // 값이 없는 기본 옵션은 건너뜀
-            const optType = opt.dataset.type;
-            opt.hidden = optType !== type;
-        });
-
-        // 현재 선택된 값이 숨겨진 상태가 되면 선택을 초기화
-        if (select.options[select.selectedIndex]?.hidden) {
-            select.value = "";
-        }
-    } catch (e) {
-        console.error("filterCompanies 함수 실행 중 오류:", e);
-    }
-}
-
-
-/**
- * [추가] 페이지 로드 시 URL 파라미터를 확인하여 모달을 자동으로 띄우고 품목을 채우는 기능
- */
+// [추가] 체크박스 관련 DOM 로드 이벤트
 document.addEventListener('DOMContentLoaded', function() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const itemsParam = urlParams.get('items');
-
-    // MRP 페이지에서 'items' 파라미터를 가지고 넘어온 경우에만 실행
-    if (itemsParam) {
-        openplaceAddModal(); // 모달창을 열고 기본 폼을 초기화
-
-        const items = itemsParam.split(',').map(pair => {
-            const [code, qty] = pair.split(':');
-            return { itemCode: code, quantity: parseInt(qty, 10) || 1 };
+    const itemCheckboxes = document.querySelectorAll('.item-checkbox');
+    itemCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updateBatchDeleteButton();
         });
-        
-        const container = document.getElementById('itemListContainer');
-        container.innerHTML = ''; // 기본으로 생성된 첫 행을 제거
-
-        // 각 품목에 대한 비동기 작업을 Promise 배열로 관리
-        const promises = items.map(item => {
-            const newRow = document.createElement('tr');
-            newRow.className = 'item-row';
-            // 각 품목에 대한 새로운 행 HTML 생성
-            newRow.innerHTML = `
-                <td><select class="form-select item-type" onchange="loadItems(this)"><option value="자재" selected>자재</option></select></td>
-                <td><select class="form-select item-name" onchange="fillItemDetails(this)"><option value="">-- 품목 선택 --</option></select></td>
-                <td><input type="text" class="form-control item-code" readonly></td>
-                <td><input type="number" class="form-control unit-qty" value="1" min="1"></td>
-                <td><input type="text" class="form-control item-unit" readonly></td>
-                <td><input type="text" class="form-control unit-price" readonly></td>
-                <td><input type="text" class="form-control unit-price-all" readonly></td>
-                <input type="hidden" class="order-line-item-id">
-                <td><button type="button" class="btn btn-danger btn-sm" onclick="removeItemRow(this)">삭제</button></td>
-            `;
-            container.appendChild(newRow);
-
-            // '자재' 타입의 품목 목록을 로드하고, 완료되면 다음 작업을 수행하는 Promise 반환
-            return loadItems(newRow.querySelector('.item-type')).then(() => {
-                const itemSelect = newRow.querySelector('.item-name');
-                const option = Array.from(itemSelect.options).find(opt => opt.dataset.code === item.itemCode);
-                
-                if (option) {
-                    itemSelect.value = option.value; // 품목명 선택
-                    fillItemDetails(itemSelect);    // 품목 상세 정보 채우기
-                    newRow.querySelector('.unit-qty').value = item.quantity; // 수량 설정
-                    calculateItemTotal(newRow); // 개별 합계 계산
-                }
-            });
-        });
-        
-        // 모든 품목 행이 성공적으로 처리된 후에 최종 합계 계산 및 모달 표시
-        Promise.all(promises).then(() => {
-            calculateTotals();
-            const modal = new bootstrap.Modal(document.getElementById('placeRegisterModal'));
-            modal.show();
-        }).catch(error => {
-            console.error("MRP 품목으로 발주 모달을 채우는 중 오류 발생:", error);
-            alert("자동으로 발주 품목을 채우는 중 오류가 발생했습니다.");
+    });
+    
+    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function() {
+            toggleSelectAll(this);
         });
     }
+    
+    updateBatchDeleteButton();
 });
