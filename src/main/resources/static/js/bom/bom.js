@@ -153,7 +153,7 @@ function openBomEditVersionSelectModal(parentId) {
 	bomEditMode = true;
 	openBomVersionSelectModal(parentId);
 }
-
+//bom_version 가져오는 메소드
 function openBomVersionSelectModal(parentId) {
 	fetch(`/api/bom/versions/${parentId}`)
 		.then(res => res.json())
@@ -187,6 +187,9 @@ function loadBomVersionForView(versionId) {
 	    .then(data => {
 	      // (a) 최상위 부모 이름
 	      document.getElementById("bomParentName").innerText = data.parentName;
+
+		  // ✅ 추가: 버전 설명 표시
+		  document.getElementById("bomVersionDescription").innerText = data.description || "-";
 
 	      // (b) BOM 구성 상세 테이블 채우기
 	      const tbody = document.getElementById("bomComponentTableBody");
