@@ -17,9 +17,12 @@ import com.team.berp.domain.CompanyOrder;
 import com.team.berp.domain.Employee;
 import com.team.berp.domain.Item;
 import com.team.berp.domain.ItemType;
+import com.team.berp.domain.Mrp;
+import com.team.berp.domain.MrpStatus;
 import com.team.berp.domain.OrderLineItem;
 import com.team.berp.employee.repository.EmployeeRepository;
 import com.team.berp.item.repository.ItemRepository;
+import com.team.berp.mrp.repository.EntityMrpRepository;
 import com.team.berp.order.repository.Order_OrderLineItemRepository;
 import com.team.berp.place.dto.PlaceDTO;
 import com.team.berp.place.dto.PlaceDTO.OrderLineItemDTO;
@@ -39,7 +42,7 @@ public class PlaceServiceImpl implements PlaceService{ //실제 구현
     private final ItemRepository itemRepository;
     private final Order_OrderLineItemRepository orderLineItemRepository;
     private final EmployeeRepository employeeRepository;  // 생성자 주입으로 추가
-
+    private final EntityMrpRepository mrpRepository;
 	 
 	
     @Override
@@ -125,6 +128,16 @@ public class PlaceServiceImpl implements PlaceService{ //실제 구현
         savedOrder.setOrderQty((int) totalOrderQty); // long → int
         savedOrder.setAmount(totalAmount);
         companyOrderRepository.save(savedOrder); // 다시 저장
+        
+        for (OrderLineItem lineItem : savedOrder.getLineItems()) {
+            String code = lineItem.getItem().getCode();
+            // PLANNED 상태의 MRP만 조회
+            List<Mrp> mrpList = mrpRepository.findByPlan_Item_CodeAndStatus(code, MrpStatus.PLANNED);
+            // 상태를 ORDERED로 변경
+            mrpList.forEach(mrp -> mrp.setStatus(MrpStatus.RELEASED));
+            // 일괄 저장
+            mrpRepository.saveAll(mrpList);
+        }
 
         return savedOrder;
     }
