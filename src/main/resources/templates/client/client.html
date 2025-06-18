@@ -10,11 +10,11 @@
 </head>
 <body class="d-flex flex-column" style="min-height: 100vh;">
   <!-- 헤더 영역 -->
-  <div th:replace="~{layouts/header :: header}"></div>
+  <div th:replace="layouts/header :: header"></div>
 
   <div class="d-flex flex-grow-1">
     <!-- 사이드바 영역 -->
-    <div th:replace="~{layouts/sidebar :: sidebar}"></div>
+    <div th:replace="layouts/sidebar :: sidebar"></div>
 
     <!-- 메인 콘텐츠 -->
     <main class="p-4 flex-fill">
@@ -220,7 +220,7 @@
   </div>
 
   <!-- 푸터 영역 -->
-  <div th:replace="~{layouts/footer :: footer}"></div>
+  <div th:replace="layouts/footer :: footer"></div>
 
   <!-- JS 불러오기 -->
   <script src="/js/client/client.js"></script>

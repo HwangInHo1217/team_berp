@@ -15,9 +15,9 @@
 </head>
 <body class="d-flex flex-column" style="min-height: 100vh;">
 	<!-- 공통 헤더/사이드바 -->
-	<div th:replace="~{/layouts/header :: header}"></div>
+	<div th:replace="layouts/header :: header"></div>
 	<div class="d-flex flex-grow-1">
-		<div th:replace="~{/layouts/sidebar :: sidebar}"></div>
+		<div th:replace="layouts/sidebar :: sidebar"></div>
 
 		<!-- 메인 -->
 		<main class="p-4 flex-fill">
@@ -146,9 +146,9 @@
 	</div>
 
 	<!-- ✅ 모달 영역 -->
-	<div th:replace="~{/item/item-add-modal :: itemRegisterModal}"></div>
-	<div th:replace="~{/item/item-edit-modal :: itemEditModal}"></div>
-	<div th:replace="~{/layouts/footer :: footer}"></div>
+	<div th:replace="item/item-add-modal :: itemRegisterModal"></div>
+	<div th:replace="item/item-edit-modal :: itemEditModal"></div>
+	<div th:replace="layouts/footer :: footer"></div>
 
 	<script src="/js/item/item.js"></script>
 

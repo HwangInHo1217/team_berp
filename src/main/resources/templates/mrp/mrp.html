@@ -11,10 +11,10 @@
 </head>
 <body class="d-flex flex-column" style="min-height:100vh;">
   <!-- 헤더 -->
-  <div th:replace="~{layouts/header :: header}"></div>
+  <div th:replace="layouts/header :: header"></div>
   <div class="d-flex flex-grow-1">
     <!-- 사이드바 -->
-    <div th:replace="~{layouts/sidebar :: sidebar}"></div>
+    <div th:replace="layouts/sidebar :: sidebar"></div>
     <main class="p-4 flex-fill">
       <div class="container">
 
@@ -113,11 +113,11 @@
 
   <!-- ────────────────────────────────────────────────────────── -->
   <!-- (A) 모달 프래그먼트 포함 -->
-  <div th:replace="~{mrp/mrp-detail-modal :: mrp-detail-modal}"></div>
+  <div th:replace="mrp/mrp-detail-modal :: mrp-detail-modal"></div>
 
   <!-- ────────────────────────────────────────────────────────── -->
   <!-- (B) 푸터 -->
-  <div th:replace="~{layouts/footer :: footer}"></div>
+  <div th:replace="layouts/footer :: footer"></div>
 
   <!-- ────────────────────────────────────────────────────────── -->
   <!-- (C) 외부 JS: 단 하나만 로드 -->
