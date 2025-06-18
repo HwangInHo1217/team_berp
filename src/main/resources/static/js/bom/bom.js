@@ -276,6 +276,7 @@ function loadBomVersionForEdit(versionId) {
           </div>
           <div class="col-md-1">
             <label class="form-label">로스율</label>
+			
             <input type="number" step="0.01" class="form-control" name="loss_rt[]" value="${extractNumber(c.lossRate)}" />
           </div>
           <div class="col-md-2">

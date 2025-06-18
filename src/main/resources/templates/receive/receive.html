@@ -83,27 +83,27 @@
 <body class="d-flex flex-column" style="min-height: 100vh;">
 
     <!-- ✅ Header -->
-    <div th:replace="~{layouts/header :: header}"></div>
+    <div th:replace="layouts/header :: header"></div>
     <!-- ✅ Header 끝 -->
     
     <div class="d-flex flex-grow-1">
         <!-- ✅ Sidebar -->
-        <div th:replace="~{layouts/sidebar :: sidebar}"></div>
+        <div th:replace="layouts/sidebar :: sidebar"></div>
         <!-- ✅ Sidebar 끝 -->
 
         <!-- ✅ Layout: Main - 입고 관리 페이지 -->
         <main class="p-4 flex-fill">
-            <div class="container" th:replace="~{receive/receive_view :: receive_main}"></div>
+            <div class="container" th:replace="receive/receive_view :: receive_main"></div>
         </main>
         <!-- ✅ Layout: Main 끝 -->
     </div>
 
     <!-- ✅ Footer -->
-    <div th:replace="~{layouts/footer :: footer}"></div>
+    <div th:replace="layouts/footer :: footer"></div>
     <!-- ✅ Footer 끝 -->
 
     <!-- ✅ 입고 모달 페이지 -->
-    <div th:replace="~{receive/receive_modal :: receive_modals}"></div>
+    <div th:replace="receive/receive_modal :: receive_modals"></div>
     <!-- ✅ 입고 모달 페이지 끝 -->
 
 </body>
