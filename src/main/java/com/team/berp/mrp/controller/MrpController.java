@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class MrpController {
     @GetMapping("/mrp/mrp")
     public String mrpPage() {
-        return "/mrp/mrp";
+        return "mrp/mrp";
     }
     
     
