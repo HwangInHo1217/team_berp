@@ -145,4 +145,50 @@ public interface EntityMrpRepository extends JpaRepository<Mrp, Long>, JpaSpecif
 	);
     
 	List<Mrp> findByPlan_Item_CodeAndStatus(String itemCode, MrpStatus status);
+	
+	Page<Mrp> findByStatusAndDueDateBetweenAndPlan_Item_CodeContainingIgnoreCaseOrStatusAndDueDateBetweenAndPlan_Item_NameContainingIgnoreCase(
+		    MrpStatus status1, LocalDate startDate1, LocalDate endDate1, String itemCode,
+		    MrpStatus status2, LocalDate startDate2, LocalDate endDate2, String itemName,
+		    Pageable pageable
+		);
+	
+	// [신규 메소드 추가] JOIN FETCH를 사용하여 연관된 엔티티를 한 번에 가져오도록 수정
+    @Query("""
+            SELECT m FROM Mrp m
+            JOIN FETCH m.plan p
+            JOIN FETCH p.item i
+            WHERE m.status = :status
+              AND m.dueDate BETWEEN :start AND :end
+            ORDER BY m.mrpId DESC
+            """)
+    List<Mrp> findAllByStatusAndDueDateBetween(@Param("status") MrpStatus status, 
+                                               @Param("start") LocalDate start, 
+                                               @Param("end") LocalDate end);
+
+    // 2. [신규 추가] 날짜와 키워드로 검색 시, Page가 아닌 List를 반환하는 메소드
+    @Query("""
+            SELECT m FROM Mrp m
+            JOIN FETCH m.plan p
+            JOIN FETCH p.item i
+            WHERE m.status = :status
+              AND m.dueDate BETWEEN :startDate AND :endDate
+              AND (i.code LIKE %:keyword% OR i.name LIKE %:keyword%)
+            ORDER BY m.mrpId DESC
+            """)
+    List<Mrp> findAllByStatusAndDueDateBetweenAndPlanItemNameOrCode(
+        @Param("status") MrpStatus status,
+        @Param("startDate") LocalDate startDate,
+        @Param("endDate") LocalDate endDate,
+        @Param("keyword") String keyword
+    );
+	
+    @Query("""
+            SELECT m FROM Mrp m
+            JOIN FETCH m.plan p
+            JOIN FETCH p.item i
+            WHERE m.status = :status
+            ORDER BY m.mrpId DESC
+            """)
+    List<Mrp> findAllByStatus(@Param("status") MrpStatus status);
+    
 }
