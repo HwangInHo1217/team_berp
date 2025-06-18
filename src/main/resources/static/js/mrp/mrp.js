@@ -76,19 +76,26 @@ function loadMrpList(page, callback) {
         size: pageSize,
         sortKey: currentSortKey,
         sortDir: currentSortDir,
-        startDate: document.getElementById("startDate").value,
-        endDate: document.getElementById("endDate").value,
-        itemSearch: document.getElementById("itemSearch").value,
-    }).toString();
+    });
 
-    fetch(`/api/mrp/list?${params}`)
-        .then(res => res.json())
-        .then(data => {
-            renderMrpList(data, page);
-            renderPagination(data.currentPage, data.totalPages);
-            if (callback) callback();
-        })
-        .catch(err => console.error("MRP 리스트 로드 실패:", err));
+    // 기간 필터(From/To)가 입력된 것만
+    const sd = document.getElementById("startDate").value.trim();
+    const ed = document.getElementById("endDate").value.trim();
+    if (sd) params.append("startDate", sd);
+    if (ed) params.append("endDate",   ed);
+
+    // 품목명/코드 검색어가 입력된 것만
+    const kw = document.getElementById("itemSearch").value.trim();
+    if (kw) params.append("itemSearch", kw);
+
+    fetch(`/api/mrp/list?${params.toString()}`)
+      .then(res => res.json())
+      .then(data => {
+          renderMrpList(data, page);
+          renderPagination(data.currentPage, data.totalPages);
+          if (callback) callback();
+      })
+      .catch(err => console.error("MRP 리스트 로드 실패:", err));
 }
 
 function renderMrpList(data, page) {
@@ -311,15 +318,12 @@ function moveModal(offset) {
  * 이 함수는 단순히 검색 버튼을 누르는 것과 동일하게 동작합니다.
  */
 function calculateMrp() {
-    const startDate = document.getElementById("startDate").value.trim();
-    const endDate   = document.getElementById("endDate").value.trim();
-    const itemSearch = document.getElementById("itemSearch").value.trim();
+    const sd = document.getElementById("startDate").value.trim();
+    const ed = document.getElementById("endDate").value.trim();
+    
 
-    if (!startDate || !endDate || !itemSearch) {
-        alert("기간(From), 기간(To), 그리고 품목명/코드를 모두 입력해주세요.");
-        return;
-    }
-    if (startDate > endDate) {
+	// 기간 둘 다 입력된 경우에만 순서 체크
+    if (sd && ed && sd > ed) {
         alert("기간(From)이 기간(To)보다 클 수 없습니다.");
         return;
     }
@@ -331,7 +335,9 @@ function calculateMrp() {
 // 페이지 초기화 및 이벤트 리스너
 // ────────────────────────────────────────────────────────
 window.onload = function() {
-    document.getElementById("startDate").value = new Date().toISOString().substring(0, 10);
+	document.getElementById("startDate").value = "";
+	document.getElementById("endDate").value = "";
+	document.getElementById("itemSearch").value = "";
 
     // 공통 이벤트 핸들러
     document.getElementById('selectAll')?.addEventListener('change', function() {

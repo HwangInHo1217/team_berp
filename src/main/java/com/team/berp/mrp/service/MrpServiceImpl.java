@@ -31,6 +31,8 @@ import com.team.berp.mrp.repository.Mrp_InventoryLogRepository;
 import com.team.berp.mrp.repository.Mrp_WarehouseRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -44,6 +46,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class MrpServiceImpl implements MrpService {
@@ -61,100 +64,98 @@ public class MrpServiceImpl implements MrpService {
     private final Mrp_WarehouseRepository      mrpWarehouseRepository;
 
     @Override
+    @Transactional(readOnly = true)
     public Page<MrpViewDto> findMrpList(
             int page, int size,
             String sortKey, String sortDir,
             String startDate, String endDate,
             String itemSearch
     ) {
-        Sort.Direction dir = sortDir.equalsIgnoreCase("asc")
-                ? Sort.Direction.ASC
-                : Sort.Direction.DESC;
-        Pageable pageable = PageRequest.of(page - 1, size, Sort.by(dir, sortKey));
+        log.info("================== MRP 리스트 조회 시작 ==================");
+        log.info("페이지: {}, 시작일: {}, 종료일: {}, 검색어: '{}'", page, startDate, endDate, itemSearch);
 
-        LocalDate start = (startDate == null || startDate.isEmpty())
-                ? LocalDate.MIN
-                : LocalDate.parse(startDate);
-        LocalDate end   = (endDate   == null || endDate.isEmpty())
-                ? LocalDate.MAX
-                : LocalDate.parse(endDate);
+        Pageable pageable = PageRequest.of(page - 1, size, Sort.by(Sort.Direction.DESC, "mrpId"));
 
-        Page<Mrp> mrpPage;
-        if (itemSearch == null || itemSearch.isEmpty()) {
-        	     // 검색어 없으면 PLANNED 전체(날짜 범위 기준) 조회
-        	     mrpPage = mrpRepository
-        	         .findByStatusAndBaseDateBetween(
-        	             MrpStatus.PLANNED,
-        	             start, end,
-        	             pageable
-        	         );
-        	 } else {
-        	     // 검색어 있으면 PLANNED + 날짜 + 코드/이름 검색
-        	     mrpPage = mrpRepository
-        	         .findByStatusAndBaseDateBetweenAndPlan_Item_CodeContainingIgnoreCaseOrBaseDateBetweenAndPlan_Item_NameContainingIgnoreCase(
-        	             MrpStatus.PLANNED,
-        	             start, end, itemSearch,
-        	             start, end, itemSearch,
-        	             pageable
-        	         );
-        	 }
+        boolean noDateFilter = (startDate == null || startDate.isEmpty()) && (endDate == null || endDate.isEmpty());
+        boolean noSearch = (itemSearch == null || itemSearch.isEmpty());
 
+        List<Mrp> allMatchingMrps;
+
+        if (noSearch) {
+            // [수정된 부분] 날짜 필터가 없는 경우(초기 로딩)와 있는 경우를 분리
+            if (noDateFilter) {
+                log.info("초기 로딩 케이스 실행 (날짜 필터 없음)");
+                allMatchingMrps = mrpRepository.findAllByStatus(MrpStatus.PLANNED);
+            } else {
+                log.info("날짜 단독 검색 케이스 실행");
+                LocalDate sd = LocalDate.parse(startDate);
+                LocalDate ed = LocalDate.parse(endDate);
+                allMatchingMrps = mrpRepository.findAllByStatusAndDueDateBetween(MrpStatus.PLANNED, sd, ed);
+            }
+        } else {
+            log.info("키워드 검색 케이스 실행");
+            LocalDate sd = noDateFilter ? LocalDate.MIN : LocalDate.parse(startDate);
+            LocalDate ed = noDateFilter ? LocalDate.MAX : LocalDate.parse(endDate);
+            allMatchingMrps = mrpRepository.findAllByStatusAndDueDateBetweenAndPlanItemNameOrCode(MrpStatus.PLANNED, sd, ed, itemSearch);
+        }
+        log.info("[1단계] DB에서 조회된 Mrp 레코드 개수: {}", allMatchingMrps.size());
+
+        // ... (이하 모든 데이터 처리 및 페이지네이션 로직은 이전 답변과 동일하게 유지) ...
+        
+        // (이전 답변의 3, 4단계 코드와 동일한 내용이 여기에 위치합니다)
+        // ...
         List<Stock> allStocks = stockRepository.findAll();
         Map<String, Integer> stockByItemCode = allStocks.stream()
                 .filter(s -> s.getItem() != null)
-                .collect(Collectors.groupingBy(
-                        s -> s.getItem().getCode(),
-                        Collectors.summingInt(s -> Optional.ofNullable(s.getQuantity()).orElse(0))
-                ));
+                .collect(Collectors.groupingBy(s -> s.getItem().getCode(), Collectors.summingInt(s -> Optional.ofNullable(s.getQuantity()).orElse(0))));
 
         Map<String, Integer> totalRequiredByItemCode = new HashMap<>();
-        for (Mrp mrp : mrpPage.getContent()) {
+        Set<String> processedItemCodesForSum = new HashSet<>();
+        log.info("--- [2단계] 품목별 총 필요수량 계산 시작 ---");
+        for (Mrp mrp : allMatchingMrps) {
+            if (mrp.getPlan() == null || mrp.getPlan().getItem() == null) continue;
             Item parent = mrp.getPlan().getItem();
-            if (parent == null) continue;
-
-            Long itemId = parent.getId();
             String code = parent.getCode();
-            Integer sumRequired = mrpRepository.sumRequiredQtyByItemIdAndStatus(
-                    itemId, MrpStatus.PLANNED);
+            if (processedItemCodesForSum.contains(code)) continue;
+
+            Integer sumRequired = mrpRepository.sumRequiredQtyByItemIdAndStatus(parent.getId(), MrpStatus.PLANNED);
             int requiredQty = (sumRequired != null ? sumRequired : 0);
-
+            log.info(" > 품목코드: {}, 계산된 총 필요수량: {}", code, requiredQty);
             totalRequiredByItemCode.put(code, requiredQty);
+            processedItemCodesForSum.add(code);
         }
+        log.info("--- [2단계] 품목별 총 필요수량 계산 완료 ---");
 
+
+        List<MrpViewDto> finalDtoList = new ArrayList<>();
         Set<String> seenCodes = new HashSet<>();
-        List<MrpViewDto> dtoList = new ArrayList<>();
-
-        for (Mrp mrp : mrpPage.getContent()) {
+        log.info("--- [3단계] 최종 DTO 리스트 생성 시작 ---");
+        for (Mrp mrp : allMatchingMrps) {
+            if (mrp.getPlan() == null || mrp.getPlan().getItem() == null) continue;
             Item parent = mrp.getPlan().getItem();
-            if (parent == null) continue;
-
             String itemCode = parent.getCode();
-            if (seenCodes.contains(itemCode)) {
-                continue;
-            }
-            seenCodes.add(itemCode);
-
+            if (seenCodes.contains(itemCode)) continue;
+            
             int stockQty = stockByItemCode.getOrDefault(itemCode, 0);
             int requiredQty = totalRequiredByItemCode.getOrDefault(itemCode, 0);
             int shortageQty = requiredQty - stockQty;
+
+            log.info(" > 품목코드: {}, 필요수량: {}, 재고: {}, 부족수량: {}", itemCode, requiredQty, stockQty, shortageQty);
+
             if (shortageQty <= 0) {
+                log.info("   >> 부족수량 0 이하. 리스트에서 제외.");
                 continue;
             }
-
-            String itemName   = parent.getName();
-            String itemType   = (parent.getType() != null ? parent.getType().toString() : "");
-            String unit       = parent.getUnit();
-            String spec       = parent.getSpec();
-            String custName   = mrpRepository.findLatestCompanyNameByItemId(parent.getId());
-            String dueDateStr = (mrp.getDueDate() != null ? mrp.getDueDate().toString() : "");
-            String mrpStatus  = (mrp.getStatus() != null ? mrp.getStatus().toString() : "");
-
+            
+            log.info("   >> 부족수량 0 초과. 리스트에 추가!");
+            seenCodes.add(itemCode);
+            
             MrpViewDto dto = new MrpViewDto(
                     mrp.getMrpId(),
                     itemCode,
-                    itemName,
-                    itemType,
-                    unit,
+                    parent.getName(),
+                    (parent.getType() != null ? parent.getType().toString() : ""),
+                    parent.getUnit(),
                     Optional.ofNullable(mrp.getBaseDate()).map(Object::toString).orElse(""),
                     requiredQty,
                     stockQty,
@@ -162,15 +163,24 @@ public class MrpServiceImpl implements MrpService {
                     mrp.getSource(),
                     Optional.ofNullable(mrp.getLeadTime()).orElse(0),
                     mrp.getComment(),
-                    custName,
-                    spec,
-                    dueDateStr,
-                    mrpStatus
+                    mrpRepository.findLatestCompanyNameByItemId(parent.getId()),
+                    parent.getSpec(),
+                    (mrp.getDueDate() != null ? mrp.getDueDate().toString() : ""),
+                    (mrp.getStatus() != null ? mrp.getStatus().toString() : "")
             );
-            dtoList.add(dto);
+            finalDtoList.add(dto);
         }
+        log.info("--- [3단계] 최종 DTO 리스트 생성 완료 ---");
+        log.info("[4단계] 화면에 표시될 최종 품목 개수: {}", finalDtoList.size());
 
-        return new PageImpl<>(dtoList, pageable, dtoList.size());
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), finalDtoList.size());
+        
+        List<MrpViewDto> pageContent = (start > finalDtoList.size()) ? Collections.emptyList() : finalDtoList.subList(start, end);
+        log.info("[5단계] 현재 페이지에 표시될 품목 개수: {}", pageContent.size());
+        log.info("================== MRP 리스트 조회 종료 ==================\n");
+
+        return new PageImpl<>(pageContent, pageable, finalDtoList.size());
     }
 
     @Override
@@ -182,30 +192,39 @@ public class MrpServiceImpl implements MrpService {
         if (parentItem == null) {
             return Collections.emptyList();
         }
-        
-        // [수정 1] 부모의 '총 필요수량'을 가져옵니다. (모달 로직과 동일하게)
+
         Integer sumRequired = mrpRepository.sumRequiredQtyByItemIdAndStatus(parentItem.getId(), MrpStatus.PLANNED);
         int parentRequiredQty = (sumRequired != null) ? sumRequired : 0;
-        
-        // 재고 정보를 미리 Map으로 만들어 성능을 최적화합니다.
+
         Map<Long, Integer> stockMap = stockRepository.findAll().stream()
                 .filter(s -> s.getItem() != null && s.getQuantity() != null)
-                .collect(Collectors.groupingBy(s -> s.getItem().getId(), 
+                .collect(Collectors.groupingBy(s -> s.getItem().getId(),
                                                Collectors.summingInt(Stock::getQuantity)));
-        
-        List<com.team.berp.domain.Bom> bomList = bomRepository.findByParentItem(parentItem);
+
+        // 여러 버전에 걸친 모든 BOM 자재를 가져옵니다.
+        List<com.team.berp.domain.Bom> rawBomList = bomRepository.findByParentItem(parentItem);
         LocalDate today = LocalDate.now();
 
-        List<ExtendedComponent> extendedComponents = bomList.stream()
+        // [핵심 수정] DB에서 가져온 BOM 리스트의 중복 자재를 제거합니다.
+        Map<Long, com.team.berp.domain.Bom> uniqueBomMap = new LinkedHashMap<>();
+        for (com.team.berp.domain.Bom bom : rawBomList) {
+            Item childItem = bom.getChildItem();
+            if (childItem == null) continue;
+
+            // 맵에 해당 자재가 아직 없으면 추가합니다. (이미 있으면 아무것도 하지 않음)
+            // 이렇게 하면 동일한 자재 중 가장 처음 발견된 하나만 남게 됩니다.
+            uniqueBomMap.putIfAbsent(childItem.getId(), bom);
+        }
+        List<com.team.berp.domain.Bom> uniqueBomList = new ArrayList<>(uniqueBomMap.values());
+        // [핵심 수정 로직 끝]
+
+
+        // 중복이 제거된 BOM 리스트(uniqueBomList)를 사용하여 화면에 보낼 데이터를 생성합니다.
+        List<ExtendedComponent> extendedComponents = uniqueBomList.stream()
             .map(bom -> {
                 Item childItem = bom.getChildItem();
-                if (childItem == null) return null;
-                
-                int perParentQty = bom.getQty();
-
-                // [수정 2] 자재 총 필요량 = (부모의 총 필요수량) * (BOM 단위 소요량)
+                int perParentQty = bom.getQty(); // 중복 제거된 첫 번째 자재의 소요량
                 int totalQty = perParentQty * parentRequiredQty;
-
                 int childStockQty = stockMap.getOrDefault(childItem.getId(), 0);
                 int childShortageQty = Math.max(0, totalQty - childStockQty);
                 int safetyStock = Optional.ofNullable(childItem.getSafetyStock()).orElse(0);

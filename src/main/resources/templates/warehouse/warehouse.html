@@ -78,31 +78,31 @@
 <body class="d-flex flex-column" style="min-height: 100vh;">
 
   <!-- ✅ Header -->
-  <div th:replace="~{layouts/header :: header}"></div>
+  <div th:replace="layouts/header :: header"></div>
   <!-- ✅ Header 끝 -->
 	<div class="d-flex flex-grow-1">
 		<!-- ✅ Sidebar -->
-		<div th:replace="~{layouts/sidebar :: sidebar}"></div>
+		<div th:replace="layouts/sidebar :: sidebar"></div>
 		<!-- ✅ Sidebar 끝 -->
 
 		<!-- ✅ Layout: Main - 페이징-->
 		<main class="p-4 flex-fill">
-			<div class="container" th:replace="~{warehouse/warehouse_view :: warehouse_main}"></div>
+			<div class="container" th:replace="warehouse/warehouse_view :: warehouse_main"></div>
 		</main>
 	</div>
 	<!-- ✅ Layout: Main 끝 -->
   
   
   <!-- ✅ Footer -->
-  <div th:replace="~{layouts/footer :: footer}"></div>
+  <div th:replace="layouts/footer :: footer"></div>
   <!-- ✅ Footer 끝 -->
   
   <!-- ✅ 창고 모달페이지 -->
-  <div th:replace="~{warehouse/warehouse_modal  :: warehouse_modal}"></div>
+  <div th:replace="warehouse/warehouse_modal  :: warehouse_modal"></div>
   <!-- ✅ 창고 모달페이지 끝 -->
 
   <!-- 🆕 창고별 재고 목록 모달 추가 -->
-  <div th:replace="~{warehouse/warehouse_stock_modal :: warehouse_stock_modal}"></div>  
+  <div th:replace="warehouse/warehouse_stock_modal :: warehouse_stock_modal"></div>  
 </body>
 
   <!-- ✅ 공통 레이아웃 JS -->
