@@ -192,30 +192,39 @@ public class MrpServiceImpl implements MrpService {
         if (parentItem == null) {
             return Collections.emptyList();
         }
-        
-        // [수정 1] 부모의 '총 필요수량'을 가져옵니다. (모달 로직과 동일하게)
+
         Integer sumRequired = mrpRepository.sumRequiredQtyByItemIdAndStatus(parentItem.getId(), MrpStatus.PLANNED);
         int parentRequiredQty = (sumRequired != null) ? sumRequired : 0;
-        
-        // 재고 정보를 미리 Map으로 만들어 성능을 최적화합니다.
+
         Map<Long, Integer> stockMap = stockRepository.findAll().stream()
                 .filter(s -> s.getItem() != null && s.getQuantity() != null)
-                .collect(Collectors.groupingBy(s -> s.getItem().getId(), 
+                .collect(Collectors.groupingBy(s -> s.getItem().getId(),
                                                Collectors.summingInt(Stock::getQuantity)));
-        
-        List<com.team.berp.domain.Bom> bomList = bomRepository.findByParentItem(parentItem);
+
+        // 여러 버전에 걸친 모든 BOM 자재를 가져옵니다.
+        List<com.team.berp.domain.Bom> rawBomList = bomRepository.findByParentItem(parentItem);
         LocalDate today = LocalDate.now();
 
-        List<ExtendedComponent> extendedComponents = bomList.stream()
+        // [핵심 수정] DB에서 가져온 BOM 리스트의 중복 자재를 제거합니다.
+        Map<Long, com.team.berp.domain.Bom> uniqueBomMap = new LinkedHashMap<>();
+        for (com.team.berp.domain.Bom bom : rawBomList) {
+            Item childItem = bom.getChildItem();
+            if (childItem == null) continue;
+
+            // 맵에 해당 자재가 아직 없으면 추가합니다. (이미 있으면 아무것도 하지 않음)
+            // 이렇게 하면 동일한 자재 중 가장 처음 발견된 하나만 남게 됩니다.
+            uniqueBomMap.putIfAbsent(childItem.getId(), bom);
+        }
+        List<com.team.berp.domain.Bom> uniqueBomList = new ArrayList<>(uniqueBomMap.values());
+        // [핵심 수정 로직 끝]
+
+
+        // 중복이 제거된 BOM 리스트(uniqueBomList)를 사용하여 화면에 보낼 데이터를 생성합니다.
+        List<ExtendedComponent> extendedComponents = uniqueBomList.stream()
             .map(bom -> {
                 Item childItem = bom.getChildItem();
-                if (childItem == null) return null;
-                
-                int perParentQty = bom.getQty();
-
-                // [수정 2] 자재 총 필요량 = (부모의 총 필요수량) * (BOM 단위 소요량)
+                int perParentQty = bom.getQty(); // 중복 제거된 첫 번째 자재의 소요량
                 int totalQty = perParentQty * parentRequiredQty;
-
                 int childStockQty = stockMap.getOrDefault(childItem.getId(), 0);
                 int childShortageQty = Math.max(0, totalQty - childStockQty);
                 int safetyStock = Optional.ofNullable(childItem.getSafetyStock()).orElse(0);
