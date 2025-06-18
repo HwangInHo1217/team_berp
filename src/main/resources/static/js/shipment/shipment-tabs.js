@@ -191,7 +191,7 @@ function renderCustomerTab(page) {
       <td>${row.unit || ''}</td>
       <td>${row.warehouseName || ''}</td>
       <td>${row.empName || ''}</td>
-      <td>${row.comment || ''}</td>
+      <td>${row.comment && row.comment.trim() !== "" ? row.comment : "고객사 출고"}</td>
 
     `;
     tbody.appendChild(tr);
@@ -403,12 +403,9 @@ document
 // ─────────────────────────────────────────────────────────────────
 // ② “창고 이동(특별 출고)” 탭 내 삭제 버튼 핸들러 예시
 // ─────────────────────────────────────────────────────────────────
-document
-  .getElementById('btnDelete_Transfer')
+document.getElementById('btnDelete_Transfer')
   .addEventListener('click', () => {
-    // “창고 이동” 전용 테이블에서 체크된 박스(value=logId) 모으기
-    const checkedBoxes = document
-      .querySelectorAll('#tblTransferShipment tbody input[type="checkbox"]:checked');
+    const checkedBoxes = document.querySelectorAll('#tblTransferShipment tbody input[type="checkbox"]:checked');
     const logIds = Array.from(checkedBoxes).map(cb => Number(cb.value));
 
     if (logIds.length === 0) {
@@ -433,14 +430,29 @@ document
       })
       .then(msg => {
         alert('✅ 삭제되었습니다.');
-        // “창고 이동” 목록 리프레시
-        loadTransferShipments(/*필요한 인자*/);
+
+        // --- 탭 전환 ---
+        let tabBtn = document.getElementById('tab-transfer-shipment');
+        if (tabBtn) {
+          let tab = new bootstrap.Tab(tabBtn);
+          tab.show();
+        }
+
+        // --- 데이터 다시 받아서 1페이지 보여주기 ---
+        // fetchAllShipments()는 데이터를 받아오고 기본적으로 renderCustomerTab(1)을 호출
+        // 특별 출고 탭이 활성화된 후, renderTransferTab(1)도 호출해야 안전합니다.
+        fetchAllShipments().then(() => {
+          renderTransferTab(1);
+        });
+
       })
       .catch(err => {
         console.error('❌ 이동 삭제 중 오류 발생:', err);
         alert('❌ 삭제 중 오류가 발생했습니다:\n' + err.message);
       });
   });
+
+
   
   
   // ─────────────────────────────────────────────────────────────────
@@ -503,10 +515,16 @@ document
       this.reset();
 
       // 모달 닫기
-      bootstrap.Modal.getInstance(document.getElementById('registerTransferModal')).hide();
+	  const modalEl = document.getElementById('registerTransferModal');
+	    const modalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
+	    modalInstance.hide();
 
       // 목록 새로고침
-      fetchAllShipments();
+      await fetchAllShipments();
+	  
+	  // 창고 이동 탭 자동 전환
+	  renderTransferTab(1);
+	  
     } catch (err) {
       alert('❌ 등록 중 오류: ' + err.message);
     }
@@ -569,3 +587,25 @@ document
       XLSX.writeFile(wb, "특별출고내역.xlsx");
   });
   
+  
+  
+  // 모달이 열릴 때마다 오늘 날짜를 세팅
+  document.getElementById('btnRegister_Transfer').addEventListener('click', function () {
+    const dateInput = document.getElementById('inputShipmentDate');
+    if (dateInput) {
+      dateInput.value = getToday();
+      dateInput.readOnly = true;
+    }
+    // 모달이 이미 열려있는지 확인하고, 한 번만 show
+    const modalEl = document.getElementById('registerTransferModal');
+    const modalInstance = bootstrap.Modal.getOrCreateInstance(modalEl); // 이미 열려있으면 재활용
+    modalInstance.show();
+  });
+  
+  // 오늘 날짜 yyyy-MM-dd 포맷 구하기
+  function getToday() {
+    const d = new Date();
+    const month = (d.getMonth() + 1).toString().padStart(2, '0');
+    const day = d.getDate().toString().padStart(2, '0');
+    return `${d.getFullYear()}-${month}-${day}`;
+  }

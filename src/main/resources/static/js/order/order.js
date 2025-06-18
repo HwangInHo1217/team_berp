@@ -53,7 +53,7 @@ function bindGlobalEventHandlers() {
   $('#selectAll').change(toggleSelectAll);
   $('#deleteSelected').click(deleteSelectedOrders);
   $('#filterForm').submit(e => { e.preventDefault(); fetchOrders(0); });
-  $('#fixedaddItem').off('click').on('click', () => {
+  $('#fixedAddItem').off('click').on('click', () => {
     addFixedItemRow();
     calcFixedTotalAmount();
   });
@@ -121,7 +121,7 @@ function saveOrder() {
     const unitPrice = $(this).find('.unitPrice').val();
     const unitQty = $(this).find('.unitQty').val();
     orderItems.push({
-      itemId: Number(itemId), unit, unitPrice: Number(unitPrice), unitQty: Number(unitQty)
+      itemId: Number(itemId), unit, unitPrice: Number(String(unitPrice).replace(/,/g,"")), unitQty: Number(unitQty)
     });
   });
 
@@ -161,8 +161,8 @@ function addItemRow() {
         </select>
       </td>
       <td><input type="text" class="form-control unit" readonly></td>
-      <td><input type="number" class="form-control unitPrice" readonly></td>
-      <td><input type="number" class="form-control unitQty" required></td>
+      <td><input type="text" class="form-control unitPrice" readonly></td>
+      <td><input type="number" class="form-control unitQty" min="1" step="1" required></td>
       <td><input type="text" class="form-control total" readonly></td>
       <td><button type="button" class="btn btn-danger removeItem">삭제</button></td>
     </tr>
@@ -172,16 +172,44 @@ function addItemRow() {
     $itemSel.append(`<option value="${i.id}" data-unit="${i.unit}" data-price="${i.itemPrice}">${i.itemName}</option>`);
   });
   $('#itemsTable tbody').append($tr);
+  updateItemSelectOptions();
 }
+
+// 주문등록 모달 - 품목 중복 선택 방지
+function updateItemSelectOptions() {
+  // 선택된 품목ID들
+  const selected = [];
+  $('#itemsTable .itemSelect').each(function() {
+    const v = $(this).val();
+    if (v) selected.push(v);
+  });
+  // 각 셀렉트 박스마다
+  $('#itemsTable .itemSelect').each(function() {
+    const myVal = $(this).val();
+    $(this).find('option').each(function() {
+      if ($(this).val() === "" || $(this).val() === myVal) {
+        $(this).prop('disabled', false);
+      } else if (selected.includes($(this).val())) {
+        $(this).prop('disabled', true);
+      } else {
+        $(this).prop('disabled', false);
+      }
+    });
+  });
+}
+
 
 // ===== 품목행 입력시 자동처리 =====
 $('#itemsTable').on('change', '.itemSelect', function() {
+  updateItemSelectOptions();
   const $tr = $(this).closest('tr');
   const opt = $(this).find('option:selected');
   $tr.find('.unit').val(opt.data('unit'));
-  $tr.find('.unitPrice').val(opt.data('price'));
+  // 단가를 자동 입력하고 콤마 적용
+  $tr.find('.unitPrice').val(formatNumber(opt.data('price')));
   $tr.find('.unitQty').val(1);
-  calculateRowTotal($tr); calculateTotalAmount();
+  calculateRowTotal($tr);
+  calculateTotalAmount();
 });
 $('#itemsTable').on('input', '.unitQty', function() {
   const $tr = $(this).closest('tr');
@@ -189,11 +217,12 @@ $('#itemsTable').on('input', '.unitQty', function() {
 });
 $('#itemsTable').on('click', '.removeItem', function() {
   $(this).closest('tr').remove();
+  updateItemSelectOptions();
   calculateTotalAmount();
 });
 function calculateRowTotal($tr) {
   const qty = parseFloat($tr.find('.unitQty').val()) || 0;
-  const price = parseFloat($tr.find('.unitPrice').val()) || 0;
+  const price = Number(String($tr.find('.unitPrice').val()).replace(/,/g,"")) || 0;
   $tr.find('.total').val(formatNumber(qty * price));
 }
 function calculateTotalAmount() {
@@ -258,9 +287,16 @@ function renderOrderTable(orders, pageNumber, pageSize) {
         <td>
           <button class="btn btn-info btn-sm detailBtn" data-id="${o.orderId}">상세</button>
         </td>
-        <td>
-          <button class="btn btn-warning btn-sm editBtn" data-id="${o.orderId}">수정</button>
-        </td>
+		<td>
+		  <button
+		    class="btn btn-sm editBtn ${o.allShipped ? 'btn-secondary' : 'btn-warning'}"
+		    data-id="${o.orderId}"
+		    ${o.allShipped ? 'disabled' : ''}
+		  >
+		    수정
+		  </button>
+		</td>
+
         <td>
           ${shipmentBtnHtml}
         </td>
@@ -327,9 +363,12 @@ function populateFixedForm(orderData) {
   (orderData.items || []).forEach(item => addFixedItemRow(item));
   calcFixedTotalAmount();
   $tbody.off('click', '.fixedRemoveItem').on('click', '.fixedRemoveItem', function() {
-    $(this).closest('tr').remove(); calcFixedTotalAmount();
+    $(this).closest('tr').remove(); 
+	updateFixedItemSelectOptions();
+	calcFixedTotalAmount();
   });
   $tbody.off('change', '.fixedItemSelect').on('change', '.fixedItemSelect', function() {
+	updateFixedItemSelectOptions();
     const $tr = $(this).closest('tr');
     const opt = $(this).find('option:selected');
     $tr.find('.fixedUnit').val(opt.data('unit'));
@@ -357,7 +396,7 @@ function addFixedItemRow(item) {
         </select>
       </td>
       <td><input type="text" class="form-control fixedUnit" readonly></td>
-      <td><input type="number" class="form-control fixedUnitPrice" readonly></td>
+      <td><input type="text" class="form-control fixedUnitPrice" readonly></td>
       <td><input type="number" class="form-control fixedUnitQty" value="1" required></td>
       <td><input type="text" class="form-control fixedTotal" readonly></td>
       <td><button type="button" class="btn btn-danger fixedRemoveItem">삭제</button></td>
@@ -375,13 +414,38 @@ function addFixedItemRow(item) {
     tr.find('.fixedTotal').val(formatNumber(item.unitQty * item.unitPrice));
   }
   $('#fixedItemsTable tbody').append(tr);
+  updateFixedItemSelectOptions();
 }
+
+function updateFixedItemSelectOptions() {
+  const selected = [];
+  $('#fixedItemsTable .fixedItemSelect').each(function() {
+    const v = $(this).val();
+    if (v) selected.push(v);
+  });
+  $('#fixedItemsTable .fixedItemSelect').each(function() {
+    const myVal = $(this).val();
+    $(this).find('option').each(function() {
+      if ($(this).val() === "" || $(this).val() === myVal) {
+        $(this).prop('disabled', false);
+      } else if (selected.includes($(this).val())) {
+        $(this).prop('disabled', true);
+      } else {
+        $(this).prop('disabled', false);
+      }
+    });
+  });
+}
+
+
+
+
 function calcFixedTotalAmount() {
   let total = 0;
   $('#fixedItemsTable tbody tr').each(function() {
     total += Number(String($(this).find('.fixedTotal').val()).replace(/,/g,"")) || 0;
   });
-  $('#totalAmount').text(formatNumber(total));
+  $('#fixedTotalAmount').text(formatNumber(total));
 }
 $('#updateOrder').off('click').on('click', function() {
   const orderId = Number($('#fixedOrderId').val());
@@ -626,4 +690,5 @@ function downloadExcelOrderList() {
   XLSX.utils.book_append_sheet(wb, ws, '주문목록');
   XLSX.writeFile(wb, `주문목록_${new Date().toISOString().slice(0,10)}.xlsx`);
 }
+
 
