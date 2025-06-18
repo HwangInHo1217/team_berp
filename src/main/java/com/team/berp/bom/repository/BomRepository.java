@@ -16,7 +16,8 @@ import com.team.berp.domain.Item;
 
 public interface BomRepository extends JpaRepository<Bom, Integer> {
 
-	List<Bom> findByParentItem(Item parent);
+	@Query("SELECT b FROM Bom b JOIN FETCH b.childItem WHERE b.parentItem = :parent")
+	List<Bom> findByParentItem(@Param("parent") Item parent);
 	
 	// ✅ 3. Repository 수정
 	List<Bom> findByBomVersion(BomVersion version);

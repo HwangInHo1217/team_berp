@@ -1,6 +1,7 @@
 # ✅ 서버 포트 설정
 server:
-  port: 8080  # 기본 포트 8080. 필요 시 다른 포트로 변경 가능
+
+  port: 8082  # 기본 포트 8080. 필요 시 다른 포트로 변경 가능
 
 # ✅ Spring 설정
 spring:
@@ -10,7 +11,9 @@ spring:
   datasource:
 
   #   url: jdbc:mysql://localhost:3306/berp_db?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8
-     url: jdbc:mysql://210.178.108.186:13306/erp
+
+     url: jdbc:mysql://localhost:13306/erp
+
      username: erp         # DB 접속 ID
      password: erp1234   # DB 접속 비밀번호
      driver-class-name: com.mysql.cj.jdbc.Driver  # MySQL 드라이버 클래스

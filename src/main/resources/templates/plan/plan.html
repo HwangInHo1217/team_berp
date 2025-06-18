@@ -23,9 +23,9 @@
 
 </head>
 <body class="d-flex flex-column" style="min-height: 100vh;">
-	<div th:replace="~{/layouts/header :: header}"></div>
+	<div th:replace="layouts/header :: header"></div>
 	<div class="d-flex flex-grow-1">
-		<div th:replace="~{/layouts/sidebar :: sidebar}"></div>
+		<div th:replace="layouts/sidebar :: sidebar"></div>
 		<main class="p-4 flex-fill">
 			<div class="container">
 				<h2 class="mb-4">생산계획 관리</h2>
@@ -106,7 +106,7 @@
 		</main>
 	</div>
 
-	<div th:replace="~{/layouts/footer :: footer}"></div>
+	<div th:replace="layouts/footer :: footer"></div>
 
 	<!-- 모달 영역 -->
 	<div id="planRegisterModalWrapper">

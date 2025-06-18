@@ -5,172 +5,238 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>발주 관리</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <style>
   .custom-modal-dialog {
     max-width: 1300px; /* 너비를 넓히고 싶은 만큼 조절 (예: 900px, 80vw 등) */
     margin: auto;     /* 가운데 정렬 */
   }
+  
+  /* ✅ Copyright 고정을 위한 스타일 추가 */
+  .page-wrapper {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .main-content {
+    flex: 1;
+  }
+  
+  .footer-copyright {
+    background-color: #f8f9fa;
+    border-top: 1px solid #dee2e6;
+    padding: 15px 0;
+    text-align: center;
+    color: #6c757d;
+    font-size: 0.875rem;
+    margin-top: auto;
+  }
+  
+  /* ✅ 빈 데이터 메시지 스타일 */
+  .empty-data-message {
+    text-align: center;
+    padding: 60px 20px;
+    color: #6c757d;
+    background-color: #f8f9fa;
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    margin: 20px 0;
+  }
+  
+  .empty-data-message i {
+    font-size: 4rem;
+    color: #adb5bd;
+    margin-bottom: 20px;
+    display: block;
+  }
+  
+  .empty-data-message h4 {
+    color: #495057;
+    margin-bottom: 15px;
+  }
+  
+  .empty-data-message p {
+    margin-bottom: 25px;
+    line-height: 1.6;
+  }
 </style>
 </head>
-	<body class="d-flex flex-column" style="min-height: 100vh;">
-	
-	<!-- 공통 헤더 -->
-	  <div th:replace="~{/layouts/header :: header}"></div>
-	  <div class="d-flex flex-grow-1">
-	       <!-- 공통 사이드바 -->
-	    <div th:replace="~{/layouts/sidebar :: sidebar}"></div>
-	
-	    <!-- ✅ 본문 영역 -->
-	    <div class="container py-4">
-	      <h2 class="mb-4">발주 관리</h2>
-	
-	<!-- 🔍 검색 + 버튼 -->
-	<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-	  <!-- 왼쪽: 검색창 + 검색 버튼 + 초기화 버튼 -->
-	  <div class="d-flex align-items-center gap-2">
-	    <!-- ✅ 검색어 유지 -->
-	    <input type="text" class="form-control w-auto" placeholder="품목명을 입력하세요" 
-	           id="searchKeyword" th:value="${searchKeyword}" />
-	    <button class="btn btn-outline-secondary" onclick="searchOrders()">검색</button>
-	    <button class="btn btn-outline-danger" onclick="clearSearch()">초기화</button>
-	    
-	    <!-- ✅ 검색 결과 표시 (선택사항) -->
-	    <span th:if="${searchKeyword != null and !searchKeyword.isEmpty()}" 
-	          class="badge bg-info">
-	      '<span th:text="${searchKeyword}"></span>' 검색 결과
-	    </span>
-	  </div>
-	
-	  <!-- 오른쪽: 상세 / 수정 / 삭제 / 발주 등록 / 입고 이동 버튼 -->
-	  <!-- 오른쪽: 버튼들 -->
-  <div class="d-flex align-items-center gap-2">
-    <!-- ✅ 새로운 일괄 삭제 버튼들 -->
-     <button class="btn btn-danger" id="batchDeleteBtn" onclick="deleteSelectedItems()" disabled>
-      <i class="bi bi-trash"></i> 선택 삭제
-    </button>
-    <button class="btn btn-primary" id="addBtn">+ 발주 등록</button>
-    <button class="btn btn-primary" onclick="goToInboundPage()">입고 페이지로 이동</button>
+<body class="page-wrapper">
+
+<!-- 공통 헤더 -->
+<div th:replace="layouts/header :: header"></div>
+
+<div class="d-flex flex-grow-1 main-content">
+  <!-- 공통 사이드바 -->
+  <div th:replace="layouts/sidebar :: sidebar"></div>
+
+  <!-- ✅ 본문 영역 -->
+  <div class="container py-4">
+    <h2 class="mb-4">발주 관리</h2>
+
+    <!-- 🔍 검색 + 버튼 -->
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+      <!-- 왼쪽: 검색창 + 검색 버튼 + 초기화 버튼 -->
+      <div class="d-flex align-items-center gap-2">
+        <!-- ✅ 검색어 유지 -->
+        <input type="text" class="form-control w-auto" placeholder="품목명을 입력하세요" 
+               id="searchKeyword" th:value="${searchKeyword}" />
+        <button class="btn btn-outline-secondary" onclick="searchOrders()">검색</button>
+        <button class="btn btn-outline-danger" onclick="clearSearch()">초기화</button>
+        
+        <!-- ✅ 검색 결과 표시 (선택사항) -->
+        <span th:if="${searchKeyword != null and !searchKeyword.isEmpty()}" 
+              class="badge bg-info">
+          '<span th:text="${searchKeyword}"></span>' 검색 결과
+        </span>
+      </div>
+
+      <!-- 오른쪽: 상세 / 수정 / 삭제 / 발주 등록 / 입고 이동 버튼 -->
+      <!-- 오른쪽: 버튼들 -->
+      <div class="d-flex align-items-center gap-2">
+        <!-- ✅ 새로운 일괄 삭제 버튼들 -->
+        <button class="btn btn-danger" id="batchDeleteBtn" onclick="deleteSelectedItems()" disabled>
+          <i class="bi bi-trash"></i> 선택 삭제
+        </button>
+        <button class="btn btn-primary" id="addBtn">+ 발주 등록</button>
+        <button class="btn btn-primary" onclick="goToInboundPage()">입고 페이지로 이동</button>
+      </div>
+    </div>
+
+    <!-- 📋 발주 테이블 -->
+    <div class="table-responsive">
+      <table class="table table-bordered text-center align-middle">
+        <thead class="table-light">
+          <tr>
+            <th width="50">
+              <!-- ✅ 전체 선택 체크박스 -->
+              <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)" />
+            </th>
+            <th>순번</th>
+            <th>발주일자</th>
+            <th>거래처</th>
+            <th>주문번호</th>
+            <th>품목코드</th>
+            <th>품목명</th>
+            <th>수량</th>
+            <th>단위</th>
+            <th>담당자</th>
+            <th>처리현황</th>
+            <th width="200">액션</th>
+          </tr>
+        </thead>
+        
+        <tbody>
+          <!-- ✅ 빈 데이터 메시지 행 (데이터가 없을 때만 표시) -->
+          <tr th:if="${#lists.isEmpty(orderList)}" id="emptyDataRow">
+            <td colspan="12">
+              <div class="empty-data-message">
+                <i class="bi bi-inbox"></i>
+                <h4>데이터가 존재하지 않습니다</h4>
+                <p>등록된 발주 내역이 없습니다.<br>새 발주를 등록해보세요.</p>
+              </div>
+            </td>
+          </tr>
+          
+          <!-- ✅ 실제 데이터 행들 (데이터가 있을 때만 표시) -->
+          <th:block th:each="order, orderStat : ${orderList}" th:unless="${#lists.isEmpty(orderList)}">
+            <tr th:each="item, iterStat : ${order.lineItems}">
+              <!-- ✅ 체크박스 칼럼 -->
+              <td>
+                <input type="checkbox" 
+                       class="item-checkbox" 
+                       th:value="${item.orderLineItemId}"
+                       th:attr="data-orderId=${order.orderId},
+                                data-itemName=${item.item.name},
+                                data-orderNum=${order.orderNum},
+                                data-itemCount=${order.lineItems.size()},
+                                data-orderStatus=${order.orderStatus}"
+                       th:disabled="${order.orderStatus == null or order.orderStatus.name() != 'WAITING'}"
+                       onchange="updateDeleteButtons()" />
+              </td>
+              <!-- 첫 번째 품목일 때만 rowspan 칼럼 출력 -->
+              <td th:if="${iterStat.index == 0}" th:rowspan="${order.lineItems.size()}" th:text="${orderStat.count}">1</td>
+              <td th:if="${iterStat.index == 0}" th:rowspan="${order.lineItems.size()}" th:text="${#temporals.format(order.orderDate, 'yyyy-MM-dd')}">2024-01-01</td>
+              <td th:if="${iterStat.index == 0}" th:rowspan="${order.lineItems.size()}" th:text="${order.company.companyName}">거래처명</td>
+
+              <!-- 품목 정보 (항상 출력) -->
+              <td th:text="${order.orderNum}">주문번호</td>
+              <td th:text="${item.item.code}">품목코드</td>
+              <td th:text="${item.item.name}">품목명</td>
+              <td th:text="${item.unitQty}">수량</td>
+              <td th:text="${item.item.unit}">단위</td>
+
+              <td th:if="${iterStat.index == 0}" th:rowspan="${order.lineItems.size()}" th:text="${order.company.employee.empName}">담당자</td>
+              
+              <!-- 처리현황 -->
+              <td th:if="${iterStat.index == 0}" th:rowspan="${order.lineItems.size()}">
+                <span th:switch="${order.orderStatus != null ? order.orderStatus.name() : 'UNKNOWN'}">
+                  <span th:case="'WAITING'">
+                    <button type="button" class="btn btn-primary btn-sm" 
+                            th:attr="data-orderId=${order.orderId}" 
+                            onclick="confirmOrder(this)">
+                      발주 대기
+                    </button>
+                  </span>
+                  <span th:case="'CONFIRMED'" class="badge bg-success">발주 등록</span>
+                  <span th:case="'COMPLETED'" class="badge bg-secondary">입고 완료</span>
+                </span>
+              </td>
+              
+              <!-- ✅ 개별 품목 액션 버튼 -->
+              <td class="action-buttons">
+                <div class="d-flex gap-1 justify-content-center flex-wrap">
+                  <button type="button" class="btn btn-info btn-sm" 
+                          th:attr="data-lineItemId=${item.orderLineItemId}"
+                          onclick="openPlaceDetailModal(this.getAttribute('data-lineItemId'))"
+                          th:title="'품목 상세: ' + ${item.item.name}"> 상세
+                  </button> 
+                  
+                  <!-- 수정 버튼 (발주 대기 상태에서만 활성화) -->
+                  <button type="button" 
+                          th:class="${order.orderStatus != null and order.orderStatus.name() == 'WAITING'} ? 'btn btn-warning btn-sm' : 'btn btn-secondary btn-sm'"
+                          th:disabled="${order.orderStatus == null or order.orderStatus.name() != 'WAITING'}"
+                          th:attr="data-lineItemId=${item.orderLineItemId}"
+                          onclick="openPlaceEditModal(this.getAttribute('data-lineItemId'))"
+                          th:title="'품목 수정: ' + ${item.item.name}"> 수정
+                  </button>
+                  
+                  <!-- 삭제 버튼 -->
+                  <button type="button" 
+                          th:class="${order.orderStatus != null and order.orderStatus.name() == 'WAITING'} ? 'btn btn-danger btn-sm' : 'btn btn-secondary btn-sm'"
+                          th:disabled="${order.orderStatus == null or order.orderStatus.name() != 'WAITING'}"
+                          th:attr="data-lineItemId=${item.orderLineItemId}, 
+                                   data-orderId=${order.orderId},
+                                   data-itemCount=${order.lineItems.size()},
+                                   data-itemName=${item.item.name},
+                                   data-orderNum=${order.orderNum}"
+                          onclick="smartDeleteItem(this)"
+                          th:title="'품목 삭제: ' + ${item.item.name}"> 삭제
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </th:block>
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
-	
-	
-	      <!-- 📋 발주 테이블 -->
-	      <!-- place.html의 테이블 부분 교체 -->
-	<div class="table-responsive">
-	  <table class="table table-bordered text-center align-middle">
-	    <thead class="table-light">
-	      <tr>
-	      	<th width="50">
-	          <!-- ✅ 전체 선택 체크박스 -->
-	          <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)" />
-	        </th>
-	        <th>순번</th>
-	        <th>발주일자</th>
-	        <th>거래처</th>
-	        <th>주문번호</th>
-	        <th>품목코드</th>
-	        <th>품목명</th>
-	        <th>수량</th>
-	        <th>단위</th>
-	        <th>담당자</th>
-	        <th>처리현황</th>
-	        <th width="200">액션</th>
-	      </tr>
-	    </thead>
-	    
-	   <tbody>
-	  <th:block th:each="order, orderStat : ${orderList}">
-	    <tr th:each="item, iterStat : ${order.lineItems}">
-	    <!-- ✅ 체크박스 칼럼 -->
-        <td>
-          <input type="checkbox" 
-                 class="item-checkbox" 
-                 th:value="${item.orderLineItemId}"
-                 th:attr="data-orderId=${order.orderId},
-                          data-itemName=${item.item.name},
-                          data-orderNum=${order.orderNum},
-                          data-itemCount=${order.lineItems.size()},
-                          data-orderStatus=${order.orderStatus}"
-                 th:disabled="${order.orderStatus == null or order.orderStatus.name() != 'WAITING'}"
-                 onchange="updateDeleteButtons()" />
-        </td>
-	      <!-- 첫 번째 품목일 때만 rowspan 칼럼 출력 -->
-	      <td th:if="${iterStat.index == 0}" th:rowspan="${order.lineItems.size()}" th:text="${orderStat.count}">1</td>
-	      <td th:if="${iterStat.index == 0}" th:rowspan="${order.lineItems.size()}" th:text="${#temporals.format(order.orderDate, 'yyyy-MM-dd')}">2024-01-01</td>
-	      <td th:if="${iterStat.index == 0}" th:rowspan="${order.lineItems.size()}" th:text="${order.company.companyName}">거래처명</td>
-	
-	      <!-- 품목 정보 (항상 출력) -->
-	      <td th:text="${order.orderNum}">주문번호</td>
-	      <td th:text="${item.item.code}">품목코드</td>
-	      <td th:text="${item.item.name}">품목명</td>
-	      <td th:text="${item.unitQty}">수량</td>
-	      <td th:text="${item.item.unit}">단위</td>
-	
-	      <td th:if="${iterStat.index == 0}" th:rowspan="${order.lineItems.size()}" th:text="${order.company.employee.empName}">담당자</td>
-	      
-	      <!-- 처리현황 -->
-	      <td th:if="${iterStat.index == 0}" th:rowspan="${order.lineItems.size()}">
-	        <span th:switch="${order.orderStatus != null ? order.orderStatus.name() : 'UNKNOWN'}">
-	          <span th:case="'WAITING'">
-	            <button type="button" class="btn btn-primary btn-sm" 
-	                    th:attr="data-orderId=${order.orderId}" 
-	                    onclick="confirmOrder(this)">
-	              발주 대기
-	            </button>
-	          </span>
-	          <span th:case="'CONFIRMED'" class="badge bg-success">발주 등록</span>
-	          <span th:case="'COMPLETED'" class="badge bg-secondary">입고 완료</span>
-	        </span>
-	      </td>
-	      
-	      <!-- ✅ 개별 품목 액션 버튼 -->
-	      <td class="action-buttons">
-	        <div class="d-flex gap-1 justify-content-center flex-wrap">
-	          <button type="button" class="btn btn-info btn-sm" 
-	                  th:attr="data-lineItemId=${item.orderLineItemId}"
-	                  onclick="openPlaceDetailModal(this.getAttribute('data-lineItemId'))"
-	                  th:title="'품목 상세: ' + ${item.item.name}">
-	            <i class="bi bi-eye"></i>상세
-	          </button>
-	          
-	          <!-- 수정 버튼 (발주 대기 상태에서만 활성화) -->
-	          <button type="button" 
-	                  th:class="${order.orderStatus != null and order.orderStatus.name() == 'WAITING'} ? 'btn btn-warning btn-sm' : 'btn btn-secondary btn-sm'"
-	                  th:disabled="${order.orderStatus == null or order.orderStatus.name() != 'WAITING'}"
-	                  th:attr="data-lineItemId=${item.orderLineItemId}"
-	                  onclick="openPlaceEditModal(this.getAttribute('data-lineItemId'))"
-	                  th:title="'품목 수정: ' + ${item.item.name}">
-	            <i class="bi bi-pencil"></i>수정
-	          </button>
-	          
-	          <!-- 삭제 버튼 -->
-	          <button type="button" 
-	                  th:class="${order.orderStatus != null and order.orderStatus.name() == 'WAITING'} ? 'btn btn-danger btn-sm' : 'btn btn-secondary btn-sm'"
-	                  th:disabled="${order.orderStatus == null or order.orderStatus.name() != 'WAITING'}"
-	                  th:attr="data-lineItemId=${item.orderLineItemId}, 
-	                           data-orderId=${order.orderId},
-	                           data-itemCount=${order.lineItems.size()},
-	                           data-itemName=${item.item.name},
-	                           data-orderNum=${order.orderNum}"
-	                  onclick="smartDeleteItem(this)"
-	                  th:title="'품목 삭제: ' + ${item.item.name}">
-	            <i class="bi bi-trash"></i>삭제
-	          </button>
-	        </div>
-	      </td>
-	    </tr>
-	  </th:block>
-	</tbody>
-	  </table>
-	</div>
-   <!-- 공통 푸터 -->
-  <div th:replace="~{/layouts/footer :: footer}"></div>
-  <!-- ✅ 모달 삽입용 div -->
- <div th:replace="~{place/place-detail-modal :: place-detail-modal}"></div>
- <div th:replace="~{place/place-register-modal :: place-register-modal}"></div>
- 
- <script th:inline="javascript">
+
+<!-- ✅ Copyright Footer - 항상 하단에 고정 -->
+<footer class="footer-copyright">
+  <div class="container">
+    <p class="mb-0">© 2025 ERP System. All rights reserved. | Powered by Spring Boot & Bootstrap</p>
+  </div>
+</footer>
+
+<!-- ✅ 모달 삽입용 div -->
+<div th:replace="place/place-detail-modal :: place-detail-modal"></div>
+<div th:replace="place/place-register-modal :: place-register-modal"></div>
+
+<script th:inline="javascript">
   document.addEventListener('DOMContentLoaded', function() {
     const itemsParam = /*[[${itemsParam}]]*/ null;
 
@@ -229,7 +295,7 @@
         `;
         container.appendChild(newRow);
 
-        // item-type을 “자재”로 고정
+        // item-type을 "자재"로 고정
         newRow.querySelector('.item-type').value = '자재';
 
         // 옵션 채워넣고, itemCode가 일치하는 option 선택
@@ -251,10 +317,9 @@
       // 총합계 계산
       calculateTotals();
     }
+    
   });
 </script>
-  
-  
 
 <script src="/js/place/place.js"></script>
 </body>

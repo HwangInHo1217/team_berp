@@ -15,9 +15,9 @@
 
 <body class="d-flex flex-column" style="min-height: 100vh;">
 	<!-- ✅ 공통 헤더/사이드바 -->
-	<div th:replace="~{/layouts/header :: header}"></div>
+	<div th:replace="layouts/header :: header"></div>
 	<div class="d-flex flex-grow-1">
-		<div th:replace="~{/layouts/sidebar :: sidebar}"></div>
+		<div th:replace="layouts/sidebar :: sidebar"></div>
 
 		<main class="p-4 flex-fill">
 			<div class="container">
@@ -347,7 +347,9 @@
 										</div>
 									</div>
 								</div>
-
+								<div class="mb-2">
+  <strong>버전 설명:</strong> <span id="bomVersionDescription">-</span>
+</div>
 								<!-- BOM 구성 상세 -->
 								<div class="row">
 									<div class="col-12">
@@ -390,6 +392,6 @@
 	</div>
 
 	<script src="/js/bom/bom.js"></script>
-	<div th:replace="~{/layouts/footer :: footer}"></div>
+	<div th:replace="layouts/footer :: footer"></div>
 </body>
 </html>
